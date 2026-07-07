@@ -29,7 +29,9 @@ if (isProd) {
 export function query(text, params = []) {
   return new Promise((resolve, reject) => {
     if (isProd) {
-      pgPool.query(text, params, (err, res) => {
+      let index = 1;
+      const pgText = text.replace(/\?/g, () => `$${index++}`);
+      pgPool.query(pgText, params, (err, res) => {
         if (err) return reject(err);
         resolve({ rows: res.rows, rowCount: res.rowCount });
       });
@@ -50,7 +52,9 @@ export function run(text, params = []) {
   return new Promise((resolve, reject) => {
     if (isProd) {
       // In PG, we use query. If there's a RETURNING clause, the rows will be in res.rows.
-      pgPool.query(text, params, (err, res) => {
+      let index = 1;
+      const pgText = text.replace(/\?/g, () => `$${index++}`);
+      pgPool.query(pgText, params, (err, res) => {
         if (err) return reject(err);
         // Map PG insert results to return an object similar to SQLite's run
         const lastID = res.rows && res.rows[0] ? res.rows[0].id : null;

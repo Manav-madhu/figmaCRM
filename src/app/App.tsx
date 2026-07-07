@@ -2265,26 +2265,40 @@ export default function App() {
   const refreshData = async () => {
     try {
       const data = await api.getAnalytics();
-      setStats(data.stats);
-      setAnalytics(data);
+      if (data && Array.isArray(data.stats)) {
+        setStats(data.stats);
+        setAnalytics(data);
+      }
 
       const leadsData = await api.getLeads();
-      setLeads(leadsData);
+      if (Array.isArray(leadsData)) {
+        setLeads(leadsData);
+      }
 
       const propsData = await api.getProperties();
-      setProperties(propsData);
+      if (Array.isArray(propsData)) {
+        setProperties(propsData);
+      }
 
       const tasksData = await api.getTasks();
-      setTasks(tasksData);
+      if (Array.isArray(tasksData)) {
+        setTasks(tasksData);
+      }
 
       const aptsData = await api.getAppointments();
-      setAppointments(aptsData);
+      if (Array.isArray(aptsData)) {
+        setAppointments(aptsData);
+      }
 
       const fupsData = await api.getFollowups();
-      setFollowups(fupsData);
+      if (Array.isArray(fupsData)) {
+        setFollowups(fupsData);
+      }
 
       const bcastsData = await api.getBroadcasts();
-      setBroadcasts(bcastsData);
+      if (Array.isArray(bcastsData)) {
+        setBroadcasts(bcastsData);
+      }
     } catch (e) {
       console.error("Error loading data from backend API:", e);
     }

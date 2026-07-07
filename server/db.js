@@ -12,23 +12,36 @@ const __dirname = path.dirname(__filename);
 const isProd = !!process.env.DATABASE_URL;
 let pgPool = null;
 let sqliteDb = null;
+let useSQLite = !isProd;
 
-if (isProd) {
-  pgPool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
-} else {
+function initSQLite() {
   const dbPath = path.join(__dirname, 'database.db');
   sqliteDb = new sqlite3.Database(dbPath);
+  useSQLite = true;
+  console.log('Resilient DB: Local SQLite database initialized.');
+}
+
+if (isProd) {
+  try {
+    pgPool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      connectionTimeoutMillis: 4000 // 4 seconds timeout
+    });
+  } catch (e) {
+    console.error('Failed to create pg Pool, falling back to SQLite:', e);
+    initSQLite();
+  }
+} else {
+  initSQLite();
 }
 
 // Promise-based query function (primarily for SELECT or queries returning rows)
 export function query(text, params = []) {
   return new Promise((resolve, reject) => {
-    if (isProd) {
+    if (!useSQLite) {
       let index = 1;
       const pgText = text.replace(/\?/g, () => `$${index++}`);
       pgPool.query(pgText, params, (err, res) => {
@@ -50,7 +63,7 @@ export function query(text, params = []) {
 // Promise-based run function (for INSERT, UPDATE, DELETE where we want lastID/changes)
 export function run(text, params = []) {
   return new Promise((resolve, reject) => {
-    if (isProd) {
+    if (!useSQLite) {
       // In PG, we use query. If there's a RETURNING clause, the rows will be in res.rows.
       let index = 1;
       const pgText = text.replace(/\?/g, () => `$${index++}`);
@@ -71,7 +84,18 @@ export function run(text, params = []) {
 
 // Database schema setup and seeding
 export async function initDb() {
-  const createLeadsTable = isProd ? `
+  if (isProd && !useSQLite) {
+    try {
+      // Test PostgreSQL connection
+      await pgPool.query('SELECT 1');
+      console.log('Connected to PostgreSQL successfully.');
+    } catch (err) {
+      console.error('PostgreSQL connection test failed. Falling back to SQLite. Error:', err.message);
+      initSQLite();
+    }
+  }
+
+  const createLeadsTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS leads (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -115,7 +139,7 @@ export async function initDb() {
     );
   `;
 
-  const createPropertiesTable = isProd ? `
+  const createPropertiesTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS properties (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -151,7 +175,7 @@ export async function initDb() {
     );
   `;
 
-  const createTasksTable = isProd ? `
+  const createTasksTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
@@ -173,7 +197,7 @@ export async function initDb() {
     );
   `;
 
-  const createAppointmentsTable = isProd ? `
+  const createAppointmentsTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS appointments (
       id SERIAL PRIMARY KEY,
       time VARCHAR(50),
@@ -195,7 +219,7 @@ export async function initDb() {
     );
   `;
 
-  const createFollowupsTable = isProd ? `
+  const createFollowupsTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS followups (
       id SERIAL PRIMARY KEY,
       leadId INTEGER,
@@ -221,7 +245,7 @@ export async function initDb() {
     );
   `;
 
-  const createBroadcastsTable = isProd ? `
+  const createBroadcastsTable = !useSQLite ? `
     CREATE TABLE IF NOT EXISTS broadcasts (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255),
@@ -418,7 +442,7 @@ export async function initDb() {
         status: "Available",
         statusColor: "#10B981",
         image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=260&fit=crop&auto=format",
-        featured: isProd ? true : 1
+        featured: !useSQLite ? true : 1
       },
       {
         name: "Skyline Residences",
@@ -432,7 +456,7 @@ export async function initDb() {
         status: "Pending",
         statusColor: "#F59E0B",
         image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format",
-        featured: isProd ? false : 0
+        featured: !useSQLite ? false : 0
       },
       {
         name: "Oak Park Flats",
@@ -446,7 +470,7 @@ export async function initDb() {
         status: "Available",
         statusColor: "#10B981",
         image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&auto=format",
-        featured: isProd ? false : 0
+        featured: !useSQLite ? false : 0
       },
       {
         name: "Harbour View Tower",
@@ -460,7 +484,7 @@ export async function initDb() {
         status: "Exclusive",
         statusColor: VIOLET,
         image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=260&fit=crop&auto=format",
-        featured: isProd ? false : 0
+        featured: !useSQLite ? false : 0
       }
     ];
 
@@ -493,10 +517,10 @@ export async function initDb() {
 
     // Seed Follow-ups
     const initialFollowups = [
-      { leadId: 1, name: "Christopher Kane", initials: "CK", color: VIOLET, note: "Send revised pricing sheet", time: "10:30 AM", overdue: isProd ? false : 0 },
-      { leadId: 3, name: "Thor Johnson", initials: "TJ", color: "#3B82F6", note: "Discuss payment plan options", time: "12:00 PM", overdue: isProd ? false : 0 },
-      { leadId: 2, name: "Addie Bradford", initials: "AB", color: "#10B981", note: "Confirm site visit timing", time: "Yesterday 3PM", overdue: isProd ? true : 1 },
-      { leadId: 6, name: "Marcus Chen", initials: "MC", color: "#F59E0B", note: "Share brochure and floor plans", time: "2:30 PM", overdue: isProd ? false : 0 }
+      { leadId: 1, name: "Christopher Kane", initials: "CK", color: VIOLET, note: "Send revised pricing sheet", time: "10:30 AM", overdue: !useSQLite ? false : 0 },
+      { leadId: 3, name: "Thor Johnson", initials: "TJ", color: "#3B82F6", note: "Discuss payment plan options", time: "12:00 PM", overdue: !useSQLite ? false : 0 },
+      { leadId: 2, name: "Addie Bradford", initials: "AB", color: "#10B981", note: "Confirm site visit timing", time: "Yesterday 3PM", overdue: !useSQLite ? true : 1 },
+      { leadId: 6, name: "Marcus Chen", initials: "MC", color: "#F59E0B", note: "Share brochure and floor plans", time: "2:30 PM", overdue: !useSQLite ? false : 0 }
     ];
 
     for (const f of initialFollowups) {
@@ -508,12 +532,12 @@ export async function initDb() {
 
     // Seed Tasks
     const initialTasks = [
-      { title: "Send project brochure to Christopher", lead: "Christopher Kane", due: "Today 12:00 PM", overdue: isProd ? false : 0, completed: isProd ? false : 0 },
-      { title: "Schedule site visit for Addie Bradford", lead: "Addie Bradford", due: "Today 3:00 PM", overdue: isProd ? false : 0, completed: isProd ? false : 0 },
-      { title: "Follow up on loan pre-approval", lead: "Diana Hess", due: "Yesterday 5:00 PM", overdue: isProd ? true : 1, completed: isProd ? false : 0 },
-      { title: "Send WhatsApp greeting to new leads", lead: "", due: "Today 10:00 AM", overdue: isProd ? true : 1, completed: isProd ? false : 0 },
-      { title: "Update property pricing for Skyline", lead: "", due: "Tomorrow 11:00 AM", overdue: isProd ? false : 0, completed: isProd ? false : 0 },
-      { title: "Prepare project presentation", lead: "Marcus Chen", due: "Fri 2:00 PM", overdue: isProd ? false : 0, completed: isProd ? true : 1 }
+      { title: "Send project brochure to Christopher", lead: "Christopher Kane", due: "Today 12:00 PM", overdue: !useSQLite ? false : 0, completed: !useSQLite ? false : 0 },
+      { title: "Schedule site visit for Addie Bradford", lead: "Addie Bradford", due: "Today 3:00 PM", overdue: !useSQLite ? false : 0, completed: !useSQLite ? false : 0 },
+      { title: "Follow up on loan pre-approval", lead: "Diana Hess", due: "Yesterday 5:00 PM", overdue: !useSQLite ? true : 1, completed: !useSQLite ? false : 0 },
+      { title: "Send WhatsApp greeting to new leads", lead: "", due: "Today 10:00 AM", overdue: !useSQLite ? true : 1, completed: !useSQLite ? false : 0 },
+      { title: "Update property pricing for Skyline", lead: "", due: "Tomorrow 11:00 AM", overdue: !useSQLite ? false : 0, completed: !useSQLite ? false : 0 },
+      { title: "Prepare project presentation", lead: "Marcus Chen", due: "Fri 2:00 PM", overdue: !useSQLite ? false : 0, completed: !useSQLite ? true : 1 }
     ];
 
     for (const t of initialTasks) {

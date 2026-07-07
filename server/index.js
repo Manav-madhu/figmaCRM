@@ -38,7 +38,7 @@ app.get('/api/leads', async (req, res) => {
     res.json(leads);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch leads', details: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
 

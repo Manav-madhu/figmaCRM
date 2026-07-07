@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+import { api } from "./api";
 import {
   Home,
   Users,
@@ -73,6 +74,26 @@ const BD = "#4B4B6B"; // secondary body text
 const MT = "#6B6B8A"; // muted text
 const BR = "#ECE8F7"; // hairline border
 const BG = "#F2F1F8"; // app background
+
+// ─── App Context for backend API integration ──────────────────────
+const AppContext = createContext<{
+  leads: any[];
+  properties: any[];
+  tasks: any[];
+  appointments: any[];
+  followups: any[];
+  broadcasts: any[];
+  stats: any[];
+  analytics: any;
+  setLeads: React.Dispatch<React.SetStateAction<any[]>>;
+  setProperties: React.Dispatch<React.SetStateAction<any[]>>;
+  setTasks: React.Dispatch<React.SetStateAction<any[]>>;
+  setAppointments: React.Dispatch<React.SetStateAction<any[]>>;
+  setFollowups: React.Dispatch<React.SetStateAction<any[]>>;
+  setBroadcasts: React.Dispatch<React.SetStateAction<any[]>>;
+  setStats: React.Dispatch<React.SetStateAction<any[]>>;
+  refreshData: () => Promise<void>;
+} | null>(null);
 
 const STATUS_CONFIG = {
   New: { bg: "#EDE9FF", text: VIOLET },
@@ -457,6 +478,8 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
 function DashboardTab({ go }: { go: (s: Screen) => void }) {
+  const { leads, stats, tasks } = useContext(AppContext)!;
+
   const [greeting] = useState(() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -464,7 +487,27 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
     return "Good evening";
   });
 
-  const maxPipeline = Math.max(...PIPELINE_STAGES.map((p) => p.leads.length));
+  const getIcon = (label: string) => {
+    switch (label) {
+      case "Active Leads": return Target;
+      case "Properties": return Building2;
+      case "Revenue": return DollarSign;
+      case "Tasks Due": return Zap;
+      default: return Target;
+    }
+  };
+
+  const pipelineStages = [
+    { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
+    { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
+    { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
+    { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
+    { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },
+    { stage: "Booked" as LeadStatus, leads: leads.filter((l) => l.status === "Booked") },
+    { stage: "Lost" as LeadStatus, leads: leads.filter((l) => l.status === "Lost") },
+  ];
+
+  const maxPipeline = Math.max(...pipelineStages.map((p) => p.leads.length));
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
@@ -504,20 +547,23 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
       {/* Stats */}
       <div className="px-5 -mt-5">
         <div className="grid grid-cols-2 gap-3">
-          {stats.map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: s.bg }}>
-                  <s.icon size={16} style={{ color: s.color }} />
+          {stats.map((s) => {
+            const Icon = getIcon(s.label);
+            return (
+              <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: s.bg }}>
+                    <Icon size={16} style={{ color: s.color }} />
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.bg, color: s.color }}>
+                    {s.delta}
+                  </span>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.bg, color: s.color }}>
-                  {s.delta}
-                </span>
+                <p className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
               </div>
-              <p className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -552,7 +598,7 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <div className="space-y-2.5">
-            {PIPELINE_STAGES.map((s) => {
+            {pipelineStages.map((s) => {
               const pct = maxPipeline > 0 ? (s.leads.length / maxPipeline) * 100 : 0;
               const barCol = s.stage === "Negotiation" ? AMBER : s.stage === "Booked" ? GR : s.stage === "Lost" ? MT : VIOLET;
               return (
@@ -573,7 +619,7 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
       <div className="px-5 mt-6">
         <SectionHeader title="Tasks Due Today" action="View all →" onAction={() => go("tasks")} />
         <Card>
-          {TASKS_DATA.filter((t) => !t.completed).slice(0, 3).map((t, i, arr) => (
+          {tasks.filter((t) => !t.completed).slice(0, 3).map((t, i, arr) => (
             <div
               key={t.id}
               className="flex items-start gap-3 px-4 py-3"
@@ -676,6 +722,7 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
 // ─── Tab: Leads ─────────────────────────────────────────────────────
 
 function LeadsTab({ go, openLead }: { go: (s: Screen) => void; openLead: (id: number) => void }) {
+  const { leads } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
   const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost"];
@@ -815,6 +862,7 @@ function LeadsTab({ go, openLead }: { go: (s: Screen) => void; openLead: (id: nu
 // ─── Screen: Lead Detail ────────────────────────────────────────────
 
 function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => void }) {
+  const { leads } = useContext(AppContext)!;
   const lead = leads.find((l) => l.id === leadId) ?? leads[0];
   const [tab, setTab] = useState("WhatsApp");
   const [msgText, setMsgText] = useState("");
@@ -1052,11 +1100,22 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
 // ─── Screen: Pipeline (Kanban) ───────────────────────────────────────
 
 function PipelineScreen({ onBack, openLead }: { onBack: () => void; openLead: (id: number) => void }) {
+  const { leads } = useContext(AppContext)!;
+  const pipelineStages = [
+    { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
+    { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
+    { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
+    { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
+    { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },
+    { stage: "Booked" as LeadStatus, leads: leads.filter((l) => l.status === "Booked") },
+    { stage: "Lost" as LeadStatus, leads: leads.filter((l) => l.status === "Lost") },
+  ];
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <ScreenHeader title="Pipeline" onBack={onBack} />
       <div className="flex gap-3 p-4 overflow-x-auto flex-1 items-start" style={{ scrollbarWidth: "none" }}>
-        {PIPELINE_STAGES.map((stage) => {
+        {pipelineStages.map((stage) => {
           const c = STATUS_CONFIG[stage.stage];
           return (
             <div key={stage.stage} className="flex-shrink-0 w-[210px]">
@@ -1103,6 +1162,7 @@ function PipelineScreen({ onBack, openLead }: { onBack: () => void; openLead: (i
 // ─── Screen: Follow-ups ──────────────────────────────────────────────
 
 function FollowUpsScreen({ onBack }: { onBack: () => void }) {
+  const { followups } = useContext(AppContext)!;
   const [tab, setTab] = useState("Due Today");
   const tabs = ["Due Today", "Upcoming", "Completed", "Calendar"];
   const [month, setMonth] = useState(new Date(2025, 5, 1));
@@ -1130,7 +1190,7 @@ function FollowUpsScreen({ onBack }: { onBack: () => void }) {
 
         {(tab === "Due Today" || tab === "Upcoming") && (
           <div className="space-y-3">
-            {FOLLOWUPS.map((f) => (
+            {followups.map((f) => (
               <Card key={f.id} className="p-4 flex items-center gap-3" style={{ backgroundColor: f.overdue ? "#FFF5F5" : "#fff" }}>
                 <Avatar initials={f.initials} bg={f.color} />
                 <div className="flex-1 min-w-0">
@@ -1215,17 +1275,52 @@ function FollowUpsScreen({ onBack }: { onBack: () => void }) {
 // ─── Screen: Tasks ────────────────────────────────────────────────────
 
 function TasksScreen({ onBack }: { onBack: () => void }) {
-  const [tasks, setTasks] = useState(TASKS_DATA);
+  const { tasks, refreshData } = useContext(AppContext)!;
   const [tab, setTab] = useState("Pending");
+  const [newTitle, setNewTitle] = useState("");
 
-  const toggle = (id: number) => setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
-  const remove = (id: number) => setTasks((prev) => prev.filter((t) => t.id !== id));
+  const toggle = async (id: number) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    await api.toggleTask(id, !task.completed);
+    refreshData();
+  };
+
+  const remove = async (id: number) => {
+    await api.deleteTask(id);
+    refreshData();
+  };
+
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    await api.createTask({
+      title: newTitle,
+      due: "Today 5:00 PM"
+    });
+    setNewTitle("");
+    refreshData();
+  };
+
   const filtered = tab === "Pending" ? tasks.filter((t) => !t.completed) : tasks.filter((t) => t.completed);
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <ScreenHeader title="Tasks" onBack={onBack} />
       <div className="px-5 py-5 space-y-4">
+        <form onSubmit={handleAddTask} className="flex gap-2">
+          <input
+            className="flex-1 px-3 rounded-xl text-sm"
+            style={{ border: `1px solid ${BR}`, height: 44, outline: "none", color: DK }}
+            placeholder="Add a new task..."
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+          />
+          <button type="submit" className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: VIOLET }}>
+            <Plus size={16} />
+          </button>
+        </form>
+
         <div className="flex gap-2">
           {["Pending", "Completed"].map((t) => (
             <button
@@ -1277,6 +1372,7 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
 // ─── Screen: WhatsApp Hub ─────────────────────────────────────────────
 
 function WhatsAppScreen({ onBack, go }: { onBack: () => void; go: (s: Screen) => void }) {
+  const { leads } = useContext(AppContext)!;
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <ScreenHeader title="WhatsApp" onBack={onBack} />
@@ -1347,7 +1443,24 @@ function WhatsAppScreen({ onBack, go }: { onBack: () => void; go: (s: Screen) =>
 // ─── Screen: Broadcasts ────────────────────────────────────────────────
 
 function BroadcastsScreen({ onBack }: { onBack: () => void }) {
+  const { broadcasts, refreshData, leads } = useContext(AppContext)!;
   const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState("");
+  const [preview, setPreview] = useState("");
+
+  const handleSend = async () => {
+    if (!name.trim() || !preview.trim()) return;
+    await api.createBroadcast({
+      name,
+      preview,
+      recipients: leads.length || 142
+    });
+    setName("");
+    setPreview("");
+    setShowCreate(false);
+    refreshData();
+  };
+
   return (
     <div className="flex-1 overflow-y-auto pb-24 relative" style={{ scrollbarWidth: "none" }}>
       <ScreenHeader
@@ -1360,7 +1473,7 @@ function BroadcastsScreen({ onBack }: { onBack: () => void }) {
         }
       />
       <div className="px-5 py-5 space-y-3">
-        {BROADCASTS_DATA.map((b) => (
+        {broadcasts.map((b) => (
           <Card key={b.id} className="p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <span className="text-[15px] font-semibold flex-1 text-foreground">{b.name}</span>
@@ -1408,10 +1521,23 @@ function BroadcastsScreen({ onBack }: { onBack: () => void }) {
               </button>
             </div>
             <div className="space-y-4">
-              <input className="w-full px-3 rounded-xl text-sm" style={{ border: `1px solid ${BR}`, height: 48, color: DK, outline: "none" }} placeholder="Broadcast name" />
+              <input
+                className="w-full px-3 rounded-xl text-sm"
+                style={{ border: `1px solid ${BR}`, height: 48, color: DK, outline: "none" }}
+                placeholder="Broadcast name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
               <div>
-                <textarea className="w-full px-3 py-3 rounded-xl text-sm resize-none" rows={4} style={{ border: `1px solid ${BR}`, color: DK, outline: "none" }} placeholder="Message..." />
-                <div className="text-right text-[11px] text-muted-foreground">0 / 1024</div>
+                <textarea
+                  className="w-full px-3 py-3 rounded-xl text-sm resize-none"
+                  rows={4}
+                  style={{ border: `1px solid ${BR}`, color: DK, outline: "none" }}
+                  placeholder="Message..."
+                  value={preview}
+                  onChange={e => setPreview(e.target.value)}
+                />
+                <div className="text-right text-[11px] text-muted-foreground">{preview.length} / 1024</div>
               </div>
               <select className="w-full px-3 rounded-xl text-sm" style={{ border: `1px solid ${BR}`, height: 48, color: DK }}>
                 <option>All Leads ({leads.length})</option>
@@ -1419,11 +1545,11 @@ function BroadcastsScreen({ onBack }: { onBack: () => void }) {
                 <option>Qualified</option>
               </select>
               <div className="py-2 rounded-xl text-center text-sm font-medium" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>
-                This will reach 89 leads
+                This will reach {leads.length} leads
               </div>
               <div className="flex gap-3">
-                <button className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Send Now</button>
-                <button className="flex-1 rounded-xl text-sm font-semibold" style={{ backgroundColor: AMBER, color: DK, height: 48 }}>Schedule</button>
+                <button onClick={handleSend} className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Send Now</button>
+                <button onClick={handleSend} className="flex-1 rounded-xl text-sm font-semibold" style={{ backgroundColor: AMBER, color: DK, height: 48 }}>Schedule</button>
               </div>
             </div>
           </div>
@@ -1436,7 +1562,29 @@ function BroadcastsScreen({ onBack }: { onBack: () => void }) {
 // ─── Screen: Analytics ──────────────────────────────────────────────────
 
 function AnalyticsScreen({ onBack }: { onBack: () => void }) {
+  const { leads, analytics } = useContext(AppContext)!;
   const [range, setRange] = useState("30d");
+
+  const weeklyData = analytics?.weekly || WEEKLY;
+  const revenueData = analytics?.revenue || REVENUE;
+  const sourcesData = analytics?.sources || SOURCES;
+
+  const hotLeadsCount = leads.filter(l => l.tags && (l.tags.includes("Hot") || l.tags.includes("Investor"))).length;
+  const conversionRate = leads.length ? ((leads.filter(l => l.status === "Booked").length / leads.length) * 100).toFixed(1) + "%" : "12.3%";
+
+  // Dynamically compute the pipeline funnel based on current database
+  const totalInFunnel = leads.length || 1;
+  const funnelStages = [
+    { stage: "New", count: leads.filter(l => l.status === "New").length, color: VIOLET },
+    { stage: "Contacted", count: leads.filter(l => l.status === "Contacted").length, color: "#3B82F6" },
+    { stage: "Qualified", count: leads.filter(l => l.status === "Qualified").length, color: "#B45309" },
+    { stage: "Visit Scheduled", count: leads.filter(l => l.status === "Visit Scheduled").length, color: GR },
+    { stage: "Negotiation", count: leads.filter(l => l.status === "Negotiation").length, color: AMBER },
+    { stage: "Booked", count: leads.filter(l => l.status === "Booked").length, color: "#065F46" },
+  ].map(f => ({
+    ...f,
+    pct: Math.round((f.count / totalInFunnel) * 100)
+  }));
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
@@ -1464,8 +1612,8 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
             { label: "Total Leads", value: String(leads.length), color: VIOLET },
             { label: "Revenue", value: "$198k", color: GR },
             { label: "Avg Deal", value: "$640k", color: "#3B82F6" },
-            { label: "Conversion", value: "12.3%", color: GR },
-            { label: "Hot Leads", value: "18", color: AMBER },
+            { label: "Conversion", value: conversionRate, color: GR },
+            { label: "Hot Leads", value: String(hotLeadsCount), color: AMBER },
           ].map((k, i) => (
             <Card key={i} className="p-4 flex-shrink-0" style={{ minWidth: 110 }}>
               <div className="text-xl font-bold leading-tight" style={{ color: k.color === AMBER ? DK : k.color }}>{k.value}</div>
@@ -1485,7 +1633,7 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
             ))}
           </div>
           <ResponsiveContainer width="100%" height={150}>
-            <AreaChart data={WEEKLY} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
+            <AreaChart data={weeklyData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
@@ -1499,13 +1647,13 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
         <Card className="p-4">
           <h2 className="text-[15px] font-semibold mb-4 text-foreground">Monthly Revenue ($k)</h2>
           <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={REVENUE} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
+            <BarChart data={revenueData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BR}` }} formatter={(v: any) => [`$${v}k`]} />
               <Bar dataKey="v" radius={[4, 4, 0, 0]}>
-                {REVENUE.map((_, i) => <Cell key={i} fill={i === REVENUE.length - 1 ? GR : VIOLET} />)}
+                {revenueData.map((_, i) => <Cell key={i} fill={i === revenueData.length - 1 ? GR : VIOLET} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -1516,13 +1664,13 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
           <div className="flex items-center gap-4">
             <ResponsiveContainer width={130} height={130}>
               <PieChart>
-                <Pie data={SOURCES} cx="50%" cy="50%" innerRadius={38} outerRadius={62} dataKey="value" paddingAngle={3}>
-                  {SOURCES.map((s, i) => <Cell key={i} fill={s.color} />)}
+                <Pie data={sourcesData} cx="50%" cy="50%" innerRadius={38} outerRadius={62} dataKey="value" paddingAngle={3}>
+                  {sourcesData.map((s, i) => <Cell key={i} fill={s.color} />)}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             <div className="space-y-2 flex-1">
-              {SOURCES.map((s, i) => (
+              {sourcesData.map((s, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
@@ -1538,18 +1686,11 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
         <Card className="p-4">
           <h2 className="text-[15px] font-semibold mb-4 text-foreground">Sales Funnel</h2>
           <div className="space-y-2">
-            {[
-              { stage: "New", count: 247, pct: 100, color: VIOLET },
-              { stage: "Contacted", count: 180, pct: 73, color: "#3B82F6" },
-              { stage: "Qualified", count: 92, pct: 37, color: "#B45309" },
-              { stage: "Visit Scheduled", count: 48, pct: 19, color: GR },
-              { stage: "Negotiation", count: 22, pct: 9, color: AMBER },
-              { stage: "Booked", count: 30, pct: 12, color: "#065F46" },
-            ].map((f) => (
+            {funnelStages.map((f) => (
               <div key={f.stage} className="flex items-center gap-2">
                 <span className="text-[11px] w-24 flex-shrink-0" style={{ color: BD }}>{f.stage}</span>
                 <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: BR }}>
-                  <div className="h-full rounded-full flex items-center px-2" style={{ width: `${f.pct}%`, backgroundColor: f.color, minWidth: 24 }}>
+                  <div className="h-full rounded-full flex items-center px-2" style={{ width: `${f.pct || 4}%`, backgroundColor: f.color, minWidth: 24 }}>
                     {f.pct > 12 && <span className="text-[10px] font-bold text-white truncate">{f.count}</span>}
                   </div>
                 </div>
@@ -1566,6 +1707,7 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
 // ─── Tab: Properties (unchanged from original design) ─────────────────
 
 function PropertiesTab() {
+  const { properties } = useContext(AppContext)!;
   const [typeFilter, setTypeFilter] = useState("All");
 
   const filtered = properties.filter((p) => typeFilter === "All" || p.type === typeFilter || p.type === "Both");
@@ -1665,6 +1807,7 @@ function PropertiesTab() {
 // ─── Tab: Calendar (unchanged) ──────────────────────────────────────────
 
 function CalendarTab() {
+  const { appointments } = useContext(AppContext)!;
   const [activeDay, setActiveDay] = useState(todayIdx);
 
   return (
@@ -1729,15 +1872,20 @@ function CalendarTab() {
 // ─── Tab: Profile (extended with links to all new features) ────────────
 
 function ProfileTab({ go }: { go: (s: Screen) => void }) {
+  const { leads, tasks } = useContext(AppContext)!;
+  const activeLeadsCount = leads.filter((l) => l.status !== "Lost").length;
+  const pendingTasksCount = tasks.filter((t) => !t.completed).length;
+  const overdueTasksCount = tasks.filter((t) => t.overdue && !t.completed).length;
+
   const metrics = [
-    { label: "Closed Deals", value: "34", icon: CheckCircle2, color: "#10B981" },
-    { label: "Active Leads", value: "142", icon: Users, color: VIOLET },
+    { label: "Closed Deals", value: String(leads.filter(l => l.status === "Booked").length || 34), icon: CheckCircle2, color: "#10B981" },
+    { label: "Active Leads", value: String(activeLeadsCount), icon: Users, color: VIOLET },
     { label: "Avg. Rating", value: "4.9", icon: Star, color: AMBER },
   ];
   const items: { label: string; sub: string; icon: typeof Building2; screen: Screen }[] = [
     { label: "Pipeline", sub: "Track deals by stage", icon: BarChart2, screen: "pipeline" },
     { label: "Follow-ups", sub: "Manage your callbacks", icon: Clock, screen: "followups" },
-    { label: "Tasks", sub: "3 overdue, 6 pending", icon: CheckCircle2, screen: "tasks" },
+    { label: "Tasks", sub: `${overdueTasksCount} overdue, ${pendingTasksCount} pending`, icon: CheckCircle2, screen: "tasks" },
     { label: "WhatsApp Hub", sub: "Broadcasts, templates & more", icon: MessageCircle, screen: "whatsapp" },
     { label: "Broadcasts", sub: "Send to many leads at once", icon: Share2, screen: "broadcasts" },
     { label: "Analytics", sub: "Performance & revenue", icon: TrendingUp, screen: "analytics" },
@@ -1895,6 +2043,7 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
 // ─── Screen: Import (Excel/CSV wizard) ──────────────────────────────────
 
 function ImportScreen({ onBack }: { onBack: () => void }) {
+  const { refreshData } = useContext(AppContext)!;
   const [step, setStep] = useState(1);
   const stepLabels = ["Upload", "Map", "Validate", "Done"];
 
@@ -1904,6 +2053,24 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
     { num: 3, name: "Invalid Name", phone: "invalid-phone", budget: "—", valid: false, dup: false },
     { num: 4, name: "Suresh Kumar", phone: "+1 773-555-0177", budget: "$350,000", valid: true, dup: true },
   ];
+
+  const handleImport = async () => {
+    const validRows = rows.filter(r => r.valid).map(r => ({
+      name: r.name,
+      phone: r.phone,
+      budget: r.budget,
+      project: "Harbour View Tower",
+      city: "San Francisco",
+      status: "New"
+    }));
+    try {
+      await api.importLeads(validRows);
+      await refreshData();
+    } catch (e) {
+      console.error(e);
+    }
+    setStep(4);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
@@ -2027,7 +2194,7 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setStep(2)} className="flex-1 rounded-xl text-sm font-semibold text-muted-foreground" style={{ border: `1.5px solid ${BR}`, height: 48 }}>← Back</button>
-              <button onClick={() => setStep(4)} className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Import 18 Leads</button>
+              <button onClick={handleImport} className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Import 18 Leads</button>
             </div>
           </div>
         )}
@@ -2082,9 +2249,50 @@ const navItems: { key: Tab; label: string; icon: typeof Home }[] = [
 // ─── App ──────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [followups, setFollowups] = useState<any[]>([]);
+  const [broadcasts, setBroadcasts] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
+
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
-  const [selectedLeadId, setSelectedLeadId] = useState<number>(leads[0].id);
+  const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
+
+  const refreshData = async () => {
+    try {
+      const data = await api.getAnalytics();
+      setStats(data.stats);
+      setAnalytics(data);
+
+      const leadsData = await api.getLeads();
+      setLeads(leadsData);
+
+      const propsData = await api.getProperties();
+      setProperties(propsData);
+
+      const tasksData = await api.getTasks();
+      setTasks(tasksData);
+
+      const aptsData = await api.getAppointments();
+      setAppointments(aptsData);
+
+      const fupsData = await api.getFollowups();
+      setFollowups(fupsData);
+
+      const bcastsData = await api.getBroadcasts();
+      setBroadcasts(bcastsData);
+    } catch (e) {
+      console.error("Error loading data from backend API:", e);
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   const rootTabs: Screen[] = ["dashboard", "leads", "properties", "calendar", "profile"];
   const isRootTab = (s: Screen): s is Tab => rootTabs.includes(s);
@@ -2151,63 +2359,69 @@ export default function App() {
   };
 
   return (
-    <div className="size-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 p-4">
-      <div
-        className="relative flex flex-col overflow-hidden shadow-2xl"
-        style={{
-          width: "min(390px, 100%)",
-          height: "min(844px, 100%)",
-          borderRadius: "44px",
-          backgroundColor: "#F2F1F8",
-          fontFamily: "'Inter', sans-serif",
-          boxShadow: "0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.1)",
-        }}
-      >
-        {/* Phone status bar */}
-        <div className="flex items-center justify-between px-8 py-3 flex-shrink-0" style={{ backgroundColor: "#5B3FD9", paddingTop: "16px" }}>
-          <span className="text-white text-xs font-semibold">9:41</span>
-          <div className="w-24 h-5 bg-black rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
-          <div className="flex items-center gap-1.5">
-            <div className="flex gap-0.5 items-end">
-              {[3, 5, 7, 9].map((h, i) => (
-                <div key={i} className="w-1 rounded-sm bg-white" style={{ height: h, opacity: i < 3 ? 1 : 0.4 }} />
-              ))}
-            </div>
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-              <path d="M8 2.5C9.9 2.5 11.6 3.3 12.8 4.6L14 3.4C12.5 1.9 10.4 1 8 1C5.6 1 3.5 1.9 2 3.4L3.2 4.6C4.4 3.3 6.1 2.5 8 2.5Z" fill="white" />
-              <path d="M8 5.5C9.1 5.5 10.2 5.9 11 6.7L12.2 5.5C11.1 4.5 9.6 3.9 8 3.9C6.4 3.9 4.9 4.5 3.8 5.5L5 6.7C5.8 5.9 6.9 5.5 8 5.5Z" fill="white" />
-              <circle cx="8" cy="10" r="1.5" fill="white" />
-            </svg>
-            <div className="flex items-center gap-0.5">
-              <div className="w-5 h-2.5 border border-white/70 rounded-sm p-0.5">
-                <div className="w-3/4 h-full bg-white rounded-[1px]" />
+    <AppContext.Provider value={{
+      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
+      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
+      refreshData
+    }}>
+      <div className="size-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 p-4">
+        <div
+          className="relative flex flex-col overflow-hidden shadow-2xl"
+          style={{
+            width: "min(390px, 100%)",
+            height: "min(844px, 100%)",
+            borderRadius: "44px",
+            backgroundColor: "#F2F1F8",
+            fontFamily: "'Inter', sans-serif",
+            boxShadow: "0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.1)",
+          }}
+        >
+          {/* Phone status bar */}
+          <div className="flex items-center justify-between px-8 py-3 flex-shrink-0" style={{ backgroundColor: "#5B3FD9", paddingTop: "16px" }}>
+            <span className="text-white text-xs font-semibold">9:41</span>
+            <div className="w-24 h-5 bg-black rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
+            <div className="flex items-center gap-1.5">
+              <div className="flex gap-0.5 items-end">
+                {[3, 5, 7, 9].map((h, i) => (
+                  <div key={i} className="w-1 rounded-sm bg-white" style={{ height: h, opacity: i < 3 ? 1 : 0.4 }} />
+                ))}
+              </div>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                <path d="M8 2.5C9.9 2.5 11.6 3.3 12.8 4.6L14 3.4C12.5 1.9 10.4 1 8 1C5.6 1 3.5 1.9 2 3.4L3.2 4.6C4.4 3.3 6.1 2.5 8 2.5Z" fill="white" />
+                <path d="M8 5.5C9.1 5.5 10.2 5.9 11 6.7L12.2 5.5C11.1 4.5 9.6 3.9 8 3.9C6.4 3.9 4.9 4.5 3.8 5.5L5 6.7C5.8 5.9 6.9 5.5 8 5.5Z" fill="white" />
+                <circle cx="8" cy="10" r="1.5" fill="white" />
+              </svg>
+              <div className="flex items-center gap-0.5">
+                <div className="w-5 h-2.5 border border-white/70 rounded-sm p-0.5">
+                  <div className="w-3/4 h-full bg-white rounded-[1px]" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">{renderScreen()}</div>
+          {/* Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">{renderScreen()}</div>
 
-        {/* Bottom Nav */}
-        <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "24px", borderRadius: "0 0 44px 44px" }}>
-          <div className="flex items-center">
-            {navItems.map(({ key, label, icon: Icon }) => {
-              const active = screen === key;
-              return (
-                <button key={key} onClick={() => goTab(key)} className="flex-1 flex flex-col items-center gap-1 pt-3 pb-1 transition-all">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all" style={active ? { backgroundColor: VIOLET } : {}}>
-                    <Icon size={20} style={{ color: active ? "white" : "#6B6B8A" }} strokeWidth={active ? 2.5 : 1.8} />
-                  </div>
-                  <span className="text-[10px] font-semibold transition-all" style={{ color: active ? VIOLET : "#6B6B8A" }}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
+          {/* Bottom Nav */}
+          <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "24px", borderRadius: "0 0 44px 44px" }}>
+            <div className="flex items-center">
+              {navItems.map(({ key, label, icon: Icon }) => {
+                const active = screen === key;
+                return (
+                  <button key={key} onClick={() => goTab(key)} className="flex-1 flex flex-col items-center gap-1 pt-3 pb-1 transition-all">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all" style={active ? { backgroundColor: VIOLET } : {}}>
+                      <Icon size={20} style={{ color: active ? "white" : "#6B6B8A" }} strokeWidth={active ? 2.5 : 1.8} />
+                    </div>
+                    <span className="text-[10px] font-semibold transition-all" style={{ color: active ? VIOLET : "#6B6B8A" }}>
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </AppContext.Provider>
   );
 }

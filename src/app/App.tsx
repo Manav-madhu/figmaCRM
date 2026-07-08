@@ -865,18 +865,11 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={onAddLead}
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: VIOLET }}
-            >
-              <Plus size={16} />
-            </button>
-            <button
               onClick={() => go("import")}
-              className="flex items-center gap-1.5 px-3 rounded-xl text-xs font-semibold"
-              style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 38 }}
+              className="flex items-center gap-1.5 px-3.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 active:scale-95 shadow-sm"
+              style={{ backgroundColor: VIOLET, height: 38 }}
             >
-              <Upload size={13} /> Import
+              <Upload size={13} /> Import Leads
             </button>
           </div>
         </div>

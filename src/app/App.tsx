@@ -1532,8 +1532,30 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
 
 function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: (s: Screen) => void; openLeadChat: (id: number) => void }) {
   const { leads } = useContext(AppContext)!;
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueItems, setQueueItems] = useState([
+    { id: 1, name: "Naomi Cole", phone: "+1 872-555-0142", text: "Hi Naomi, following up on your portfolio review query...", time: "Today 10:15 AM", status: "failed", error: "Authentication Failure (No API Configured)" },
+    { id: 2, name: "Christopher Kane", phone: "+1 415-553-0186", text: "Sure Christopher! Units start at $850,000...", time: "In 5 mins", status: "pending" },
+    { id: 3, name: "Addie Bradford", phone: "+1 312-440-9921", text: "Hi Addie, let's schedule a viewing this Friday...", time: "In 10 mins", status: "pending" },
+    { id: 4, name: "Thor Johnson", phone: "+1 646-210-3348", text: "Hi Thor, I've prepared the Harbour View brochure...", time: "In 15 mins", status: "pending" },
+    { id: 5, name: "Gora Williams", phone: "+1 929-771-0044", text: "Hi Gora, here are the current rental listings...", time: "In 20 mins", status: "pending" },
+  ]);
+
+  const handleRetry = (id: number) => {
+    setQueueItems(prev => prev.map(item => {
+      if (item.id === id) {
+        openWhatsApp(item.phone, item.text);
+        return { ...item, status: "sent", error: undefined };
+      }
+      return item;
+    }));
+  };
+
+  const failedCount = queueItems.filter(x => x.status === "failed").length;
+  const pendingCount = queueItems.filter(x => x.status === "pending").length;
+
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
+    <div className="flex-1 overflow-y-auto pb-24 relative" style={{ scrollbarWidth: "none" }}>
       <ScreenHeader title="WhatsApp" onBack={onBack} />
       <div className="px-5 py-5 space-y-5">
         <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
@@ -1558,13 +1580,15 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
           ))}
         </div>
 
-        <div className="px-4 py-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: "#FFF7E6", borderLeft: `3px solid ${AMBER}` }}>
-          <div>
-            <p className="text-[13px] font-semibold" style={{ color: "#92400E" }}>⚠ Message queue has failures</p>
-            <p className="text-xs" style={{ color: "#92400E" }}>1 failed · 4 pending</p>
+        {failedCount > 0 || pendingCount > 0 ? (
+          <div className="px-4 py-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: "#FFF7E6", borderLeft: `3px solid ${AMBER}` }}>
+            <div>
+              <p className="text-[13px] font-semibold" style={{ color: "#92400E" }}>⚠ Message queue has failures</p>
+              <p className="text-xs" style={{ color: "#92400E" }}>{failedCount} failed · {pendingCount} pending</p>
+            </div>
+            <button onClick={() => setShowQueueModal(true)} className="text-xs font-semibold hover:underline active:scale-95 transition-all" style={{ color: VIOLET }}>View →</button>
           </div>
-          <button className="text-xs font-semibold" style={{ color: VIOLET }}>View →</button>
-        </div>
+        ) : null}
 
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -1599,6 +1623,67 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
           ))}
         </div>
       </div>
+
+      {/* Queue Modal Overlay */}
+      {showQueueModal && (
+        <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+          <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Message Queue Status</h3>
+                <p className="text-[11px] text-muted-foreground">Monitor or bypass unconfigured API failures</p>
+              </div>
+              <button onClick={() => setShowQueueModal(false)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X size={16} /></button>
+            </div>
+            <div className="space-y-3 mt-2 text-left">
+              {queueItems.map((item) => (
+                <div key={item.id} className="p-3.5 rounded-xl border border-slate-150 space-y-2 bg-slate-50">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">{item.name}</h4>
+                      <p className="text-[10px] text-muted-foreground">{item.phone}</p>
+                    </div>
+                    {item.status === "failed" && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white bg-red-500 uppercase tracking-wider">Failed</span>
+                    )}
+                    {item.status === "pending" && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white bg-amber-500 uppercase tracking-wider">Pending</span>
+                    )}
+                    {item.status === "sent" && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white bg-emerald-500 uppercase tracking-wider">Delivered</span>
+                    )}
+                  </div>
+                  <p className="text-xs italic text-slate-600 bg-white p-2 rounded-lg border border-slate-100">"{item.text}"</p>
+                  {item.status === "failed" && item.error && (
+                    <div className="text-[10px] text-red-600 font-semibold bg-red-50 p-2 rounded-lg">
+                      ⚠ Error: {item.error}
+                    </div>
+                  )}
+                  {item.status === "failed" && (
+                    <button
+                      onClick={() => handleRetry(item.id)}
+                      className="w-full text-center py-2 bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-all hover:bg-emerald-600 active:scale-95 flex items-center justify-center gap-1"
+                    >
+                      <Zap size={11} /> Send via WhatsApp Redirect
+                    </button>
+                  )}
+                  {item.status === "pending" && (
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                      <span>Scheduled time: {item.time}</span>
+                      <button
+                        onClick={() => handleRetry(item.id)}
+                        className="text-violet-600 font-bold hover:underline"
+                      >
+                        Send Now (Bypass API)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -934,7 +934,7 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
             {filtered.map((lead) => (
               <div
                 key={lead.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm"
+                className="bg-white rounded-2xl shadow-sm relative"
                 style={{ borderLeft: lead.priority === "High" ? `3px solid ${AMBER}` : "3px solid transparent" }}
               >
                 <div className="p-4 pb-3">
@@ -965,7 +965,7 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                   </div>
                 </div>
                 <div className="flex border-t border-border">
-                  <button onClick={() => openWhatsApp(lead.phone)} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 44 }}>
+                  <button onClick={() => openWhatsApp(lead.phone)} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 rounded-bl-2xl" style={{ backgroundColor: WA, height: 44 }}>
                     <MessageCircle size={15} /> WhatsApp
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border" style={{ color: VIOLET, height: 44 }}>

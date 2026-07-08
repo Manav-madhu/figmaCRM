@@ -1610,6 +1610,7 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
   const { tasks, refreshData } = useContext(AppContext)!;
   const [tab, setTab] = useState("Pending");
   const [newTitle, setNewTitle] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const toggle = async (id: number) => {
     const task = tasks.find((t) => t.id === id);
@@ -1626,7 +1627,7 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
-      alert("Please enter a task title!");
+      setShowAddModal(true);
       return;
     }
     await api.createTask({
@@ -1699,6 +1700,87 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {showAddModal && (
+        <AddTaskModal
+          onClose={() => setShowAddModal(false)}
+          onSave={refreshData}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddTaskModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+  const { leads } = useContext(AppContext)!;
+  const [title, setTitle] = useState("");
+  const [due, setDue] = useState("Today 5:00 PM");
+  const [associatedLead, setAssociatedLead] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    try {
+      await api.createTask({
+        title,
+        lead: associatedLead,
+        due
+      });
+      onSave();
+    } catch (err) {
+      console.error(err);
+    }
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Add New Task</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Task Title *</label>
+            <input
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Schedule call with client"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
+              style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Due Date / Time</label>
+            <input
+              value={due}
+              onChange={(e) => setDue(e.target.value)}
+              placeholder="e.g. Today 5:00 PM"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
+              style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Associate with Lead</label>
+            <select
+              value={associatedLead}
+              onChange={(e) => setAssociatedLead(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white"
+              style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}
+            >
+              <option value="">None</option>
+              {leads.map(l => (
+                <option key={l.id} value={l.name}>{l.name} ({l.project})</option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
+            Save Task
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -721,7 +721,7 @@ function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: (
 
 // ─── Tab: Leads ─────────────────────────────────────────────────────
 
-function LeadsTab({ go, openLead }: { go: (s: Screen) => void; openLead: (id: number) => void }) {
+function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
   const { leads } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
@@ -743,13 +743,22 @@ function LeadsTab({ go, openLead }: { go: (s: Screen) => void; openLead: (id: nu
             <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Leads</h1>
             <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>{leads.length}</span>
           </div>
-          <button
-            onClick={() => go("import")}
-            className="flex items-center gap-1.5 px-3 rounded-xl text-xs font-semibold"
-            style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 38 }}
-          >
-            <Upload size={13} /> Import Excel
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onAddLead}
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: VIOLET }}
+            >
+              <Plus size={16} />
+            </button>
+            <button
+              onClick={() => go("import")}
+              className="flex items-center gap-1.5 px-3 rounded-xl text-xs font-semibold"
+              style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 38 }}
+            >
+              <Upload size={13} /> Import
+            </button>
+          </div>
         </div>
 
         <div className="relative mb-3">
@@ -907,14 +916,80 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     }
   };
 
-  const msgs = [
+  const [chatMessages, setChatMessages] = useState<any[]>([
     { id: 1, sent: true, text: `Hello ${lead.name.split(" ")[0]}! Thank you for your interest in ${lead.project}. I'm Sarah from Heitkamp Realty.`, time: "10:02 AM", st: "read" },
     { id: 2, sent: false, text: "Hi! Yes, I saw the listing online. Can you share the pricing details?", time: "10:05 AM", st: "" },
     { id: 3, sent: true, text: `Sure! Units start at ${lead.budget}. Shall I send the full brochure?`, time: "10:08 AM", st: "read" },
     { id: 4, sent: false, text: "Yes please, and the floor plan too.", time: "10:12 AM", st: "" },
     { id: 5, sent: true, text: "📄 Brochure.pdf\nFloor plans coming separately.", time: "10:15 AM", st: "delivered" },
     { id: 6, sent: true, text: "Available for a site visit this weekend?", time: "10:16 AM", st: "failed" },
-  ];
+  ]);
+
+  const sendMessage = (text: string) => {
+    if (!text.trim()) return;
+    const newMsg = {
+      id: Date.now(),
+      sent: true,
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      st: "sent"
+    };
+    setChatMessages((prev) => [...prev, newMsg]);
+    setMsgText("");
+
+    // Simulate checkmarks updating
+    setTimeout(() => {
+      setChatMessages((prev) =>
+        prev.map((m) => (m.id === newMsg.id ? { ...m, st: "delivered" } : m))
+      );
+    }, 1000);
+
+    setTimeout(() => {
+      setChatMessages((prev) =>
+        prev.map((m) => (m.id === newMsg.id ? { ...m, st: "read" } : m))
+      );
+    }, 2000);
+
+    // Simulate mock reply after 3 seconds
+    setTimeout(() => {
+      const reply = {
+        id: Date.now() + 1,
+        sent: false,
+        text: `Thanks for the update! I will review this and get back to you shortly.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        st: ""
+      };
+      setChatMessages((prev) => [...prev, reply]);
+    }, 3500);
+  };
+
+  const handleTemplateClick = (temp: string) => {
+    let text = "";
+    const nameFirst = lead.name.split(" ")[0];
+    switch (temp) {
+      case "Greeting":
+        text = `Hi ${nameFirst}, hope you are doing well! Sarah here from Heitkamp Realty. Let me know how I can assist with your search!`;
+        break;
+      case "Schedule Visit":
+        text = `Hi ${nameFirst}, would you be available for a site visit this weekend to see the model unit at ${lead.project}?`;
+        break;
+      case "Pricing":
+        text = `Sure! Pricing details for ${lead.project} start around ${lead.budget}. Let me know if you would like the payment schedule.`;
+        break;
+      case "Brochure":
+        text = `📄 Sharing the full project brochure for ${lead.project}.`;
+        break;
+      case "Location":
+        text = `📍 Here is the location for ${lead.project} in ${lead.city}: https://maps.google.com/?q=${encodeURIComponent(lead.project)}`;
+        break;
+      case "Thank You":
+        text = `Thank you for your time, ${nameFirst}. Have a wonderful day!`;
+        break;
+      default:
+        text = `Hello ${nameFirst}`;
+    }
+    setMsgText(text);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
@@ -932,7 +1007,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <p className="text-sm mt-1 text-muted-foreground">{lead.phone}</p>
         <div className="flex justify-center mt-2"><LeadStatusBadge status={lead.status} /></div>
         <div className="flex gap-3 mt-4">
-          <button className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white" style={{ backgroundColor: WA, height: 46 }}>
+          <button onClick={() => setTab("WhatsApp")} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 46 }}>
             <MessageCircle size={15} /> WhatsApp
           </button>
           <button className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>
@@ -981,7 +1056,11 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2">
               {["Greeting", "Schedule Visit", "Pricing", "Brochure", "Location", "Thank You"].map((t, i) => (
-                <button key={t} className="bg-white rounded-xl p-3 text-center border border-border">
+                <button
+                  key={t}
+                  onClick={() => handleTemplateClick(t)}
+                  className="bg-white rounded-xl p-3 text-center border border-border transition-all hover:bg-slate-50 active:scale-95"
+                >
                   <div className="w-6 h-6 rounded-md flex items-center justify-center mx-auto mb-1" style={{ backgroundColor: "#ECFDF5" }}>
                     <MessageSquare size={12} style={{ color: WA }} />
                   </div>
@@ -992,7 +1071,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
             </div>
           </div>
           <div className="px-4 pb-4 space-y-3">
-            {msgs.map((msg) => (
+            {chatMessages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sent ? "justify-end" : "justify-start"}`}>
                 <div
                   className="max-w-[80%] px-3 py-2.5 rounded-2xl"
@@ -1016,11 +1095,24 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           </div>
           <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             {["Sure!", "Send brochure", "Call you soon", "Site visit?"].map((r) => (
-              <button key={r} className="flex-shrink-0 px-3 rounded-full text-xs font-medium" style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 34 }}>{r}</button>
+              <button
+                key={r}
+                onClick={() => sendMessage(r)}
+                className="flex-shrink-0 px-3 rounded-full text-xs font-medium bg-white transition-all hover:bg-slate-50 active:scale-95"
+                style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 34 }}
+              >
+                {r}
+              </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border">
-            <button className="text-muted-foreground"><Paperclip size={20} /></button>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage(msgText);
+            }}
+            className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border"
+          >
+            <button type="button" className="text-muted-foreground"><Paperclip size={20} /></button>
             <input
               className="flex-1 px-3 rounded-xl text-sm"
               style={{ border: `1px solid ${BR}`, height: 44, outline: "none", color: DK }}
@@ -1028,10 +1120,14 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
               value={msgText}
               onChange={(e) => setMsgText(e.target.value)}
             />
-            <button className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: WA }}>
-              <Send size={15} className="text-white" style={{ transform: "translateX(1px)" }} />
+            <button
+              type="submit"
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ backgroundColor: WA }}
+            >
+              <Send size={15} style={{ transform: "translateX(1px)" }} />
             </button>
-          </div>
+          </form>
         </div>
       )}
 
@@ -1425,7 +1521,7 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
 
 // ─── Screen: WhatsApp Hub ─────────────────────────────────────────────
 
-function WhatsAppScreen({ onBack, go }: { onBack: () => void; go: (s: Screen) => void }) {
+function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: (s: Screen) => void; openLeadChat: (id: number) => void }) {
   const { leads } = useContext(AppContext)!;
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
@@ -1482,7 +1578,11 @@ function WhatsAppScreen({ onBack, go }: { onBack: () => void; go: (s: Screen) =>
                 <button className="w-9 h-9 rounded-full border flex items-center justify-center" style={{ borderColor: VIOLET, color: VIOLET }}>
                   <Phone size={15} />
                 </button>
-                <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: WA }}>
+                <button
+                  onClick={() => openLeadChat(lead.id)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95"
+                  style={{ backgroundColor: WA }}
+                >
                   <MessageCircle size={15} className="text-white" />
                 </button>
               </div>
@@ -2675,7 +2775,7 @@ export default function App() {
       case "dashboard":
         return <DashboardTab go={go} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "leads":
-        return <LeadsTab go={go} openLead={openLead} />;
+        return <LeadsTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "properties":
         return <PropertiesTab onAddProperty={() => setShowAddPropertyModal(true)} />;
       case "calendar":
@@ -2691,7 +2791,7 @@ export default function App() {
       case "tasks":
         return <TasksScreen onBack={back} />;
       case "whatsapp":
-        return <WhatsAppScreen onBack={back} go={go} />;
+        return <WhatsAppScreen onBack={back} go={go} openLeadChat={(id) => { setSelectedLeadId(id); go("lead-detail"); }} />;
       case "broadcasts":
         return <BroadcastsScreen onBack={back} />;
       case "analytics":

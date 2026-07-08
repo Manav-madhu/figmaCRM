@@ -2852,6 +2852,18 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
   const [status, setStatus] = useState("Available");
   const [image, setImage] = useState(presets[0].url);
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -2894,21 +2906,40 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
           </div>
           <div>
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Property Photo</label>
-            <div className="flex gap-2 mb-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              {presets.map((p) => (
-                <button
-                  type="button"
-                  key={p.url}
-                  onClick={() => setImage(p.url)}
-                  className="flex-shrink-0 relative w-16 h-12 rounded-lg overflow-hidden border-2 transition-all active:scale-95"
-                  style={{ borderColor: image === p.url ? VIOLET : "transparent" }}
-                >
-                  <img src={p.url} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <span className="text-[8px] text-white font-bold">{p.name}</span>
-                  </div>
-                </button>
-              ))}
+            <div className="flex gap-2 mb-2 items-center">
+              <input
+                type="file"
+                id="property-image-file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageFileChange}
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById("property-image-file")?.click()}
+                className="flex-shrink-0 w-16 h-12 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-slate-50 transition-all active:scale-95"
+                style={{ borderColor: image.startsWith("data:image/") ? VIOLET : BR }}
+              >
+                <Upload size={14} className="text-muted-foreground" />
+                <span className="text-[7px] font-bold mt-1 text-muted-foreground">Upload</span>
+              </button>
+              
+              <div className="flex gap-2 overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: "none" }}>
+                {presets.map((p) => (
+                  <button
+                    type="button"
+                    key={p.url}
+                    onClick={() => setImage(p.url)}
+                    className="flex-shrink-0 relative w-16 h-12 rounded-lg overflow-hidden border-2 transition-all active:scale-95"
+                    style={{ borderColor: image === p.url ? VIOLET : "transparent" }}
+                  >
+                    <img src={p.url} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <span className="text-[8px] text-white font-bold">{p.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
             <input
               value={image}
@@ -2917,6 +2948,14 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
               className="w-full px-3.5 py-2.5 rounded-xl text-sm"
               style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}
             />
+            {image && (
+              <div className="mt-2 w-full h-28 rounded-xl overflow-hidden border border-border relative bg-slate-50 flex items-center justify-center">
+                <img src={image} className="max-w-full max-h-full object-contain" />
+                <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full text-[9px] font-bold text-white">
+                  Preview
+                </div>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

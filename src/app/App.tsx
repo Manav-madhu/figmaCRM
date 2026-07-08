@@ -1073,18 +1073,22 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     }, 3500);
   };
 
-  const handleTemplateClick = (temp: string) => {
+  const handleTemplateClick = async (temp: string) => {
     let text = "";
+    let newStatus: LeadStatus | null = null;
     const nameFirst = lead.name.split(" ")[0];
     switch (temp) {
       case "Interested":
         text = `Hi ${nameFirst}, thank you for your interest! I'm glad you're looking into ${lead.project}. When would be a good time to discuss details?`;
+        newStatus = "Qualified";
         break;
       case "Not Interested":
         text = `Understood, ${nameFirst}. Thank you for letting me know. I'll update your status for ${lead.project}. Let me know if your requirements change in the future.`;
+        newStatus = "Lost";
         break;
       case "Site Visit":
         text = `Hi ${nameFirst}, would you be available for a site visit this weekend to see the model unit at ${lead.project}?`;
+        newStatus = "Visit Scheduled";
         break;
       case "Pricing Request":
         text = `Sure! Pricing details for ${lead.project} start around ${lead.budget}. Let me know if you would like the payment schedule.`;
@@ -1099,6 +1103,15 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         text = `Hello ${nameFirst}`;
     }
     setMsgText(text);
+
+    if (newStatus) {
+      try {
+        await api.updateLead(lead.id, { status: newStatus });
+        refreshData();
+      } catch (err) {
+        console.error("Failed to update lead status:", err);
+      }
+    }
   };
 
   return (

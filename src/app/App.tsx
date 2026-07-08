@@ -831,9 +831,19 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
 // ─── Tab: Leads ─────────────────────────────────────────────────────
 
 function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
-  const { leads } = useContext(AppContext)!;
+  const { leads, refreshData } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
+  const [activeLeadDropdown, setActiveLeadDropdown] = useState<number | null>(null);
+
+  const handleQuickStatus = async (leadId: number, status: LeadStatus) => {
+    try {
+      await api.updateLead(leadId, { status });
+      refreshData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
   const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost"];
 
   const filtered = leads.filter((l) => {
@@ -960,13 +970,62 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                   <button className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border" style={{ color: VIOLET, height: 44 }}>
                     <Phone size={15} /> Call
                   </button>
-                  <button
-                    className="px-4 flex items-center justify-center border-l border-border text-muted-foreground"
-                    style={{ height: 44 }}
-                    onClick={() => openLead(lead.id)}
-                  >
-                    <MoreHorizontal size={18} />
-                  </button>
+                  <div className="relative">
+                    <button
+                      className="px-4 flex items-center justify-center border-l border-border text-muted-foreground hover:bg-slate-50 transition-all"
+                      style={{ height: 44 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveLeadDropdown(activeLeadDropdown === lead.id ? null : lead.id);
+                      }}
+                    >
+                      <MoreHorizontal size={18} />
+                    </button>
+                    {activeLeadDropdown === lead.id && (
+                      <div className="absolute right-0 bottom-12 w-40 bg-white border border-slate-100 rounded-xl shadow-lg z-50 py-1 text-left">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveLeadDropdown(null);
+                            handleQuickStatus(lead.id, "Qualified");
+                          }}
+                          className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+                        >
+                          🟢 Interested
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveLeadDropdown(null);
+                            handleQuickStatus(lead.id, "Lost");
+                          }}
+                          className="w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-1.5 border-t border-slate-50"
+                        >
+                          🔴 Not Interested
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveLeadDropdown(null);
+                            handleQuickStatus(lead.id, "Visit Scheduled");
+                          }}
+                          className="w-full px-3 py-2 text-xs font-semibold text-violet-600 hover:bg-violet-50 flex items-center gap-1.5 border-t border-slate-50"
+                        >
+                          📅 Site Visit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveLeadDropdown(null);
+                            openLead(lead.id);
+                          }}
+                          className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 border-t border-slate-50"
+                        >
+                          👁 View Profile
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

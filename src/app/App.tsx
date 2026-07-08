@@ -2611,6 +2611,13 @@ function AddLeadModal({ stage, onClose, onSave }: { stage: LeadStatus; onClose: 
 }
 
 function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+  const presets = [
+    { name: "House", url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=260&fit=crop&auto=format" },
+    { name: "Villa", url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=260&fit=crop&auto=format" },
+    { name: "Apartment", url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=260&fit=crop&auto=format" },
+    { name: "Condo", url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format" },
+  ];
+
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [price, setPrice] = useState("");
@@ -2620,6 +2627,7 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
   const [baths, setBaths] = useState(2);
   const [sqft, setSqft] = useState("");
   const [status, setStatus] = useState("Available");
+  const [image, setImage] = useState(presets[0].url);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2635,6 +2643,7 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
         baths,
         sqft,
         status,
+        image,
         featured: false
       });
       onSave();
@@ -2659,6 +2668,32 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
           <div>
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Address</label>
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 850 Marina Blvd" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Property Photo</label>
+            <div className="flex gap-2 mb-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {presets.map((p) => (
+                <button
+                  type="button"
+                  key={p.url}
+                  onClick={() => setImage(p.url)}
+                  className="flex-shrink-0 relative w-16 h-12 rounded-lg overflow-hidden border-2 transition-all active:scale-95"
+                  style={{ borderColor: image === p.url ? VIOLET : "transparent" }}
+                >
+                  <img src={p.url} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">{p.name}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <input
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="Or paste any custom image URL..."
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm"
+              style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -2710,6 +2745,7 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
     </div>
   );
 }
+
 
 function AddAppointmentModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
   const [title, setTitle] = useState("");

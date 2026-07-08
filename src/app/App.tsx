@@ -646,7 +646,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
 
       {/* Stats */}
       <div className="px-5 -mt-5">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {stats.map((s) => {
             const Icon = getIcon(s.label);
             return (
@@ -715,66 +715,69 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
         </div>
       </div>
 
-      {/* Tasks Due */}
-      <div className="px-5 mt-6">
-        <SectionHeader title="Tasks Due Today" action="View all →" onAction={() => go("tasks")} />
-        <Card>
-          {tasks.filter((t) => !t.completed).slice(0, 3).map((t, i, arr) => (
-            <div
-              key={t.id}
-              className="flex items-start gap-3 px-4 py-3"
-              style={{ backgroundColor: t.overdue ? "#FFF5F5" : "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${BR}` : "none" }}
-            >
-              <button
-                onClick={() => toggleTask(t.id)}
-                className="w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all hover:bg-slate-50 active:scale-90"
-                style={{ borderColor: t.overdue ? RD : VIOLET }}
+      {/* Grid container for Tasks and Recent Leads on Desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+        {/* Tasks Due */}
+        <div className="px-5 mt-6">
+          <SectionHeader title="Tasks Due Today" action="View all →" onAction={() => go("tasks")} />
+          <Card>
+            {tasks.filter((t) => !t.completed).slice(0, 3).map((t, i, arr) => (
+              <div
+                key={t.id}
+                className="flex items-start gap-3 px-4 py-3"
+                style={{ backgroundColor: t.overdue ? "#FFF5F5" : "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${BR}` : "none" }}
               >
-                {t.completed && <Check size={10} style={{ color: GR }} />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium text-foreground">{t.title}</div>
-                {t.lead && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>
-                    {t.lead}
-                  </span>
-                )}
+                <button
+                  onClick={() => toggleTask(t.id)}
+                  className="w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all hover:bg-slate-50 active:scale-90"
+                  style={{ borderColor: t.overdue ? RD : VIOLET }}
+                >
+                  {t.completed && <Check size={10} style={{ color: GR }} />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium text-foreground">{t.title}</div>
+                  {t.lead && (
+                    <span className="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>
+                      {t.lead}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] flex-shrink-0" style={{ color: t.overdue ? RD : MT }}>{t.due}</span>
               </div>
-              <span className="text-[11px] flex-shrink-0" style={{ color: t.overdue ? RD : MT }}>{t.due}</span>
-            </div>
-          ))}
-        </Card>
-      </div>
-
-      {/* Recent Leads */}
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Recent Leads</h2>
-          <button className="text-xs font-semibold" style={{ color: VIOLET }} onClick={() => go("leads")}>See all</button>
+            ))}
+          </Card>
         </div>
-        <div className="flex flex-col gap-3">
-          {leads.slice(0, 3).map((lead) => (
-            <div
-              key={lead.id}
-              onClick={() => openLead(lead.id)}
-              className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
-            >
-              <Avatar initials={lead.initials} bg={lead.avatarBg} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm text-foreground truncate">{lead.name}</p>
-                  <LeadStatusBadge status={lead.status} />
+
+        {/* Recent Leads */}
+        <div className="px-5 mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Recent Leads</h2>
+            <button className="text-xs font-semibold" style={{ color: VIOLET }} onClick={() => go("leads")}>See all</button>
+          </div>
+          <div className="flex flex-col gap-3">
+            {leads.slice(0, 3).map((lead) => (
+              <div
+                key={lead.id}
+                onClick={() => openLead(lead.id)}
+                className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <Avatar initials={lead.initials} bg={lead.avatarBg} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm text-foreground truncate">{lead.name}</p>
+                    <LeadStatusBadge status={lead.status} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{lead.type} · {lead.budget}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{lead.type} · {lead.budget}</p>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-[10px] text-muted-foreground">{lead.lastContact}</p>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center mt-1" style={{ backgroundColor: "#EDE9FF" }}>
-                  <MessageSquare size={12} style={{ color: VIOLET }} />
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[10px] text-muted-foreground">{lead.lastContact}</p>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center mt-1" style={{ backgroundColor: "#EDE9FF" }}>
+                    <MessageSquare size={12} style={{ color: VIOLET }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -2168,7 +2171,7 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
         </div>
       </div>
 
-      <div className="px-5 pt-4 flex flex-col gap-4">
+      <div className="px-5 pt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filtered.map((prop) => (
           <div key={prop.id} className="bg-white rounded-3xl overflow-hidden shadow-sm">
             <div className="relative">
@@ -3341,9 +3344,9 @@ export default function App() {
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
       refreshData
     }}>
-      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 md:p-4 overflow-hidden">
+      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 overflow-hidden">
         <div
-          className="relative flex flex-col overflow-hidden w-full max-w-md h-full md:h-[844px] md:rounded-3xl md:shadow-xl bg-white"
+          className="relative flex flex-col overflow-hidden w-full max-w-6xl h-full bg-white md:shadow-xl"
           style={{
             fontFamily: "'Inter', sans-serif",
           }}

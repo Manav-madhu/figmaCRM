@@ -551,8 +551,10 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
         className="px-5 pt-12 pb-8 relative"
         style={{ background: `linear-gradient(135deg, #5B3FD9 0%, ${VIOLET} 60%, #9D7FFF 100%)` }}
       >
-        <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10" style={{ background: "white", transform: "translate(30%, -30%)" }} />
-        <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10" style={{ background: "white", transform: "translate(-30%, 30%)" }} />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-b-none">
+          <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10" style={{ background: "white", transform: "translate(30%, -30%)" }} />
+          <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10" style={{ background: "white", transform: "translate(-30%, 30%)" }} />
+        </div>
         <div className="flex items-start justify-between mb-6 relative">
           <div>
             <p className="text-white/70 text-sm font-medium">{greeting}</p>

@@ -486,7 +486,22 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
 function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
-  const { leads, stats, tasks, refreshData } = useContext(AppContext)!;
+  const { leads, stats, tasks, refreshData, properties } = useContext(AppContext)!;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredLeads = searchQuery.trim() ? leads.filter(l => 
+    l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (l.phone && l.phone.includes(searchQuery)) ||
+    (l.email && l.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (l.project && l.project.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (l.city && l.city.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
+
+  const filteredProperties = searchQuery.trim() && properties ? properties.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.address && p.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (p.type && p.type.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) : [];
 
   const toggleTask = async (id: number) => {
     const task = tasks.find((t) => t.id === id);
@@ -532,7 +547,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       {/* Header */}
       <div
-        className="px-5 pt-12 pb-8 relative overflow-hidden"
+        className="px-5 pt-12 pb-8 relative"
         style={{ background: `linear-gradient(135deg, #5B3FD9 0%, ${VIOLET} 60%, #9D7FFF 100%)` }}
       >
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10" style={{ background: "white", transform: "translate(30%, -30%)" }} />
@@ -554,12 +569,77 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 relative">
+        <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-2.5 relative z-50">
           <Search size={16} className="text-white/60" />
-          <span className="text-white/50 text-sm">Search leads, properties...</span>
-          <div className="ml-auto w-7 h-7 bg-white/20 rounded-xl flex items-center justify-center">
-            <Filter size={12} className="text-white" />
-          </div>
+          <input
+            type="text"
+            placeholder="Search leads, properties..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-white text-sm placeholder:text-white/50 w-full"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="text-white/60 hover:text-white flex-shrink-0">
+              <X size={14} />
+            </button>
+          )}
+
+          {/* Search Dropdown Overlay */}
+          {searchQuery.trim() && (
+            <div className="absolute top-12 left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-3 z-50 max-h-80 overflow-y-auto text-left">
+              {/* Leads */}
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-0.5">Leads</p>
+                {filteredLeads.length > 0 ? (
+                  filteredLeads.slice(0, 5).map(l => (
+                    <div
+                      key={l.id}
+                      onClick={() => {
+                        setSearchQuery("");
+                        openLead(l.id);
+                      }}
+                      className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer active:scale-[0.98]"
+                    >
+                      <Avatar initials={l.initials} bg={l.avatarBg} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{l.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{l.phone} · {l.project}</p>
+                      </div>
+                      <ChevronRight size={10} className="text-muted-foreground" />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[11px] text-muted-foreground px-2 italic font-normal">No matching leads</p>
+                )}
+              </div>
+
+              {/* Properties */}
+              <div className="border-t border-slate-100 pt-2">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-0.5">Properties</p>
+                {filteredProperties.length > 0 ? (
+                  filteredProperties.slice(0, 5).map(p => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        setSearchQuery("");
+                        go("properties");
+                      }}
+                      className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer active:scale-[0.98]"
+                    >
+                      <img src={p.image} className="w-8 h-8 rounded-lg object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{p.price} · {p.address}</p>
+                      </div>
+                      <ChevronRight size={10} className="text-muted-foreground" />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[11px] text-muted-foreground px-2 italic font-normal">No matching properties</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

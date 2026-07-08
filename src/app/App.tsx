@@ -3344,9 +3344,9 @@ export default function App() {
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
       refreshData
     }}>
-      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 overflow-hidden">
+      <div className="fixed inset-0 bg-white flex flex-col overflow-hidden">
         <div
-          className="relative flex flex-col overflow-hidden w-full max-w-6xl h-full bg-white md:shadow-xl"
+          className="relative flex flex-col overflow-hidden w-full h-full bg-white"
           style={{
             fontFamily: "'Inter', sans-serif",
           }}

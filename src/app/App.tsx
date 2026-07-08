@@ -2083,7 +2083,6 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
 function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { onAddProperty: () => void; onEditProperty: (prop: any) => void; onDeleteProperty: (id: number) => void }) {
   const { properties } = useContext(AppContext)!;
   const [typeFilter, setTypeFilter] = useState("All");
-  const [showDropdownId, setShowDropdownId] = useState<number | null>(null);
 
   const filtered = properties.filter((p) => typeFilter === "All" || p.type === typeFilter || p.type === "Both");
 
@@ -2142,42 +2141,6 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
                     <p className="text-xs text-muted-foreground">{prop.address}</p>
                   </div>
                 </div>
-                <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDropdownId(showDropdownId === prop.id ? null : prop.id);
-                    }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-slate-100 active:scale-90"
-                    style={{ backgroundColor: "#EDE9FF" }}
-                  >
-                    <MoreHorizontal size={14} style={{ color: VIOLET }} />
-                  </button>
-                  {showDropdownId === prop.id && (
-                    <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-100 rounded-xl shadow-lg z-50 py-1 text-left">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDropdownId(null);
-                          onEditProperty(prop);
-                        }}
-                        className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDropdownId(null);
-                          onDeleteProperty(prop.id);
-                        }}
-                        className="w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-1.5 border-t border-slate-50"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
               <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                 <div className="flex items-center gap-1">
@@ -2197,10 +2160,18 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
                 </span>
               </div>
               <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                <button className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold" style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 40 }}>
+                <button
+                  onClick={() => onEditProperty(prop)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-all active:scale-95"
+                  style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 40 }}
+                >
                   <Edit size={13} /> Edit
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: "#FEF2F2", color: RD, border: "1px solid #FECACA", height: 40 }}>
+                <button
+                  onClick={() => onDeleteProperty(prop.id)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-red-100 transition-all active:scale-95"
+                  style={{ backgroundColor: "#FEF2F2", color: RD, border: "1px solid #FECACA", height: 40 }}
+                >
                   <Trash2 size={13} /> Delete
                 </button>
               </div>

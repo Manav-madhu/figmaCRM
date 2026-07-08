@@ -1077,23 +1077,23 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     let text = "";
     const nameFirst = lead.name.split(" ")[0];
     switch (temp) {
-      case "Greeting":
-        text = `Hi ${nameFirst}, hope you are doing well! Sarah here from Heitkamp Realty. Let me know how I can assist with your search!`;
+      case "Interested":
+        text = `Hi ${nameFirst}, thank you for your interest! I'm glad you're looking into ${lead.project}. When would be a good time to discuss details?`;
         break;
-      case "Schedule Visit":
+      case "Not Interested":
+        text = `Understood, ${nameFirst}. Thank you for letting me know. I'll update your status for ${lead.project}. Let me know if your requirements change in the future.`;
+        break;
+      case "Site Visit":
         text = `Hi ${nameFirst}, would you be available for a site visit this weekend to see the model unit at ${lead.project}?`;
         break;
-      case "Pricing":
+      case "Pricing Request":
         text = `Sure! Pricing details for ${lead.project} start around ${lead.budget}. Let me know if you would like the payment schedule.`;
         break;
-      case "Brochure":
-        text = `📄 Sharing the full project brochure for ${lead.project}.`;
+      case "Shared Brochure":
+        text = `📄 Sharing the full project brochure for ${lead.project} here.`;
         break;
-      case "Location":
-        text = `📍 Here is the location for ${lead.project} in ${lead.city}: https://maps.google.com/?q=${encodeURIComponent(lead.project)}`;
-        break;
-      case "Thank You":
-        text = `Thank you for your time, ${nameFirst}. Have a wonderful day!`;
+      case "Follow up":
+        text = `Hi ${nameFirst}, just checking in on your interest in ${lead.project}. Do you have any questions about the floor plans or pricing?`;
         break;
       default:
         text = `Hello ${nameFirst}`;
@@ -1165,7 +1165,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <div>
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2">
-              {["Greeting", "Schedule Visit", "Pricing", "Brochure", "Location", "Thank You"].map((t, i) => (
+              {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up"].map((t, i) => (
                 <button
                   key={t}
                   onClick={() => handleTemplateClick(t)}

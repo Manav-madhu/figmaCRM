@@ -2308,38 +2308,143 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
 // ─── Screen: Import (Excel/CSV wizard) ──────────────────────────────────
 
 function ImportScreen({ onBack }: { onBack: () => void }) {
-  const { refreshData } = useContext(AppContext)!;
+  const { leads, refreshData } = useContext(AppContext)!;
   const [step, setStep] = useState(1);
   const stepLabels = ["Upload", "Map", "Validate", "Done"];
 
-  const rows = [
-    { num: 1, name: "Rohan Mehta", phone: "+1 646-555-0134", budget: "$520,000", valid: true, dup: false },
-    { num: 2, name: "Anjali Kapoor", phone: "+1 312-555-0198", budget: "$800,000", valid: true, dup: false },
-    { num: 3, name: "Invalid Name", phone: "invalid-phone", budget: "—", valid: false, dup: false },
-    { num: 4, name: "Suresh Kumar", phone: "+1 773-555-0177", budget: "$350,000", valid: true, dup: true },
-  ];
+  // File Upload States
+  const [fileName, setFileName] = useState("");
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Result States
+  const [importSummary, setImportSummary] = useState({ created: 0, updated: 0, failed: 0, skipped: 0 });
+
+  const targetColumns = ["Name", "Phone", "Email", "City", "Project", "Budget", "Status", "Source"];
+
+  const handleFile = (file: File) => {
+    if (!file) return;
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+      // Split lines
+      const lines = text.split(/\r?\n/).map(line => {
+        // Simple CSV cell splitter (handles quotes)
+        const cells: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            cells.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        cells.push(current.trim());
+        return cells;
+      }).filter(cells => cells.length > 0 && cells.some(c => c !== ""));
+
+      if (lines.length > 0) {
+        const fileHeaders = lines[0];
+        setHeaders(fileHeaders);
+        const dataRows = lines.slice(1);
+        setParsedRows(dataRows);
+
+        // Auto-map headers
+        const initialMapping: Record<string, string> = {};
+        fileHeaders.forEach((h) => {
+          const cleanH = h.toLowerCase().replace(/[^a-z]/g, "");
+          const match = targetColumns.find(col => {
+            const cleanCol = col.toLowerCase().replace(/[^a-z]/g, "");
+            return cleanH.includes(cleanCol) || cleanCol.includes(cleanH);
+          });
+          initialMapping[h] = match || "Ignore";
+        });
+        setColumnMapping(initialMapping);
+        setStep(2);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const getMappedRows = () => {
+    return parsedRows.map((row, index) => {
+      const rowObj: any = { num: index + 1, valid: true, dup: false };
+      headers.forEach((h, colIndex) => {
+        const targetField = columnMapping[h];
+        if (targetField && targetField !== "Ignore") {
+          rowObj[targetField.toLowerCase()] = row[colIndex] || "";
+        }
+      });
+      
+      const phoneClean = (rowObj.phone || "").replace(/[^\d]/g, "");
+      
+      if (!rowObj.name || rowObj.name.trim() === "" || phoneClean.length < 7) {
+        rowObj.valid = false;
+      }
+      
+      const isDuplicate = leads.some(l => {
+        const lp = l.phone.replace(/[^\d]/g, "");
+        return lp === phoneClean && phoneClean !== "";
+      });
+      if (isDuplicate) {
+        rowObj.dup = true;
+      }
+      
+      return rowObj;
+    });
+  };
+
+  const mappedRows = getMappedRows();
+  const validCount = mappedRows.filter(r => r.valid).length;
+  const invalidCount = mappedRows.filter(r => !r.valid).length;
+  const duplicateCount = mappedRows.filter(r => r.valid && r.dup).length;
 
   const handleImport = async () => {
-    const validRows = rows.filter(r => r.valid).map(r => ({
+    const leadsToImport = mappedRows.filter(r => r.valid).map(r => ({
       name: r.name,
-      phone: r.phone,
-      budget: r.budget,
-      project: "Harbour View Tower",
-      city: "San Francisco",
-      status: "New"
+      phone: r.phone || "",
+      email: r.email || "",
+      city: r.city || "",
+      project: r.project || "",
+      budget: r.budget || "",
+      status: r.status || "New",
+      source: r.source || "Excel Import"
     }));
+
+    if (leadsToImport.length === 0) {
+      setImportSummary({ created: 0, updated: 0, failed: invalidCount, skipped: 0 });
+      setStep(4);
+      return;
+    }
+
     try {
-      await api.importLeads(validRows);
+      const res = await api.importLeads(leadsToImport);
+      setImportSummary({
+        created: res.created || 0,
+        updated: res.updated || 0,
+        failed: (res.failed || 0) + invalidCount,
+        skipped: res.skipped || 0
+      });
       await refreshData();
     } catch (e) {
       console.error(e);
+      setImportSummary({ created: 0, updated: 0, failed: leadsToImport.length + invalidCount, skipped: 0 });
     }
     setStep(4);
   };
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      <ScreenHeader title="Import from Excel" onBack={onBack} />
+      <ScreenHeader title="Import Leads" onBack={onBack} />
       <div className="px-5 py-5 space-y-6">
         {/* Progress indicator */}
         <div className="flex items-center">
@@ -2361,14 +2466,39 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
 
         {step === 1 && (
           <div className="space-y-4">
-            <div className="p-8 rounded-2xl flex flex-col items-center text-center bg-white" style={{ border: `2px dashed ${VIOLET}` }}>
+            <input
+              type="file"
+              id="excel-file-input"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+            />
+            <div
+              onClick={() => document.getElementById("excel-file-input")?.click()}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleFile(file);
+              }}
+              className="p-8 rounded-2xl flex flex-col items-center text-center bg-white cursor-pointer transition-all hover:bg-slate-50"
+              style={{
+                border: `2px dashed ${VIOLET}`,
+                backgroundColor: isDragging ? "#F5F3FF" : "#fff"
+              }}
+            >
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: "#EDE9FF" }}>
                 <Upload size={28} style={{ color: VIOLET }} />
               </div>
-              <p className="text-base font-semibold text-foreground">Drop your Excel file here</p>
+              <p className="text-base font-semibold text-foreground">Drop your CSV file here</p>
               <p className="text-[13px] mt-1 text-muted-foreground">or tap to browse</p>
               <div className="flex gap-2 mt-4">
-                {[".xlsx", ".xls", ".csv"].map((ext) => (
+                {[".csv"].map((ext) => (
                   <span key={ext} className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>{ext}</span>
                 ))}
               </div>
@@ -2381,9 +2511,6 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
                 ))}
               </div>
             </Card>
-            <button onClick={() => setStep(2)} className="w-full rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>
-              Continue →
-            </button>
           </div>
         )}
 
@@ -2391,35 +2518,28 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Map Your Columns</h2>
-              <p className="text-[13px] text-muted-foreground">We detected 6 columns in your Excel file</p>
+              <p className="text-[13px] text-muted-foreground">We detected {headers.length} columns in {fileName}</p>
             </div>
             <div className="space-y-2">
-              {[
-                { excel: "Customer Name", example: "Rohan Mehta", mapped: "Name", auto: true, ignored: false },
-                { excel: "Mobile No", example: "+1 646-555-0134", mapped: "Phone", auto: true, ignored: false },
-                { excel: "Project Interest", example: "Harbour View Tower", mapped: "Project", auto: false, ignored: false },
-                { excel: "Budget Range", example: "$500k–600k", mapped: "Budget", auto: false, ignored: false },
-                { excel: "Email ID", example: "rohan@gmail.com", mapped: "Email", auto: true, ignored: false },
-                { excel: "Source Channel", example: "Facebook", mapped: "— Ignore —", auto: false, ignored: true },
-              ].map((row, i) => (
-                <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm" style={{ opacity: row.ignored ? 0.5 : 1 }}>
+              {headers.map((h, i) => (
+                <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground">{row.excel}</div>
-                    <div className="text-xs italic text-muted-foreground">e.g. "{row.example}"</div>
+                    <div className="text-sm font-semibold text-foreground">{h}</div>
+                    <div className="text-xs italic text-muted-foreground">e.g. "{parsedRows[0]?.[i] || ""}"</div>
                   </div>
                   <span className="text-muted-foreground">→</span>
                   <div className="flex items-center gap-1.5">
                     <select
                       className="px-2 rounded-lg text-[13px] font-medium bg-white"
                       style={{ border: `1px solid ${BR}`, color: DK, height: 44 }}
-                      defaultValue={row.mapped}
+                      value={columnMapping[h] || "Ignore"}
+                      onChange={(e) => setColumnMapping(prev => ({ ...prev, [h]: e.target.value }))}
                     >
-                      <option>— Ignore —</option>
-                      <option>Name</option><option>Phone</option><option>Email</option>
-                      <option>City</option><option>Project</option><option>Budget</option>
+                      <option value="Ignore">— Ignore —</option>
+                      {targetColumns.map(col => (
+                        <option key={col} value={col}>{col}</option>
+                      ))}
                     </select>
-                    {row.auto && <span className="text-sm" style={{ color: GR }}>✓</span>}
-                    {!row.auto && !row.ignored && <span style={{ color: AMBER }}>●</span>}
                   </div>
                 </div>
               ))}
@@ -2434,12 +2554,12 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
         {step === 3 && (
           <div className="space-y-4">
             <div className="flex gap-2 flex-wrap">
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#D1FAE5", color: "#065F46" }}>✓ 18 Valid</span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>✗ 4 Invalid</span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FFF3CD", color: "#92400E" }}>⚠ 2 Duplicate</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#D1FAE5", color: "#065F46" }}>✓ {validCount} Valid</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FEE2E2", color: "#991B1B" }}>✗ {invalidCount} Invalid</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#FFF3CD", color: "#92400E" }}>⚠ {duplicateCount} Duplicate</span>
             </div>
-            <div className="space-y-2">
-              {rows.map((r) => (
+            <div className="space-y-2 max-h-60 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+              {mappedRows.map((r) => (
                 <Card
                   key={r.num}
                   className="p-3"
@@ -2447,11 +2567,11 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-semibold text-foreground">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.phone} · {r.budget}</div>
+                      <div className="text-sm font-semibold text-foreground">{r.name || "— Empty Name —"}</div>
+                      <div className="text-xs text-muted-foreground">{(r.phone) || "— No Phone —"} {r.budget ? `· ${r.budget}` : ""}</div>
                     </div>
-                    {!r.valid && <span className="text-[11px] font-semibold" style={{ color: RD }}>Invalid phone</span>}
-                    {r.valid && r.dup && <span className="text-[11px] font-semibold" style={{ color: AMBER }}>Duplicate</span>}
+                    {!r.valid && <span className="text-[11px] font-semibold" style={{ color: RD }}>Invalid record</span>}
+                    {r.valid && r.dup && <span className="text-[11px] font-semibold" style={{ color: AMBER }}>Duplicate (Will Update)</span>}
                     {r.valid && !r.dup && <Check size={16} style={{ color: GR }} />}
                   </div>
                 </Card>
@@ -2459,7 +2579,7 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setStep(2)} className="flex-1 rounded-xl text-sm font-semibold text-muted-foreground" style={{ border: `1.5px solid ${BR}`, height: 48 }}>← Back</button>
-              <button onClick={handleImport} className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Import 18 Leads</button>
+              <button onClick={handleImport} className="flex-1 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Import {validCount} Leads</button>
             </div>
           </div>
         )}
@@ -2470,13 +2590,13 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
               <Check size={36} style={{ color: GR }} />
             </div>
             <h2 className="text-xl font-bold mb-2 text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Import Complete!</h2>
-            <p className="text-sm mb-6" style={{ color: BD }}>Processed 24 rows from your Excel file.</p>
+            <p className="text-sm mb-6" style={{ color: BD }}>Processed {parsedRows.length} rows from {fileName}.</p>
             <div className="w-full grid grid-cols-2 gap-3 mb-6">
               {[
-                { label: "Created", value: "18", color: VIOLET },
-                { label: "Updated", value: "3", color: GR },
-                { label: "Skipped", value: "2", color: MT },
-                { label: "Failed", value: "1", color: RD },
+                { label: "Created", value: String(importSummary.created), color: VIOLET },
+                { label: "Updated", value: String(importSummary.updated), color: GR },
+                { label: "Skipped", value: String(importSummary.skipped), color: MT },
+                { label: "Failed", value: String(importSummary.failed), color: RD },
               ].map((s, i) => (
                 <Card key={i} className="py-4 text-center">
                   <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
@@ -2484,12 +2604,6 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
                 </Card>
               ))}
             </div>
-            <div className="w-full mb-1">
-              <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: BR }}>
-                <div className="h-2 rounded-full" style={{ width: "87%", backgroundColor: VIOLET }} />
-              </div>
-            </div>
-            <p className="text-xs mb-6 text-muted-foreground">87% success rate</p>
             <div className="w-full flex flex-col gap-3">
               <button onClick={onBack} className="w-full rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>View All Leads</button>
               <button onClick={() => setStep(1)} className="w-full rounded-xl text-sm font-semibold" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 48 }}>Import More</button>

@@ -106,6 +106,7 @@ const AppContext = createContext<{
 const STATUS_CONFIG = {
   New: { bg: "#EDE9FF", text: VIOLET },
   Contacted: { bg: "#EFF6FF", text: "#3B82F6" },
+  Interested: { bg: "#ECFDF5", text: "#10B981" },
   Qualified: { bg: "#FFF7ED", text: "#B45309" },
   "Visit Scheduled": { bg: "#ECFDF5", text: "#059669" },
   Negotiation: { bg: "#FFF7E6", text: "#B45309", border: AMBER },
@@ -844,7 +845,7 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
       console.error(err);
     }
   };
-  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost"];
+  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost"];
 
   const filtered = leads.filter((l) => {
     const q = search.toLowerCase();
@@ -987,7 +988,7 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveLeadDropdown(null);
-                            handleQuickStatus(lead.id, "Qualified");
+                            handleQuickStatus(lead.id, "Interested");
                           }}
                           className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
                         >
@@ -1139,7 +1140,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     switch (temp) {
       case "Interested":
         text = `Hi ${nameFirst}, thank you for your interest! I'm glad you're looking into ${lead.project}. When would be a good time to discuss details?`;
-        newStatus = "Qualified";
+        newStatus = "Interested";
         break;
       case "Not Interested":
         text = `Understood, ${nameFirst}. Thank you for letting me know. I'll update your status for ${lead.project}. Let me know if your requirements change in the future.`;

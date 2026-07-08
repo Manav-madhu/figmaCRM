@@ -409,7 +409,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     res.json({ message: 'Task updated successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update task' });
+    res.status(500).json({ error: 'Failed to update task', details: err.message, stack: err.stack });
   }
 });
 

@@ -1625,7 +1625,10 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim()) {
+      alert("Please enter a task title!");
+      return;
+    }
     await api.createTask({
       title: newTitle,
       due: "Today 5:00 PM"
@@ -1643,7 +1646,7 @@ function TasksScreen({ onBack }: { onBack: () => void }) {
         <form onSubmit={handleAddTask} className="flex gap-2">
           <input
             className="flex-1 px-3 rounded-xl text-sm"
-            style={{ border: `1px solid ${BR}`, height: 44, outline: "none", color: DK }}
+            style={{ border: `1.5px solid ${VIOLET}`, height: 44, outline: "none", color: DK }}
             placeholder="Add a new task..."
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}

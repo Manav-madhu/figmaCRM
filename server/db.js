@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const isProd = !!process.env.DATABASE_URL;
 let pgPool = null;
 let sqliteDb = null;
-let useSQLite = !isProd;
+export let useSQLite = !isProd;
 
 function initSQLite() {
   const dbPath = path.join(__dirname, 'database.db');

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { query, run, initDb } from './db.js';
+import { query, run, initDb, useSQLite } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -289,7 +289,7 @@ app.post('/api/properties', async (req, res) => {
 
   const statusColor = status === 'Available' ? '#10B981' : status === 'Pending' ? '#F59E0B' : '#7C5CFC';
   const imgUrl = image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format';
-  const featVal = isProd ? featured : (featured ? 1 : 0);
+  const featVal = !useSQLite ? featured : (featured ? 1 : 0);
 
   try {
     const result = await run(`
@@ -324,7 +324,7 @@ app.put('/api/properties/:id', async (req, res) => {
     const updatedSqft = sqft !== undefined ? sqft : current.sqft;
     const updatedStatus = status !== undefined ? status : current.status;
     const updatedStatusColor = updatedStatus === 'Available' ? '#10B981' : updatedStatus === 'Pending' ? '#F59E0B' : '#7C5CFC';
-    const updatedFeatured = featured !== undefined ? (isProd ? featured : (featured ? 1 : 0)) : current.featured;
+    const updatedFeatured = featured !== undefined ? (!useSQLite ? featured : (featured ? 1 : 0)) : current.featured;
 
     await run(`
       UPDATE properties
@@ -377,7 +377,7 @@ app.post('/api/tasks', async (req, res) => {
     return res.status(400).json({ error: 'Task title is required' });
   }
 
-  const odVal = isProd ? overdue : (overdue ? 1 : 0);
+  const odVal = !useSQLite ? overdue : (overdue ? 1 : 0);
 
   try {
     const result = await run(`
@@ -402,7 +402,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     }
 
     if (completed !== undefined) {
-      const compVal = isProd ? completed : (completed ? 1 : 0);
+      const compVal = !useSQLite ? completed : (completed ? 1 : 0);
       await run('UPDATE tasks SET completed = ? WHERE id = ?', [compVal, req.params.id]);
     }
 
@@ -477,7 +477,7 @@ app.post('/api/followups', async (req, res) => {
     return res.status(400).json({ error: 'Name and time are required' });
   }
 
-  const odVal = isProd ? overdue : (overdue ? 1 : 0);
+  const odVal = !useSQLite ? overdue : (overdue ? 1 : 0);
 
   try {
     const result = await run(`

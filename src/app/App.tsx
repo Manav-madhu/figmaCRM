@@ -845,7 +845,7 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                   </div>
                 </div>
                 <div className="flex border-t border-border">
-                  <button className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white" style={{ backgroundColor: WA, height: 44 }}>
+                  <button onClick={() => openLead(lead.id)} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 44 }}>
                     <MessageCircle size={15} /> WhatsApp
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border" style={{ color: VIOLET, height: 44 }}>

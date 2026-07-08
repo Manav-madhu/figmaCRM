@@ -1704,8 +1704,11 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
           {leads.slice(0, 5).map((lead) => (
             <div key={lead.id} className="bg-white rounded-2xl px-4 flex items-center gap-3 shadow-sm" style={{ height: 64 }}>
               <Avatar initials={lead.initials} bg={lead.avatarBg} />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-foreground">{lead.name}</div>
+              <div
+                onClick={() => openLeadChat(lead.id)}
+                className="flex-1 min-w-0 cursor-pointer hover:opacity-85 active:scale-[0.99] transition-all"
+              >
+                <div className="text-sm font-semibold text-foreground hover:underline">{lead.name}</div>
                 <div className="text-xs text-muted-foreground">{lead.phone}</div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
@@ -1740,8 +1743,17 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
               {queueItems.map((item) => (
                 <div key={item.id} className="p-3.5 rounded-xl border border-slate-150 space-y-2 bg-slate-50">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-foreground">{item.name}</h4>
+                    <div
+                      onClick={() => {
+                        const matchingLead = leads.find(l => l.name === item.name || l.phone.replace(/[^\d]/g, "") === item.phone.replace(/[^\d]/g, ""));
+                        if (matchingLead) {
+                          setShowQueueModal(false);
+                          openLeadChat(matchingLead.id);
+                        }
+                      }}
+                      className="cursor-pointer hover:opacity-80 group"
+                    >
+                      <h4 className="text-xs font-bold text-foreground group-hover:underline">{item.name}</h4>
                       <p className="text-[10px] text-muted-foreground">{item.phone}</p>
                     </div>
                     {item.status === "failed" && (

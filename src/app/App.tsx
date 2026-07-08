@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useRef } from "react";
 import { api } from "./api";
 import {
   Home,
@@ -2851,6 +2851,7 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
   const [sqft, setSqft] = useState("");
   const [status, setStatus] = useState("Available");
   const [image, setImage] = useState(presets[0].url);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2909,14 +2910,14 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
             <div className="flex gap-2 mb-2 items-center">
               <input
                 type="file"
-                id="property-image-file"
+                ref={fileInputRef}
                 accept="image/*"
                 className="hidden"
                 onChange={handleImageFileChange}
               />
               <button
                 type="button"
-                onClick={() => document.getElementById("property-image-file")?.click()}
+                onClick={() => fileInputRef.current?.click()}
                 className="flex-shrink-0 w-16 h-12 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-slate-50 transition-all active:scale-95"
                 style={{ borderColor: image.startsWith("data:image/") ? VIOLET : BR }}
               >

@@ -2080,9 +2080,10 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
 
 // ─── Tab: Properties (unchanged from original design) ─────────────────
 
-function PropertiesTab({ onAddProperty }: { onAddProperty: () => void }) {
+function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { onAddProperty: () => void; onEditProperty: (prop: any) => void; onDeleteProperty: (id: number) => void }) {
   const { properties } = useContext(AppContext)!;
   const [typeFilter, setTypeFilter] = useState("All");
+  const [showDropdownId, setShowDropdownId] = useState<number | null>(null);
 
   const filtered = properties.filter((p) => typeFilter === "All" || p.type === typeFilter || p.type === "Both");
 
@@ -2141,9 +2142,42 @@ function PropertiesTab({ onAddProperty }: { onAddProperty: () => void }) {
                     <p className="text-xs text-muted-foreground">{prop.address}</p>
                   </div>
                 </div>
-                <button className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: "#EDE9FF" }}>
-                  <MoreHorizontal size={14} style={{ color: VIOLET }} />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDropdownId(showDropdownId === prop.id ? null : prop.id);
+                    }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-slate-100 active:scale-90"
+                    style={{ backgroundColor: "#EDE9FF" }}
+                  >
+                    <MoreHorizontal size={14} style={{ color: VIOLET }} />
+                  </button>
+                  {showDropdownId === prop.id && (
+                    <div className="absolute right-0 mt-1 w-28 bg-white border border-slate-100 rounded-xl shadow-lg z-50 py-1 text-left">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdownId(null);
+                          onEditProperty(prop);
+                        }}
+                        className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdownId(null);
+                          onDeleteProperty(prop.id);
+                        }}
+                        className="w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-1.5 border-t border-slate-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                 <div className="flex items-center gap-1">
@@ -2833,7 +2867,7 @@ function AddLeadModal({ stage, onClose, onSave }: { stage: LeadStatus; onClose: 
   );
 }
 
-function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+function AddPropertyModal({ onClose, onSave, propertyToEdit }: { onClose: () => void; onSave: () => void; propertyToEdit?: any }) {
   const presets = [
     { name: "House", url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=260&fit=crop&auto=format" },
     { name: "Villa", url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=260&fit=crop&auto=format" },
@@ -2841,16 +2875,16 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
     { name: "Condo", url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format" },
   ];
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [price, setPrice] = useState("");
-  const [salePrice, setSalePrice] = useState("");
-  const [type, setType] = useState<"Sale" | "Rent" | "Both">("Sale");
-  const [beds, setBeds] = useState(2);
-  const [baths, setBaths] = useState(2);
-  const [sqft, setSqft] = useState("");
-  const [status, setStatus] = useState("Available");
-  const [image, setImage] = useState(presets[0].url);
+  const [name, setName] = useState(propertyToEdit?.name ?? "");
+  const [address, setAddress] = useState(propertyToEdit?.address ?? "");
+  const [price, setPrice] = useState(propertyToEdit?.price ?? "");
+  const [salePrice, setSalePrice] = useState(propertyToEdit?.salePrice ?? "");
+  const [type, setType] = useState<"Sale" | "Rent" | "Both">(propertyToEdit?.type ?? "Sale");
+  const [beds, setBeds] = useState(propertyToEdit?.beds ?? 2);
+  const [baths, setBaths] = useState(propertyToEdit?.baths ?? 2);
+  const [sqft, setSqft] = useState(propertyToEdit?.sqft ?? "");
+  const [status, setStatus] = useState(propertyToEdit?.status ?? "Available");
+  const [image, setImage] = useState(propertyToEdit?.image ?? presets[0].url);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2869,19 +2903,34 @@ function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: ()
     e.preventDefault();
     if (!name.trim()) return;
     try {
-      await api.createProperty({
-        name,
-        address,
-        price,
-        salePrice: salePrice || price,
-        type,
-        beds,
-        baths,
-        sqft,
-        status,
-        image,
-        featured: false
-      });
+      if (propertyToEdit) {
+        await api.updateProperty(propertyToEdit.id, {
+          name,
+          address,
+          price,
+          salePrice: salePrice || price,
+          type,
+          beds,
+          baths,
+          sqft,
+          status,
+          image
+        });
+      } else {
+        await api.createProperty({
+          name,
+          address,
+          price,
+          salePrice: salePrice || price,
+          type,
+          beds,
+          baths,
+          sqft,
+          status,
+          image,
+          featured: false
+        });
+      }
       onSave();
     } catch (err) {
       console.error(err);
@@ -3104,6 +3153,7 @@ export default function App() {
   const [addLeadStage, setAddLeadStage] = useState<LeadStatus>("New");
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<any>(null);
 
   const refreshData = async () => {
     try {
@@ -3112,38 +3162,62 @@ export default function App() {
         setStats(data.stats);
         setAnalytics(data);
       }
+    } catch (e) {
+      console.error("Error loading analytics:", e);
+    }
 
+    try {
       const leadsData = await api.getLeads();
       if (Array.isArray(leadsData)) {
         setLeads(leadsData);
       }
+    } catch (e) {
+      console.error("Error loading leads:", e);
+    }
 
+    try {
       const propsData = await api.getProperties();
       if (Array.isArray(propsData)) {
         setProperties(propsData);
       }
+    } catch (e) {
+      console.error("Error loading properties:", e);
+    }
 
+    try {
       const tasksData = await api.getTasks();
       if (Array.isArray(tasksData)) {
         setTasks(tasksData);
       }
+    } catch (e) {
+      console.error("Error loading tasks:", e);
+    }
 
+    try {
       const aptsData = await api.getAppointments();
       if (Array.isArray(aptsData)) {
         setAppointments(aptsData);
       }
+    } catch (e) {
+      console.error("Error loading appointments:", e);
+    }
 
+    try {
       const fupsData = await api.getFollowups();
       if (Array.isArray(fupsData)) {
         setFollowups(fupsData);
       }
+    } catch (e) {
+      console.error("Error loading followups:", e);
+    }
 
+    try {
       const bcastsData = await api.getBroadcasts();
       if (Array.isArray(bcastsData)) {
         setBroadcasts(bcastsData);
       }
     } catch (e) {
-      console.error("Error loading data from backend API:", e);
+      console.error("Error loading broadcasts:", e);
     }
   };
 
@@ -3187,7 +3261,28 @@ export default function App() {
       case "leads":
         return <LeadsTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "properties":
-        return <PropertiesTab onAddProperty={() => setShowAddPropertyModal(true)} />;
+        return (
+          <PropertiesTab
+            onAddProperty={() => {
+              setEditingProperty(null);
+              setShowAddPropertyModal(true);
+            }}
+            onEditProperty={(prop) => {
+              setEditingProperty(prop);
+              setShowAddPropertyModal(true);
+            }}
+            onDeleteProperty={async (id) => {
+              if (confirm("Are you sure you want to delete this property?")) {
+                try {
+                  await api.deleteProperty(id);
+                  refreshData();
+                } catch (err) {
+                  console.error(err);
+                }
+              }
+            }}
+          />
+        );
       case "calendar":
         return <CalendarTab onAddAppointment={() => setShowAddAppointmentModal(true)} />;
       case "profile":
@@ -3260,7 +3355,11 @@ export default function App() {
           )}
           {showAddPropertyModal && (
             <AddPropertyModal
-              onClose={() => setShowAddPropertyModal(false)}
+              propertyToEdit={editingProperty}
+              onClose={() => {
+                setShowAddPropertyModal(false);
+                setEditingProperty(null);
+              }}
               onSave={refreshData}
             />
           )}

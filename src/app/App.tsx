@@ -1433,6 +1433,7 @@ function PipelineScreen({ onBack, openLead, onAddLead }: { onBack: () => void; o
   const pipelineStages = [
     { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
     { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
+    { stage: "Interested" as LeadStatus, leads: leads.filter((l) => l.status === "Interested") },
     { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
     { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
     { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },

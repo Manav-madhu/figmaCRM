@@ -486,7 +486,18 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
 function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: () => void }) {
-  const { leads, stats, tasks } = useContext(AppContext)!;
+  const { leads, stats, tasks, refreshData } = useContext(AppContext)!;
+
+  const toggleTask = async (id: number) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    try {
+      await api.toggleTask(id, !task.completed);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [greeting] = useState(() => {
     const h = new Date().getHours();
@@ -633,7 +644,13 @@ function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: (
               className="flex items-start gap-3 px-4 py-3"
               style={{ backgroundColor: t.overdue ? "#FFF5F5" : "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${BR}` : "none" }}
             >
-              <div className="w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5" style={{ borderColor: t.overdue ? RD : VIOLET }} />
+              <button
+                onClick={() => toggleTask(t.id)}
+                className="w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all hover:bg-slate-50 active:scale-90"
+                style={{ borderColor: t.overdue ? RD : VIOLET }}
+              >
+                {t.completed && <Check size={10} style={{ color: GR }} />}
+              </button>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-medium text-foreground">{t.title}</div>
                 {t.lead && (

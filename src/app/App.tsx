@@ -485,7 +485,7 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
-function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: () => void }) {
+function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
   const { leads, stats, tasks, refreshData } = useContext(AppContext)!;
 
   const toggleTask = async (id: number) => {
@@ -673,7 +673,11 @@ function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: (
         </div>
         <div className="flex flex-col gap-3">
           {leads.slice(0, 3).map((lead) => (
-            <div key={lead.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+            <div
+              key={lead.id}
+              onClick={() => openLead(lead.id)}
+              className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
+            >
               <Avatar initials={lead.initials} bg={lead.avatarBg} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -3034,7 +3038,7 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case "dashboard":
-        return <DashboardTab go={go} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
+        return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "leads":
         return <LeadsTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "properties":
@@ -3062,7 +3066,7 @@ export default function App() {
       case "import":
         return <ImportScreen onBack={back} />;
       default:
-        return <DashboardTab go={go} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
+        return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
     }
   };
 

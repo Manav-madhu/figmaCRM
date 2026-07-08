@@ -3287,7 +3287,7 @@ export default function App() {
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
       refreshData
     }}>
-      <div className="h-[100dvh] w-full bg-slate-50 flex items-center justify-center p-0 md:p-4">
+      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 md:p-4 overflow-hidden">
         <div
           className="relative flex flex-col overflow-hidden w-full max-w-md h-full md:h-[844px] md:rounded-3xl md:shadow-xl bg-white"
           style={{

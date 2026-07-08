@@ -3316,9 +3316,9 @@ export default function App() {
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
       refreshData
     }}>
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-0 md:p-4">
+      <div className="h-[100dvh] w-full bg-slate-50 flex items-center justify-center p-0 md:p-4">
         <div
-          className="relative flex flex-col overflow-hidden w-full max-w-md h-screen md:h-[844px] md:rounded-3xl md:shadow-xl bg-white"
+          className="relative flex flex-col overflow-hidden w-full max-w-md h-full md:h-[844px] md:rounded-3xl md:shadow-xl bg-white"
           style={{
             fontFamily: "'Inter', sans-serif",
           }}
@@ -3327,7 +3327,7 @@ export default function App() {
           <div className="flex-1 flex flex-col overflow-hidden">{renderScreen()}</div>
 
           {/* Bottom Nav */}
-          <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "8px" }}>
+          <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}>
             <div className="flex items-center">
               {navItems.map(({ key, label, icon: Icon }) => {
                 const active = screen === key;

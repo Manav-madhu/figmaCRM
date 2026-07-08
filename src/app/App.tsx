@@ -3221,46 +3221,18 @@ export default function App() {
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
       refreshData
     }}>
-      <div className="size-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 p-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-0 md:p-4">
         <div
-          className="relative flex flex-col overflow-hidden shadow-2xl"
+          className="relative flex flex-col overflow-hidden w-full max-w-md h-screen md:h-[844px] md:rounded-3xl md:shadow-xl bg-white"
           style={{
-            width: "min(390px, 100%)",
-            height: "min(844px, 100%)",
-            borderRadius: "44px",
-            backgroundColor: "#F2F1F8",
             fontFamily: "'Inter', sans-serif",
-            boxShadow: "0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.1)",
           }}
         >
-          {/* Phone status bar */}
-          <div className="flex items-center justify-between px-8 py-3 flex-shrink-0" style={{ backgroundColor: "#5B3FD9", paddingTop: "16px" }}>
-            <span className="text-white text-xs font-semibold">9:41</span>
-            <div className="w-24 h-5 bg-black rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
-            <div className="flex items-center gap-1.5">
-              <div className="flex gap-0.5 items-end">
-                {[3, 5, 7, 9].map((h, i) => (
-                  <div key={i} className="w-1 rounded-sm bg-white" style={{ height: h, opacity: i < 3 ? 1 : 0.4 }} />
-                ))}
-              </div>
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-                <path d="M8 2.5C9.9 2.5 11.6 3.3 12.8 4.6L14 3.4C12.5 1.9 10.4 1 8 1C5.6 1 3.5 1.9 2 3.4L3.2 4.6C4.4 3.3 6.1 2.5 8 2.5Z" fill="white" />
-                <path d="M8 5.5C9.1 5.5 10.2 5.9 11 6.7L12.2 5.5C11.1 4.5 9.6 3.9 8 3.9C6.4 3.9 4.9 4.5 3.8 5.5L5 6.7C5.8 5.9 6.9 5.5 8 5.5Z" fill="white" />
-                <circle cx="8" cy="10" r="1.5" fill="white" />
-              </svg>
-              <div className="flex items-center gap-0.5">
-                <div className="w-5 h-2.5 border border-white/70 rounded-sm p-0.5">
-                  <div className="w-3/4 h-full bg-white rounded-[1px]" />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Content */}
           <div className="flex-1 flex flex-col overflow-hidden">{renderScreen()}</div>
 
           {/* Bottom Nav */}
-          <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "24px", borderRadius: "0 0 44px 44px" }}>
+          <div className="flex-shrink-0 bg-white border-t border-border" style={{ paddingBottom: "8px" }}>
             <div className="flex items-center">
               {navItems.map(({ key, label, icon: Icon }) => {
                 const active = screen === key;

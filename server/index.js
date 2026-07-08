@@ -471,6 +471,27 @@ app.get('/api/followups', async (req, res) => {
   }
 });
 
+app.post('/api/followups', async (req, res) => {
+  const { leadId, name, initials, color, note, time, overdue = false } = req.body;
+  if (!name || !time) {
+    return res.status(400).json({ error: 'Name and time are required' });
+  }
+
+  const odVal = isProd ? overdue : (overdue ? 1 : 0);
+
+  try {
+    const result = await run(`
+      INSERT INTO followups (leadId, name, initials, color, note, time, overdue)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [leadId || null, name, initials || '', color || '#7C5CFC', note || '', time, odVal]);
+
+    res.status(201).json({ id: result.lastID, leadId, name, time });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create follow-up' });
+  }
+});
+
 // ─── BROADCASTS ROUTES ───────────────────────────────────────────────────────
 
 app.get('/api/broadcasts', async (req, res) => {

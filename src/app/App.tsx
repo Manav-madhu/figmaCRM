@@ -477,7 +477,7 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
-function DashboardTab({ go }: { go: (s: Screen) => void }) {
+function DashboardTab({ go, onAddLead }: { go: (s: Screen) => void; onAddLead: () => void }) {
   const { leads, stats, tasks } = useContext(AppContext)!;
 
   const [greeting] = useState(() => {
@@ -571,15 +571,15 @@ function DashboardTab({ go }: { go: (s: Screen) => void }) {
       <div className="px-5 mt-6">
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {[
-            { label: "+ Lead", bg: VIOLET, text: "#fff" },
+            { label: "+ Lead", bg: VIOLET, text: "#fff", action: onAddLead },
             { label: "+ Task", bg: "#fff", text: VIOLET, border: true, screen: "tasks" as Screen },
             { label: "Import Excel", bg: "#fff", text: VIOLET, border: true, screen: "import" as Screen },
             { label: "WhatsApp Hub", bg: WA, text: "#fff", screen: "whatsapp" as Screen },
           ].map((a, i) => (
             <button
               key={i}
-              onClick={() => a.screen && go(a.screen)}
-              className="flex-shrink-0 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5"
+              onClick={() => a.action ? a.action() : a.screen && go(a.screen)}
+              className="flex-shrink-0 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all hover:opacity-90 active:scale-95"
               style={{ backgroundColor: a.bg, color: a.text, border: a.border ? `1.5px solid ${VIOLET}` : "none", height: 40 }}
             >
               {a.label === "Import Excel" && <Upload size={12} />}
@@ -862,11 +862,50 @@ function LeadsTab({ go, openLead }: { go: (s: Screen) => void; openLead: (id: nu
 // ─── Screen: Lead Detail ────────────────────────────────────────────
 
 function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => void }) {
-  const { leads } = useContext(AppContext)!;
+  const { leads, followups, refreshData } = useContext(AppContext)!;
   const lead = leads.find((l) => l.id === leadId) ?? leads[0];
   const [tab, setTab] = useState("WhatsApp");
   const [msgText, setMsgText] = useState("");
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
+
+  const [notes, setNotes] = useState<any[]>([
+    { note: "Interested in corner unit. Wants to see the model unit first.", time: "Yesterday 4:30 PM" },
+    { note: "Budget flexible. Has existing mortgage — check refinance options.", time: "Jun 18, 11:00 AM" },
+  ]);
+  const [newNoteText, setNewNoteText] = useState("");
+
+  const [followupTime, setFollowupTime] = useState("");
+  const [followupNote, setFollowupNote] = useState("");
+
+  const handleAddNote = () => {
+    if (!newNoteText.trim()) return;
+    setNotes((prev) => [
+      { note: newNoteText, time: "Just now" },
+      ...prev
+    ]);
+    setNewNoteText("");
+  };
+
+  const handleAddFollowup = async () => {
+    if (!followupTime.trim()) return;
+    try {
+      const parsedTime = new Date(followupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " " + new Date(followupTime).toLocaleDateString([], { month: 'short', day: 'numeric' });
+      await api.createFollowup({
+        leadId: lead.id,
+        name: lead.name,
+        initials: lead.initials,
+        color: lead.avatarBg,
+        note: followupNote || "Follow-up",
+        time: parsedTime,
+        overdue: false
+      });
+      setFollowupTime("");
+      setFollowupNote("");
+      refreshData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const msgs = [
     { id: 1, sent: true, text: `Hello ${lead.name.split(" ")[0]}! Thank you for your interest in ${lead.project}. I'm Sarah from Heitkamp Realty.`, time: "10:02 AM", st: "read" },
@@ -1023,19 +1062,18 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <div className="px-4 py-5 space-y-3">
           <Card className="p-4">
             <textarea
-              className="w-full resize-none text-sm"
+              className="w-full resize-none text-sm bg-transparent"
               rows={3}
-              style={{ border: "none", outline: "none", color: DK, backgroundColor: "transparent" }}
+              style={{ border: "none", outline: "none", color: DK }}
               placeholder="Add a note about this lead..."
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
             />
-            <button className="mt-2 px-4 rounded-xl text-xs font-semibold text-white" style={{ backgroundColor: VIOLET, height: 44 }}>
+            <button onClick={handleAddNote} className="mt-2 px-4 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET, height: 44 }}>
               Add Note
             </button>
           </Card>
-          {[
-            { note: "Interested in corner unit. Wants to see the model unit first.", time: "Yesterday 4:30 PM" },
-            { note: "Budget flexible. Has existing mortgage — check refinance options.", time: "Jun 18, 11:00 AM" },
-          ].map((n, i) => (
+          {notes.map((n, i) => (
             <Card key={i} className="p-4">
               <div className="flex items-start gap-2">
                 <Star size={14} style={{ color: AMBER, marginTop: 2, flexShrink: 0 }} />
@@ -1051,15 +1089,27 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <div className="px-4 py-5 space-y-3">
           <Card className="p-4">
             <h3 className="text-sm font-semibold mb-3 text-foreground">Schedule Follow-up</h3>
-            <input type="datetime-local" className="w-full px-3 rounded-xl text-sm mb-3" style={{ border: `1px solid ${BR}`, color: DK, height: 48 }} />
-            <input className="w-full px-3 rounded-xl text-sm mb-3" style={{ border: `1px solid ${BR}`, color: DK, height: 48 }} placeholder="Add a note..." />
-            <button className="w-full rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: VIOLET, height: 48 }}>Schedule</button>
+            <input
+              type="datetime-local"
+              className="w-full px-3 rounded-xl text-sm mb-3"
+              style={{ border: `1px solid ${BR}`, color: DK, height: 48 }}
+              value={followupTime}
+              onChange={(e) => setFollowupTime(e.target.value)}
+            />
+            <input
+              className="w-full px-3 rounded-xl text-sm mb-3"
+              style={{ border: `1px solid ${BR}`, color: DK, height: 48 }}
+              placeholder="Add a note..."
+              value={followupNote}
+              onChange={(e) => setFollowupNote(e.target.value)}
+            />
+            <button onClick={handleAddFollowup} className="w-full rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET, height: 48 }}>Schedule</button>
           </Card>
-          {FOLLOWUPS.filter((f) => f.leadId === lead.id).map((f) => (
+          {followups.filter((f) => f.leadId === lead.id).map((f) => (
             <Card key={f.id} className="p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-foreground">Today, {f.time}</div>
+                  <div className="text-sm font-semibold text-foreground">{f.time}</div>
                   <div className="text-[13px] mt-1" style={{ color: BD }}>{f.note}</div>
                   <div className="mt-2"><LeadStatusBadge status="New" /></div>
                 </div>
@@ -1099,7 +1149,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
 
 // ─── Screen: Pipeline (Kanban) ───────────────────────────────────────
 
-function PipelineScreen({ onBack, openLead }: { onBack: () => void; openLead: (id: number) => void }) {
+function PipelineScreen({ onBack, openLead, onAddLead }: { onBack: () => void; openLead: (id: number) => void; onAddLead: (stage: LeadStatus) => void }) {
   const { leads } = useContext(AppContext)!;
   const pipelineStages = [
     { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
@@ -1147,7 +1197,11 @@ function PipelineScreen({ onBack, openLead }: { onBack: () => void; openLead: (i
                     No leads
                   </div>
                 )}
-                <button className="w-full rounded-xl flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground" style={{ border: `1.5px dashed ${BR}`, height: 44 }}>
+                <button
+                  onClick={() => onAddLead(stage.stage)}
+                  className="w-full rounded-xl flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition-all hover:bg-slate-100"
+                  style={{ border: `1.5px dashed ${BR}`, height: 44 }}
+                >
                   <Plus size={14} /> Add
                 </button>
               </div>
@@ -1706,7 +1760,7 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
 
 // ─── Tab: Properties (unchanged from original design) ─────────────────
 
-function PropertiesTab() {
+function PropertiesTab({ onAddProperty }: { onAddProperty: () => void }) {
   const { properties } = useContext(AppContext)!;
   const [typeFilter, setTypeFilter] = useState("All");
 
@@ -1717,7 +1771,7 @@ function PropertiesTab() {
       <div className="px-5 pt-12 pb-5 bg-white border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Properties</h1>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: VIOLET }}>
+          <button onClick={onAddProperty} className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET }}>
             <Plus size={16} className="text-white" />
           </button>
         </div>
@@ -1806,7 +1860,7 @@ function PropertiesTab() {
 
 // ─── Tab: Calendar (unchanged) ──────────────────────────────────────────
 
-function CalendarTab() {
+function CalendarTab({ onAddAppointment }: { onAddAppointment: () => void }) {
   const { appointments } = useContext(AppContext)!;
   const [activeDay, setActiveDay] = useState(todayIdx);
 
@@ -1842,7 +1896,7 @@ function CalendarTab() {
           <p className="text-sm font-semibold text-muted-foreground">
             {activeDay === todayIdx ? "Today" : weekDays[activeDay] + " · " + weekDates[activeDay] + " Jul"} — {appointments.length} events
           </p>
-          <button className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: VIOLET }}>
+          <button onClick={onAddAppointment} className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET }}>
             <Plus size={14} className="text-white" />
           </button>
         </div>
@@ -2246,6 +2300,279 @@ const navItems: { key: Tab; label: string; icon: typeof Home }[] = [
   { key: "profile", label: "Profile", icon: User },
 ];
 
+// ─── Modals: Add Lead, Add Property, Add Appointment ───────────────────
+
+function AddLeadModal({ stage, onClose, onSave }: { stage: LeadStatus; onClose: () => void; onSave: () => void }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [budget, setBudget] = useState("");
+  const [project, setProject] = useState("");
+  const [city, setCity] = useState("");
+  const [type, setType] = useState<"Buyer" | "Seller" | "Renter" | "Investor">("Buyer");
+  const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    try {
+      await api.createLead({
+        name,
+        phone,
+        email,
+        budget,
+        project,
+        city,
+        type,
+        priority,
+        status: stage,
+        tags: [type]
+      });
+      onSave();
+    } catch (err) {
+      console.error(err);
+    }
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Add New Lead ({stage})</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Name *</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Phone</label>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Email</label>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Budget</label>
+              <input value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="e.g. $850,000" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">City</label>
+              <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Project Interest</label>
+            <input value={project} onChange={(e) => setProject(e.target.value)} placeholder="e.g. Harbour View Tower" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Type</label>
+              <select value={type} onChange={(e: any) => setType(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm bg-white" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Renter">Renter</option>
+                <option value="Investor">Investor</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Priority</label>
+              <select value={priority} onChange={(e: any) => setPriority(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm bg-white" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
+            Save Lead
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddPropertyModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [price, setPrice] = useState("");
+  const [salePrice, setSalePrice] = useState("");
+  const [type, setType] = useState<"Sale" | "Rent" | "Both">("Sale");
+  const [beds, setBeds] = useState(2);
+  const [baths, setBaths] = useState(2);
+  const [sqft, setSqft] = useState("");
+  const [status, setStatus] = useState("Available");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    try {
+      await api.createProperty({
+        name,
+        address,
+        price,
+        salePrice: salePrice || price,
+        type,
+        beds,
+        baths,
+        sqft,
+        status,
+        featured: false
+      });
+      onSave();
+    } catch (err) {
+      console.error(err);
+    }
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Add New Property</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Property Name *</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Skyline Residences" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Address</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 850 Marina Blvd" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Price (e.g. Rent)</label>
+              <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. $2,400/mo" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Sale Price</label>
+              <input value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="e.g. $450,000" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Beds</label>
+              <input type="number" value={beds} onChange={(e) => setBeds(Number(e.target.value))} className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Baths</label>
+              <input type="number" value={baths} onChange={(e) => setBaths(Number(e.target.value))} className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Sqft</label>
+              <input value={sqft} onChange={(e) => setSqft(e.target.value)} placeholder="e.g. 1,200" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Type</label>
+              <select value={type} onChange={(e: any) => setType(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}>
+                <option value="Sale">For Sale</option>
+                <option value="Rent">For Rent</option>
+                <option value="Both">Both</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}>
+                <option value="Available">Available</option>
+                <option value="Pending">Pending</option>
+                <option value="Exclusive">Exclusive</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
+            Save Property
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddAppointmentModal({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
+  const [title, setTitle] = useState("");
+  const [sub, setSub] = useState("");
+  const [time, setTime] = useState("");
+  const [type, setType] = useState<"viewing" | "call" | "meeting" | "signing" | "internal">("viewing");
+
+  const colors = {
+    viewing: "#7C5CFC",
+    call: "#10B981",
+    signing: "#F59E0B",
+    meeting: "#3B82F6",
+    internal: "#8B5CF6"
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !time.trim()) return;
+    try {
+      await api.createAppointment({
+        title,
+        sub,
+        time,
+        type,
+        color: colors[type]
+      });
+      onSave();
+    } catch (err) {
+      console.error(err);
+    }
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Add Appointment</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Event Title *</label>
+            <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Property Viewing" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Details / Subtitle</label>
+            <input value={sub} onChange={(e) => setSub(e.target.value)} placeholder="e.g. Rohan Mehta · Skyline Residences" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Time *</label>
+              <input required value={time} onChange={(e) => setTime(e.target.value)} placeholder="e.g. 10:30 AM" className="w-full px-3.5 py-2.5 rounded-xl text-sm" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Event Type</label>
+              <select value={type} onChange={(e: any) => setType(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white" style={{ border: `1.5px solid ${BR}`, outline: "none", color: DK }}>
+                <option value="viewing">Property Viewing</option>
+                <option value="call">Follow-up Call</option>
+                <option value="meeting">Meeting</option>
+                <option value="signing">Lease Signing</option>
+                <option value="internal">Internal Sync</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
+            Save Appointment
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -2261,6 +2588,12 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
+
+  // Modal Visibility States
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [addLeadStage, setAddLeadStage] = useState<LeadStatus>("New");
+  const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
+  const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
 
   const refreshData = async () => {
     try {
@@ -2340,19 +2673,19 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case "dashboard":
-        return <DashboardTab go={go} />;
+        return <DashboardTab go={go} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "leads":
         return <LeadsTab go={go} openLead={openLead} />;
       case "properties":
-        return <PropertiesTab />;
+        return <PropertiesTab onAddProperty={() => setShowAddPropertyModal(true)} />;
       case "calendar":
-        return <CalendarTab />;
+        return <CalendarTab onAddAppointment={() => setShowAddAppointmentModal(true)} />;
       case "profile":
         return <ProfileTab go={go} />;
       case "lead-detail":
         return <LeadDetailScreen leadId={selectedLeadId} onBack={back} />;
       case "pipeline":
-        return <PipelineScreen onBack={back} openLead={openLead} />;
+        return <PipelineScreen onBack={back} openLead={openLead} onAddLead={(stage) => { setAddLeadStage(stage); setShowAddLeadModal(true); }} />;
       case "followups":
         return <FollowUpsScreen onBack={back} />;
       case "tasks":
@@ -2368,7 +2701,7 @@ export default function App() {
       case "import":
         return <ImportScreen onBack={back} />;
       default:
-        return <DashboardTab go={go} />;
+        return <DashboardTab go={go} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
     }
   };
 
@@ -2434,6 +2767,27 @@ export default function App() {
               })}
             </div>
           </div>
+
+          {/* Modals overlay */}
+          {showAddLeadModal && (
+            <AddLeadModal
+              stage={addLeadStage}
+              onClose={() => setShowAddLeadModal(false)}
+              onSave={refreshData}
+            />
+          )}
+          {showAddPropertyModal && (
+            <AddPropertyModal
+              onClose={() => setShowAddPropertyModal(false)}
+              onSave={refreshData}
+            />
+          )}
+          {showAddAppointmentModal && (
+            <AddAppointmentModal
+              onClose={() => setShowAddAppointmentModal(false)}
+              onSave={refreshData}
+            />
+          )}
         </div>
       </div>
     </AppContext.Provider>

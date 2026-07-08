@@ -58,6 +58,11 @@ export const api = {
   }).then(r => r.json()),
 
   getFollowups: () => fetch('/api/followups').then(r => r.json()),
+  createFollowup: (fup: any) => fetch('/api/followups', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fup)
+  }).then(r => r.json()),
 
   getBroadcasts: () => fetch('/api/broadcasts').then(r => r.json()),
   createBroadcast: (broadcast: any) => fetch('/api/broadcasts', {

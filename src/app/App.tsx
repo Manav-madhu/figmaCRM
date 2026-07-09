@@ -966,9 +966,9 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                   <button onClick={() => openWhatsApp(lead.phone)} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 rounded-bl-2xl" style={{ backgroundColor: WA, height: 44 }}>
                     <MessageCircle size={15} /> WhatsApp
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border" style={{ color: VIOLET, height: 44 }}>
+                  <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border hover:bg-slate-50 transition-all" style={{ color: VIOLET, height: 44 }}>
                     <Phone size={15} /> Call
-                  </button>
+                  </a>
                   <div className="relative">
                     <button
                       className="px-4 flex items-center justify-center border-l border-border text-muted-foreground hover:bg-slate-50 transition-all"
@@ -1191,9 +1191,9 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           <button onClick={() => setTab("WhatsApp")} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 46 }}>
             <MessageCircle size={15} /> WhatsApp
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>
+          <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>
             <Phone size={15} /> Call
-          </button>
+          </a>
           <button className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold opacity-40" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>
             <Mail size={15} /> Email
           </button>
@@ -1869,9 +1869,9 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
                 <div className="text-xs text-muted-foreground">{lead.phone}</div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button className="w-9 h-9 rounded-full border flex items-center justify-center" style={{ borderColor: VIOLET, color: VIOLET }}>
+                <a href={`tel:${lead.phone}`} className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-slate-50 transition-all" style={{ borderColor: VIOLET, color: VIOLET }}>
                   <Phone size={15} />
-                </button>
+                </a>
                 <button
                   onClick={() => openLeadChat(lead.id)}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95"

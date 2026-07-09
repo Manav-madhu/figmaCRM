@@ -2518,61 +2518,109 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
 
 function CalendarTab({ onAddAppointment }: { onAddAppointment: () => void }) {
   const { appointments } = useContext(AppContext)!;
-  const [activeDay, setActiveDay] = useState(todayIdx);
+
+  // Generate current week dates dynamically (Monday through Sunday)
+  const now = new Date();
+  const currentDay = now.getDay();
+  const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distanceToMonday);
+
+  const weekDatesObj = Array.from({ length: 7 }).map((_, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    return d;
+  });
+
+  const initialTodayIdx = weekDatesObj.findIndex(d => d.toDateString() === now.toDateString());
+  const [activeDay, setActiveDay] = useState(initialTodayIdx !== -1 ? initialTodayIdx : 0);
+
+  const activeDate = weekDatesObj[activeDay];
+
+  // Helper to match appointments to activeDate
+  const isAppointmentOnDate = (apt: any, targetDate: Date) => {
+    if (/^\d{4}-\d{2}-\d{2}/.test(apt.time)) {
+      const aptDateStr = apt.time.substring(0, 10);
+      const targetDateStr = targetDate.toISOString().substring(0, 10);
+      return aptDateStr === targetDateStr;
+    }
+    // Treat legacy static times ("09:00", etc.) as today
+    const todayStr = new Date().toDateString();
+    return targetDate.toDateString() === todayStr;
+  };
+
+  const filteredAppointments = appointments.filter(apt => isAppointmentOnDate(apt, activeDate));
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-12 pb-5 bg-white border-b border-border">
         <div className="flex items-center justify-between mb-5">
           <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Calendar</h1>
-          <p className="text-sm text-muted-foreground font-medium">July 2025</p>
+          <p className="text-sm text-muted-foreground font-medium">
+            {activeDate.toLocaleString("default", { month: "long", year: "numeric" })}
+          </p>
         </div>
         <div className="flex gap-1">
-          {weekDays.map((day, i) => (
-            <button
-              key={day}
-              onClick={() => setActiveDay(i)}
-              className="flex-1 flex flex-col items-center py-2 rounded-2xl transition-all"
-              style={activeDay === i ? { backgroundColor: VIOLET } : {}}
-            >
-              <span className="text-[10px] font-semibold mb-1" style={{ color: activeDay === i ? "rgba(255,255,255,0.7)" : "#6B6B8A" }}>
-                {day}
-              </span>
-              <span className="text-sm font-bold" style={{ color: activeDay === i ? "white" : i === todayIdx ? VIOLET : "#1A1A2E" }}>
-                {weekDates[i]}
-              </span>
-              {i === todayIdx && activeDay !== todayIdx && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: VIOLET }} />}
-            </button>
-          ))}
+          {weekDatesObj.map((d, i) => {
+            const isToday = d.toDateString() === now.toDateString();
+            const dayName = d.toLocaleString("default", { weekday: "short" });
+            const dateNum = d.getDate();
+            return (
+              <button
+                key={i}
+                onClick={() => setActiveDay(i)}
+                className="flex-1 flex flex-col items-center py-2 rounded-2xl transition-all"
+                style={activeDay === i ? { backgroundColor: VIOLET } : {}}
+              >
+                <span className="text-[10px] font-semibold mb-1" style={{ color: activeDay === i ? "rgba(255,255,255,0.7)" : "#6B6B8A" }}>
+                  {dayName}
+                </span>
+                <span className="text-sm font-bold" style={{ color: activeDay === i ? "white" : isToday ? VIOLET : "#1A1A2E" }}>
+                  {dateNum}
+                </span>
+                {isToday && activeDay !== i && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: VIOLET }} />}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="px-5 pt-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-muted-foreground">
-            {activeDay === todayIdx ? "Today" : weekDays[activeDay] + " · " + weekDates[activeDay] + " Jul"} — {appointments.length} events
+            {activeDate.toDateString() === now.toDateString() ? "Today" : activeDate.toLocaleString("default", { weekday: "short", day: "numeric", month: "short" })} — {filteredAppointments.length} events
           </p>
           <button onClick={onAddAppointment} className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET }}>
             <Plus size={14} className="text-white" />
           </button>
         </div>
         <div className="flex flex-col gap-3">
-          {appointments.map((apt, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 shadow-sm flex gap-4">
-              <div className="flex flex-col items-center gap-2 pt-1">
-                <span className="text-xs font-bold" style={{ color: apt.color }}>{apt.time}</span>
-                <div className="w-0.5 flex-1 rounded-full min-h-6" style={{ backgroundColor: apt.color + "30" }} />
+          {filteredAppointments.map((apt, i) => {
+            const displayTime = /^\d{4}-\d{2}-\d{2}/.test(apt.time) ? apt.time.split(" at ")[1] || apt.time : apt.time;
+            return (
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm flex gap-4 border border-slate-50">
+                <div className="flex flex-col items-center gap-2 pt-1">
+                  <span className="text-xs font-bold" style={{ color: apt.color }}>{displayTime}</span>
+                  <div className="w-0.5 flex-1 rounded-full min-h-6" style={{ backgroundColor: apt.color + "30" }} />
+                </div>
+                <div className="w-1 rounded-full flex-shrink-0" style={{ backgroundColor: apt.color }} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{apt.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{apt.sub}</p>
+                  <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2" style={{ backgroundColor: apt.color + "15", color: apt.color }}>
+                    {apt.type.charAt(0).toUpperCase() + apt.type.slice(1)}
+                  </span>
+                </div>
               </div>
-              <div className="w-1 rounded-full flex-shrink-0" style={{ backgroundColor: apt.color }} />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">{apt.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{apt.sub}</p>
-                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2" style={{ backgroundColor: apt.color + "15", color: apt.color }}>
-                  {apt.type.charAt(0).toUpperCase() + apt.type.slice(1)}
-                </span>
-              </div>
+            );
+          })}
+          {filteredAppointments.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl p-6 border border-slate-50">
+              <span className="text-3xl">📭</span>
+              <p className="text-xs font-semibold text-slate-800 mt-2">No appointments scheduled</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">There are no tasks or viewings for this day.</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

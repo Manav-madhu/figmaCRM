@@ -1042,7 +1042,15 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const lead = leads.find((l) => l.id === leadId) ?? leads[0];
   const [tab, setTab] = useState("WhatsApp");
   const [msgText, setMsgText] = useState("");
+  const [showSharePropModal, setShowSharePropModal] = useState(false);
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
+
+  const handleSharePropertySelect = (prop: any) => {
+    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${lead.id}`;
+    const nameFirst = lead.name.split(" ")[0];
+    setMsgText(`Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`);
+    setShowSharePropModal(false);
+  };
 
   const [notes, setNotes] = useState<any[]>([
     { note: "Interested in corner unit. Wants to see the model unit first.", time: "Yesterday 4:30 PM" },
@@ -1157,6 +1165,9 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       case "Follow up":
         text = `Hi ${nameFirst}, just checking in on your interest in ${lead.project}. Do you have any questions about the floor plans or pricing?`;
         break;
+      case "Share Property":
+        setShowSharePropModal(true);
+        return;
       default:
         text = `Hello ${nameFirst}`;
     }
@@ -1236,7 +1247,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <div>
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2">
-              {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up"].map((t, i) => (
+              {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => (
                 <button
                   key={t}
                   onClick={() => handleTemplateClick(t)}
@@ -1420,6 +1431,46 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           ))}
         </div>
       )}
+
+      {showSharePropModal && (
+        <SharePropertyModal
+          onClose={() => setShowSharePropModal(false)}
+          onSelect={handleSharePropertySelect}
+        />
+      )}
+    </div>
+  );
+}
+
+function SharePropertyModal({ onClose, onSelect }: { onClose: () => void; onSelect: (prop: any) => void }) {
+  const { properties } = useContext(AppContext)!;
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[80%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Select Property to Share</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><X size={16} /></button>
+        </div>
+        <div className="space-y-2 mt-2">
+          {properties.map(p => (
+            <div
+              key={p.id}
+              onClick={() => onSelect(p)}
+              className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all active:scale-[0.98]"
+            >
+              <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-semibold text-foreground truncate">{p.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{p.address}</div>
+                <div className="text-xs font-bold mt-0.5" style={{ color: VIOLET }}>{p.price}</div>
+              </div>
+            </div>
+          ))}
+          {properties.length === 0 && (
+            <p className="text-xs text-muted-foreground italic text-center py-4">No properties available to share.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3425,6 +3476,26 @@ export default function App() {
     }
   };
 
+  const params = new URLSearchParams(window.location.search);
+  const viewParam = params.get("view");
+  const propertyIdParam = params.get("propertyId");
+  const leadIdParam = params.get("leadId");
+
+  if (viewParam === "public-property" && propertyIdParam && leadIdParam) {
+    return (
+      <AppContext.Provider value={{
+        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
+        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
+        refreshData
+      }}>
+        <PublicPropertyView
+          propertyId={parseInt(propertyIdParam)}
+          leadId={parseInt(leadIdParam)}
+        />
+      </AppContext.Provider>
+    );
+  }
+
   return (
     <AppContext.Provider value={{
       leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
@@ -3487,5 +3558,211 @@ export default function App() {
         </div>
       </div>
     </AppContext.Provider>
+  );
+}
+
+function PublicPropertyView({ propertyId, leadId }: { propertyId: number; leadId: number }) {
+  const { leads, properties, refreshData } = useContext(AppContext)!;
+  const [statusMsg, setStatusMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+
+  const lead = leads.find((l) => l.id === leadId);
+  const property = properties.find((p) => p.id === propertyId);
+
+  if (!lead || !property) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-600 mb-4" />
+        <h3 className="text-base font-semibold text-slate-800">Loading Property Review Listing...</h3>
+        <p className="text-xs text-slate-500 mt-1">Fetching property details from CRM database.</p>
+      </div>
+    );
+  }
+
+  const handleInterested = async () => {
+    setSubmitting(true);
+    try {
+      await api.updateLead(lead.id, { status: "Interested" });
+      setStatusMsg("Thank you! We have registered your interest in this property. Sarah Mitchell (your agent) has been notified and will reach out to you soon.");
+      refreshData();
+    } catch (e) {
+      console.error(e);
+      setStatusMsg("Failed to submit status update. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  const handleNotInterested = async () => {
+    setSubmitting(true);
+    try {
+      await api.updateLead(lead.id, { status: "Lost" });
+      setStatusMsg("Thank you for your feedback. We have recorded your response and will update your search preferences accordingly.");
+      refreshData();
+    } catch (e) {
+      console.error(e);
+      setStatusMsg("Failed to submit status update. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  const handleScheduleVisit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date || !time) return;
+    setSubmitting(true);
+    try {
+      await api.updateLead(lead.id, { status: "Visit Scheduled" });
+
+      const appointmentTime = `${date} at ${time}`;
+      await api.createAppointment({
+        time: appointmentTime,
+        title: `Site Visit: ${property.name}`,
+        sub: `Client: ${lead.name} (${lead.phone})`,
+        type: "viewing",
+        color: VIOLET
+      });
+
+      setStatusMsg(`Site visit scheduled! We have blocked your calendar and notified Sarah Mitchell for ${date} at ${time}.`);
+      setShowSchedule(false);
+      refreshData();
+    } catch (e) {
+      console.error(e);
+      setStatusMsg("Failed to schedule site visit. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-slate-50 pb-12 w-full max-w-lg mx-auto min-h-screen">
+      <div className="bg-white border-b border-border py-4 px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold" style={{ backgroundColor: VIOLET }}>H</div>
+          <div>
+            <h1 className="text-sm font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Heitkamp Realty</h1>
+            <p className="text-[10px] text-muted-foreground">Property Review Desk</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase">Your Agent</p>
+          <p className="text-xs font-semibold text-slate-800">Sarah Mitchell</p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <img src={property.image} alt={property.name} className="w-full h-64 object-cover" />
+        <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm shadow-sm rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+          {property.type}
+        </div>
+      </div>
+
+      <div className="bg-white p-6 shadow-sm border-b border-slate-100">
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{property.name}</h2>
+            <p className="text-sm text-slate-500 mt-1 flex items-center gap-1">📍 {property.address}</p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Asking Price</p>
+            <p className="text-xl font-black" style={{ color: VIOLET }}>{property.price}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mt-6 border-t border-slate-50 pt-5">
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase">Bedrooms</p>
+            <p className="text-base font-bold text-slate-800 mt-0.5">🛏 {property.beds} Beds</p>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase">Bathrooms</p>
+            <p className="text-base font-bold text-slate-800 mt-0.5">🚿 {property.baths} Baths</p>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 text-center">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase">Area Size</p>
+            <p className="text-base font-bold text-slate-800 mt-0.5">📐 {property.sqft} sqft</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-violet-50/50 p-6 border-b border-violet-100/50">
+        <p className="text-sm text-slate-800 leading-relaxed">
+          Hello <strong>{lead.name}</strong>, Sarah Mitchell has shared this property listing with you. Please review the details and let us know your level of interest using the options below:
+        </p>
+      </div>
+
+      {statusMsg && (
+        <div className="mx-6 mt-6 p-4 rounded-2xl border bg-emerald-50 border-emerald-100 text-emerald-800 text-sm font-medium">
+          🎉 {statusMsg}
+        </div>
+      )}
+
+      {!statusMsg && !showSchedule && (
+        <div className="px-6 mt-6 space-y-3">
+          <button
+            onClick={handleInterested}
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white py-3.5 transition-all hover:opacity-95 active:scale-[0.99]"
+            style={{ backgroundColor: GR }}
+          >
+            🟢 I'm Interested
+          </button>
+          <button
+            onClick={() => setShowSchedule(true)}
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white py-3.5 transition-all hover:opacity-95 active:scale-[0.99]"
+            style={{ backgroundColor: VIOLET }}
+          >
+            📅 Schedule Site Visit
+          </button>
+          <button
+            onClick={handleNotInterested}
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100/70 py-3.5 transition-all active:scale-[0.99]"
+          >
+            🔴 Not Interested
+          </button>
+        </div>
+      )}
+
+      {showSchedule && (
+        <form onSubmit={handleScheduleVisit} className="mx-6 mt-6 p-5 bg-white border border-slate-100 rounded-3xl shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-800">Select Date & Time</h3>
+            <button type="button" onClick={() => setShowSchedule(false)} className="text-slate-400 hover:text-slate-600 text-xs font-semibold">Cancel</button>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Visit Date</label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-slate-100"
+              style={{ outline: "none", color: DK }}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Visit Time</label>
+            <input
+              type="time"
+              required
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-slate-100"
+              style={{ outline: "none", color: DK }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl text-sm font-semibold text-white py-3 transition-all hover:opacity-90"
+            style={{ backgroundColor: VIOLET }}
+          >
+            Confirm Site Visit
+          </button>
+        </form>
+      )}
+    </div>
   );
 }

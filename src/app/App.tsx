@@ -1117,7 +1117,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     };
     setChatMessages((prev) => [...prev, newMsg]);
     setMsgText("");
-    api.sendWhatsApp(lead.phone, text).catch(console.error);
+    openWhatsApp(lead.phone, text);
 
     // Simulate checkmarks updating
     setTimeout(() => {
@@ -1989,7 +1989,7 @@ function WhatsAppScreen({ onBack, go, openLeadChat }: { onBack: () => void; go: 
   const handleRetry = (id: number) => {
     setQueueItems(prev => prev.map(item => {
       if (item.id === id) {
-        api.sendWhatsApp(item.phone, item.text).catch(console.error);
+        openWhatsApp(item.phone, item.text);
         return { ...item, status: "sent", error: undefined };
       }
       return item;

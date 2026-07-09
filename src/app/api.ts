@@ -72,4 +72,9 @@ export const api = {
   }).then(r => r.json()),
 
   getAnalytics: () => fetch('/api/analytics').then(r => r.json()),
+  sendWhatsApp: (phone: string, message: string) => fetch('/api/whatsapp/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, message })
+  }).then(r => r.json()),
 };

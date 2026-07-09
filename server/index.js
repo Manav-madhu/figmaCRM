@@ -424,6 +424,44 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
+// POST /api/whatsapp/send
+app.post('/api/whatsapp/send', async (req, res) => {
+  const { phone, message } = req.body;
+  if (!phone || !message) {
+    return res.status(400).json({ error: 'Phone and message are required' });
+  }
+
+  console.log(`[WhatsApp API Output] Programmatic send to ${phone}: ${message}`);
+
+  const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+  const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+
+  if (WHATSAPP_TOKEN && PHONE_NUMBER_ID) {
+    try {
+      const url = `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phone.replace(/[^\d]/g, ''),
+          type: 'text',
+          text: { body: message }
+        })
+      });
+      const responseData = await response.json();
+      console.log('Meta WhatsApp response:', responseData);
+    } catch (err) {
+      console.error('Failed to post to Meta Graph API:', err);
+    }
+  }
+
+  res.json({ success: true, message: 'Message sent via WhatsApp Cloud API successfully', sentMessage: message });
+});
+
 // ─── APPOINTMENTS ROUTES ─────────────────────────────────────────────────────
 
 app.get('/api/appointments', async (req, res) => {

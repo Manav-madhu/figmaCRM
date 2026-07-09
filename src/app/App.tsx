@@ -1048,6 +1048,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const [tab, setTab] = useState("WhatsApp");
   const [msgText, setMsgText] = useState("");
   const [showSharePropModal, setShowSharePropModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
 
   const handleSharePropertySelect = (prop: any) => {
@@ -1116,6 +1117,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     };
     setChatMessages((prev) => [...prev, newMsg]);
     setMsgText("");
+    api.sendWhatsApp(lead.phone, text).catch(console.error);
     openWhatsApp(lead.phone, text);
 
     // Simulate checkmarks updating
@@ -1190,11 +1192,20 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      <div className="px-5 pt-12 pb-5 bg-white border-b border-border flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#EDE9FF" }}>
-          <ArrowLeft size={16} style={{ color: VIOLET }} />
+      <div className="px-5 pt-12 pb-5 bg-white border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#EDE9FF" }}>
+            <ArrowLeft size={16} style={{ color: VIOLET }} />
+          </button>
+          <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Lead Detail</h1>
+        </div>
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="flex items-center gap-1.5 px-3 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 active:scale-95 shadow-sm"
+          style={{ backgroundColor: VIOLET, height: 36 }}
+        >
+          <Edit size={13} /> Edit Lead
         </button>
-        <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Lead Detail</h1>
       </div>
 
       {/* Hero */}
@@ -1443,6 +1454,127 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           onSelect={handleSharePropertySelect}
         />
       )}
+
+      {showEditModal && (
+        <EditLeadModal
+          lead={lead}
+          onClose={() => setShowEditModal(false)}
+          onSave={refreshData}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => void; onSave: () => void }) {
+  const [name, setName] = useState(lead.name);
+  const [phone, setPhone] = useState(lead.phone);
+  const [email, setEmail] = useState(lead.email);
+  const [budget, setBudget] = useState(lead.budget);
+  const [project, setProject] = useState(lead.project);
+  const [city, setCity] = useState(lead.city);
+  const [type, setType] = useState(lead.type);
+  const [priority, setPriority] = useState(lead.priority);
+  const [status, setStatus] = useState(lead.status);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    try {
+      await api.updateLead(lead.id, {
+        name,
+        phone,
+        email,
+        budget,
+        project,
+        city,
+        type,
+        priority,
+        status,
+        tags: [type]
+      });
+      onSave();
+    } catch (err) {
+      console.error(err);
+    }
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Edit Lead</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Name</label>
+              <input required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Phone</label>
+              <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Email</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Budget</label>
+              <input value={budget} onChange={e => setBudget(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Project</label>
+              <input value={project} onChange={e => setProject(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">City</label>
+              <input value={city} onChange={e => setCity(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Type</label>
+              <select value={type} onChange={e => setType(e.target.value as any)} className="w-full px-2 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }}>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Renter">Renter</option>
+                <option value="Investor">Investor</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Priority</label>
+              <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full px-2 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }}>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full px-2 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }}>
+                <option value="New">New</option>
+                <option value="Contacted">Contacted</option>
+                <option value="Interested">Interested</option>
+                <option value="Qualified">Qualified</option>
+                <option value="Visit Scheduled">Visit Scheduled</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Booked">Booked</option>
+                <option value="Lost">Lost</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
+            Save Changes
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

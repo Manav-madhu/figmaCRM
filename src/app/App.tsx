@@ -940,7 +940,12 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
                     <Avatar initials={lead.initials} bg={lead.avatarBg} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <span className="text-[15px] font-semibold text-foreground">{lead.name}</span>
+                        <span
+                          onClick={() => openLead(lead.id)}
+                          className="text-[15px] font-bold text-slate-800 hover:text-violet-700 hover:underline cursor-pointer transition-all"
+                        >
+                          {lead.name}
+                        </span>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-[13px] font-bold" style={{ color: VIOLET }}>{lead.budget}</span>
                           <LeadStatusBadge status={lead.status} />

@@ -1171,7 +1171,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         break;
       case "Site Visit":
         text = `Hi ${nameFirst}, would you be available for a site visit this weekend to see the model unit at ${lead.project}?`;
-        newStatus = "Visit Scheduled";
+        setShowLocalScheduleVisit(true);
         break;
       case "Pricing Request":
         text = `Sure! Pricing details for ${lead.project} start around ${lead.budget}. Let me know if you would like the payment schedule.`;

@@ -2628,7 +2628,6 @@ function ProfileTab({ go }: { go: (s: Screen) => void }) {
     { label: "Analytics", sub: "Performance & revenue", icon: TrendingUp, screen: "analytics" },
     { label: "Import Leads", sub: "Import from Excel/CSV", icon: Upload, screen: "import" },
     { label: "Settings", sub: "Business profile & WhatsApp API", icon: SettingsIcon, screen: "settings" },
-    { label: "Logout", sub: "Log out of Heitkamp CRM session", icon: LogOut, screen: "logout" as any },
   ];
 
   return (
@@ -3526,7 +3525,6 @@ export default function App() {
   const [analytics, setAnalytics] = useState<any>(null);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [history, setHistory] = useState<Screen[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
 
@@ -3612,12 +3610,6 @@ export default function App() {
   const isRootTab = (s: Screen): s is Tab => rootTabs.includes(s);
 
   const go = (s: Screen) => {
-    if ((s as string) === "logout") {
-      setIsLoggedIn(false);
-      setScreen("dashboard");
-      setHistory([]);
-      return;
-    }
     setHistory((h) => [...h, screen]);
     setScreen(s);
   };
@@ -3728,17 +3720,7 @@ export default function App() {
     );
   }
 
-  if (!isLoggedIn) {
-    return (
-      <AppContext.Provider value={{
-        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
-        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
-        refreshData
-      }}>
-        <AuthPortalScreen onLoginSuccess={() => setIsLoggedIn(true)} />
-      </AppContext.Provider>
-    );
-  }
+
 
   return (
     <AppContext.Provider value={{

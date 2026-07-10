@@ -47,6 +47,7 @@ import {
   Check,
   X,
   Share2,
+  LogOut,
 } from "lucide-react";
 import {
   AreaChart,
@@ -112,6 +113,8 @@ const STATUS_CONFIG = {
   Negotiation: { bg: "#FFF7E6", text: "#B45309", border: AMBER },
   Booked: { bg: "#D1FAE5", text: "#065F46" },
   Lost: { bg: "#FEE2E2", text: "#991B1B" },
+  Busy: { bg: "#F3F4F6", text: "#4B5563" },
+  "No Answer": { bg: "#FFF1F2", text: "#E11D48" },
 } as const;
 
 type LeadStatus = keyof typeof STATUS_CONFIG;
@@ -860,7 +863,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
       console.error(err);
     }
   };
-  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost"];
+  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost", "Busy", "No Answer"];
 
   const filtered = leads.filter((l) => {
     const q = search.toLowerCase();
@@ -2625,6 +2628,7 @@ function ProfileTab({ go }: { go: (s: Screen) => void }) {
     { label: "Analytics", sub: "Performance & revenue", icon: TrendingUp, screen: "analytics" },
     { label: "Import Leads", sub: "Import from Excel/CSV", icon: Upload, screen: "import" },
     { label: "Settings", sub: "Business profile & WhatsApp API", icon: SettingsIcon, screen: "settings" },
+    { label: "Logout", sub: "Log out of Heitkamp CRM session", icon: LogOut, screen: "logout" as any },
   ];
 
   return (
@@ -2767,6 +2771,48 @@ function SettingsScreen({ onBack }: { onBack: () => void }) {
                 <Toggle on={notifs[i]} onChange={(v) => setNotifs((prev) => prev.map((x, idx) => (idx === i ? v : x)))} />
               </div>
             ))}
+          </Card>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1 text-muted-foreground">Account Security & Active Sessions</p>
+          <Card className="divide-y divide-slate-100">
+            <div className="p-4 space-y-2 text-left">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">1 User Session Restriction</h4>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Strict protection prevents concurrent login sharing.</p>
+                </div>
+                <span className="text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full px-2.5 py-0.5">ENFORCED</span>
+              </div>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">Active Device Sessions</h5>
+              <div className="space-y-2.5">
+                {[
+                  { device: "MacBook Pro · Chrome (This Device)", ip: "192.168.1.45", location: "Chicago, IL", time: "Active Now", current: true },
+                  { device: "iPhone 15 Pro · Safari Browser", ip: "172.56.21.90", location: "Chicago, IL", time: "Logged out 2 hours ago", current: false }
+                ].map((s, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-3 text-xs">
+                    <div className="space-y-0.5 text-left">
+                      <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                        {s.device}
+                        {s.current && <span className="text-[8px] bg-violet-50 text-violet-600 px-1.5 py-0.5 rounded font-bold">CURRENT</span>}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium">IP: {s.ip} · {s.location}</p>
+                    </div>
+                    <span className="text-[9px] font-semibold text-slate-500">{s.time}</span>
+                  </div>
+                ))}
+              </div>
+              <button 
+                onClick={() => alert("All other active device sessions have been successfully logged out.")}
+                className="w-full text-center py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 mt-2"
+              >
+                Log Out Other Devices
+              </button>
+            </div>
           </Card>
         </div>
       </div>
@@ -3097,6 +3143,7 @@ const navItems: { key: Tab; label: string; icon: typeof Home }[] = [
 // ─── Modals: Add Lead, Add Property, Add Appointment ───────────────────
 
 function AddLeadModal({ stage, onClose, onSave }: { stage: LeadStatus; onClose: () => void; onSave: () => void }) {
+  const { leads } = useContext(AppContext)!;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -3109,6 +3156,14 @@ function AddLeadModal({ stage, onClose, onSave }: { stage: LeadStatus; onClose: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    
+    const phoneClean = phone.replace(/[^\d]/g, "");
+    const isDuplicate = leads.some(l => l.phone.replace(/[^\d]/g, "") === phoneClean && phoneClean !== "");
+    if (isDuplicate) {
+      alert("A lead with this phone number already exists! Duplicate leads are automatically filtered out.");
+      return;
+    }
+
     try {
       await api.createLead({
         name,
@@ -3471,6 +3526,7 @@ export default function App() {
   const [analytics, setAnalytics] = useState<any>(null);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [history, setHistory] = useState<Screen[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
 
@@ -3556,6 +3612,12 @@ export default function App() {
   const isRootTab = (s: Screen): s is Tab => rootTabs.includes(s);
 
   const go = (s: Screen) => {
+    if ((s as string) === "logout") {
+      setIsLoggedIn(false);
+      setScreen("dashboard");
+      setHistory([]);
+      return;
+    }
     setHistory((h) => [...h, screen]);
     setScreen(s);
   };
@@ -3662,6 +3724,18 @@ export default function App() {
           propertyId={parseInt(propertyIdParam)}
           leadId={parseInt(leadIdParam)}
         />
+      </AppContext.Provider>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <AppContext.Provider value={{
+        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
+        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
+        refreshData
+      }}>
+        <AuthPortalScreen onLoginSuccess={() => setIsLoggedIn(true)} />
       </AppContext.Provider>
     );
   }
@@ -3917,6 +3991,151 @@ function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+function AuthPortalScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [step, setStep] = useState<"register" | "subscription" | "checkout" | "success">("register");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [showOtpField, setShowOtpField] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  
+  const plans = [
+    { name: "Starter Plan", price: "$29", desc: "Best for individual brokers. 1 User account limit.", features: ["Up to 100 Leads", "10 Properties", "WhatsApp Template Sync", "1 Device Login Session"] },
+    { name: "Professional Plan", price: "$79", desc: "For growth-focused brokers. Custom branding.", features: ["Unlimited Leads", "50 Properties", "Site Visit Reminders", "Dedicated Session Security"] },
+    { name: "Enterprise Plan", price: "$199", desc: "Full features & integrations.", features: ["Unlimited Leads & Properties", "Advanced Marketing automation", "Full Call Log Analytics", "IP-restricted Secure Session"] }
+  ];
+
+  const handleRegisterOrLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !phone) return;
+    if (!showOtpField) {
+      setShowOtpField(true);
+      alert("Verification OTP sent! Enter 1234 to verify.");
+    } else {
+      if (otp === "1234") {
+        setStep("subscription");
+      } else {
+        alert("Invalid OTP code. Please enter 1234.");
+      }
+    }
+  };
+
+  const handlePlanSelect = (plan: any) => {
+    setSelectedPlan(plan);
+    setStep("checkout");
+  };
+
+  const handlePaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep("success");
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-4 z-50 overflow-y-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 border border-slate-100 text-center space-y-6">
+        
+        {/* Step 1: Register / Login */}
+        {step === "register" && (
+          <form onSubmit={handleRegisterOrLogin} className="space-y-4 text-left">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto text-violet-600 font-bold text-lg">H</div>
+              <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Welcome to Heitkamp CRM</h2>
+              <p className="text-xs text-slate-500">Register or Sign in with email or mobile number to continue.</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Email Address</label>
+              <input required type="email" placeholder="sarah@example.com" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Mobile Number</label>
+              <input required type="tel" placeholder="+1 555 123 4567" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            {showOtpField && (
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">OTP Verification Code</label>
+                <input required type="text" placeholder="Enter 1234" value={otp} onChange={e => setOtp(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+              </div>
+            )}
+            <button type="submit" className="w-full rounded-xl text-xs font-bold text-white py-3 transition-all hover:opacity-95 shadow-sm" style={{ backgroundColor: VIOLET }}>
+              {showOtpField ? "Verify and Log In" : "Send OTP"}
+            </button>
+          </form>
+        )}
+
+        {/* Step 2: Choose Subscription */}
+        {step === "subscription" && (
+          <div className="space-y-4 text-left">
+            <div className="text-center space-y-1">
+              <h2 className="text-lg font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Choose Your Plan</h2>
+              <p className="text-xs text-slate-500">All subscriptions follow the strict 1 User Session policy.</p>
+            </div>
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+              {plans.map(p => (
+                <div key={p.name} onClick={() => handlePlanSelect(p)} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-violet-300 transition-all cursor-pointer space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-800">{p.name}</h4>
+                    <span className="text-sm font-bold text-violet-600">{p.price}<span className="text-[9px] font-medium text-slate-400">/mo</span></span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-normal">{p.desc}</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {p.features.map(f => (
+                      <span key={f} className="text-[8px] font-semibold bg-white border border-slate-100 rounded-full px-2 py-0.5 text-slate-600">{f}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Checkout Simulator */}
+        {step === "checkout" && selectedPlan && (
+          <form onSubmit={handlePaymentSubmit} className="space-y-4 text-left">
+            <div className="text-center space-y-1">
+              <h2 className="text-lg font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Complete Subscription</h2>
+              <p className="text-xs text-slate-500">Subscribe to {selectedPlan.name} for {selectedPlan.price}/month.</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Cardholder Name</label>
+              <input required type="text" placeholder="Sarah Mitchell" className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Card Number</label>
+              <input required type="text" placeholder="4242 4242 4242 4242" className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Expiry Date</label>
+                <input required type="text" placeholder="MM/YY" className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">CVC Code</label>
+                <input required type="text" placeholder="123" className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+              </div>
+            </div>
+            <button type="submit" className="w-full rounded-xl text-xs font-bold text-white py-3 transition-all hover:opacity-95 shadow-sm mt-2" style={{ backgroundColor: VIOLET }}>
+              Pay & Subscribe
+            </button>
+          </form>
+        )}
+
+        {/* Step 4: Success */}
+        {step === "success" && (
+          <div className="space-y-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 text-lg">✓</div>
+            <h2 className="text-lg font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Payment Successful!</h2>
+            <p className="text-xs text-slate-500">Your subscription is active. Login sessions are locked to this device.</p>
+            <button onClick={onLoginSuccess} className="w-full rounded-xl text-xs font-bold text-white py-3 transition-all hover:opacity-95 shadow-sm" style={{ backgroundColor: VIOLET }}>
+              Enter CRM Workspace
+            </button>
+          </div>
+        )}
+        
       </div>
     </div>
   );

@@ -2639,6 +2639,234 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {/* Hidden PDF print container */}
+      <div id="analytics-print-report" style={{ display: "none" }} className="text-left space-y-6 p-6">
+        {/* Print Title Header */}
+        <div className="border-b-2 border-slate-800 pb-4 mb-6 text-left">
+          <h1 className="text-xl font-bold text-slate-800 uppercase tracking-wide">Heitkamp Realty CRM</h1>
+          <p className="text-sm font-bold text-slate-500 mt-1">Performance, Operations & Analytics Report</p>
+          <p className="text-[10px] text-slate-400 mt-1">Generated: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
+        </div>
+
+        {/* Section 1: Overview */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1.5 uppercase text-left">1. Business Overview & Revenue</h2>
+          
+          <div className="grid grid-cols-5 gap-3">
+            {[
+              { label: "Total Leads", value: String(leads.length) },
+              { label: "Revenue Closed", value: "$198k" },
+              { label: "Avg Deal Size", value: "$640k" },
+              { label: "Conversion Rate", value: conversionRate },
+              { label: "Hot Leads", value: String(hotLeadsCount) },
+            ].map((k, i) => (
+              <div key={i} className="border border-slate-200 p-3 rounded-2xl text-left">
+                <div className="text-[10px] text-slate-500 font-semibold">{k.label}</div>
+                <div className="text-base font-bold text-slate-800 mt-1">{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="border border-slate-200 p-4 rounded-2xl text-left">
+              <h3 className="text-xs font-bold text-slate-800 mb-2">Monthly Revenue ($k)</h3>
+              <div style={{ height: 150, width: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                    <Bar dataKey="v" fill={VIOLET} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="border border-slate-200 p-4 rounded-2xl text-left">
+              <h3 className="text-xs font-bold text-slate-800 mb-2">Sales Funnel Conversion</h3>
+              <div className="space-y-1.5 mt-2">
+                {funnelStages.map((f) => (
+                  <div key={f.stage} className="flex items-center gap-2 text-[10px]">
+                    <span className="w-20 text-slate-500 font-semibold text-left">{f.stage}</span>
+                    <div className="flex-1 h-3 rounded-full overflow-hidden bg-slate-100">
+                      <div className="h-full rounded-full" style={{ width: `${f.pct || 4}%`, backgroundColor: f.color }} />
+                    </div>
+                    <span className="w-8 text-right text-slate-600 font-bold">{f.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 2: Call & Follow-up Performance */}
+        <div className="page-break pt-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1.5 uppercase text-left">2. Operations & Agent Performance</h2>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-slate-200 p-4 rounded-2xl space-y-3 text-left">
+              <h3 className="text-xs font-bold text-slate-800">Call Performance Outcomes</h3>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-slate-800">452</div>
+                  <div className="text-[9px] text-slate-400">Dialed</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-emerald-600">82.4%</div>
+                  <div className="text-[9px] text-slate-400">Answered</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-violet-600">4.2m</div>
+                  <div className="text-[9px] text-slate-400">Duration</div>
+                </div>
+              </div>
+              <div className="space-y-2 mt-2">
+                {[
+                  { label: "Interested / Qualified", pct: 45, color: "#10B981" },
+                  { label: "Scheduled Callbacks", pct: 30, color: VIOLET },
+                  { label: "Line Busy Outcomes", pct: 15, color: AMBER },
+                  { label: "No Answer / Lost Leads", pct: 10, color: "#EF4444" }
+                ].map(o => (
+                  <div key={o.label} className="flex items-center gap-2 text-[10px]">
+                    <span className="w-28 text-slate-500 font-semibold truncate text-left">{o.label}</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${o.pct}%`, backgroundColor: o.color }} />
+                    </div>
+                    <span className="w-8 text-right text-slate-600 font-bold">{o.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-slate-200 p-4 rounded-2xl space-y-3 text-left">
+              <h3 className="text-xs font-bold text-slate-800">Follow-up Completion Metrics</h3>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-slate-800">184</div>
+                  <div className="text-[9px] text-slate-400">Scheduled</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-emerald-600">95.1%</div>
+                  <div className="text-[9px] text-slate-400">On-Time</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-rose-600">3.5%</div>
+                  <div className="text-[9px] text-slate-400">Overdue</div>
+                </div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl text-[10px] text-slate-600 leading-normal text-left">
+                On-time follow-ups directly correlate to a 2.4x higher conversion rate in site visit bookings across all lead segments.
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-slate-200 p-4 rounded-2xl text-left">
+            <h3 className="text-xs font-bold text-slate-800 mb-3">Agent Conversion Leaderboard</h3>
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] uppercase text-slate-400 font-bold">
+                  <th className="pb-2 text-left">Agent Name</th>
+                  <th className="pb-2 text-right">Closed Deals</th>
+                  <th className="pb-2 text-right">Gross Revenue</th>
+                  <th className="pb-2 text-right">Response Speed</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {[
+                  { name: "Sarah Mitchell (You)", closed: 34, rev: "$142,000", speed: "12 min" },
+                  { name: "Jim Halpert", closed: 22, rev: "$84,000", speed: "18 min" },
+                  { name: "Michael Scott", closed: 12, rev: "$45,000", speed: "42 min" },
+                  { name: "Dwight Schrute", closed: 31, rev: "$110,000", speed: "14 min" }
+                ].map((agent, i) => (
+                  <tr key={i}>
+                    <td className="py-2.5 text-slate-800 font-semibold text-left">{agent.name}</td>
+                    <td className="py-2.5 text-right text-emerald-600 font-bold">{agent.closed}</td>
+                    <td className="py-2.5 text-right font-semibold">{agent.rev}</td>
+                    <td className="py-2.5 text-right text-slate-500">{agent.speed}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section 3: Quality & Bookings */}
+        <div className="page-break pt-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1.5 uppercase text-left">3. Lead Quality & Bookings</h2>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-slate-200 p-4 rounded-2xl space-y-3 text-left">
+              <h3 className="text-xs font-bold text-slate-800 font-bold">Lead Quality Analytics</h3>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-slate-800">42%</div>
+                  <div className="text-[9px] text-slate-400">Hot Ratio</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-emerald-600">8.4 / 10</div>
+                  <div className="text-[9px] text-slate-400 font-medium">Lead Score</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-violet-600">Portal</div>
+                  <div className="text-[9px] text-slate-400">Top Inflow</div>
+                </div>
+              </div>
+              <div className="space-y-2 mt-2">
+                {[
+                  { source: "WhatsApp Broadcasts", pct: 72, color: WA },
+                  { source: "Real Estate Portals", pct: 54, color: VIOLET },
+                  { source: "Cold Call Campaigns", pct: 28, color: AMBER },
+                  { source: "Client Referrals", pct: 90, color: "#10B981" }
+                ].map(s => (
+                  <div key={s.source} className="flex items-center justify-between text-[10px]">
+                    <span className="text-slate-500 font-semibold text-left">{s.source}</span>
+                    <div className="flex items-center gap-2 flex-1 max-w-[120px] justify-end">
+                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${s.pct}%`, backgroundColor: s.color }} />
+                      </div>
+                      <span className="w-7 text-right text-slate-600 font-bold">{s.pct}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-slate-200 p-4 rounded-2xl space-y-3 text-left">
+              <h3 className="text-xs font-bold text-slate-800">Booking & Site Visit Performance</h3>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-slate-800">84</div>
+                  <div className="text-[9px] text-slate-400">Total Visits</div>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl">
+                  <div className="font-bold text-emerald-600">32</div>
+                  <div className="text-[9px] text-slate-400">Conversions</div>
+                </div>
+              </div>
+              <div className="space-y-2 mt-2">
+                {[
+                  { label: "Completed Site Visits", pct: 75, count: 63, color: "#10B981" },
+                  { label: "Pending Scheduled Visits", pct: 15, count: 13, color: VIOLET },
+                  { label: "Rescheduled / Delayed", pct: 7, count: 6, color: AMBER },
+                  { label: "Cancelled Visits", pct: 3, count: 2, color: "#EF4444" }
+                ].map(o => (
+                  <div key={o.label} className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-semibold text-slate-600">
+                      <span className="text-left">{o.label}</span>
+                      <span>{o.count} ({o.pct}%)</span>
+                    </div>
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${o.pct}%`, backgroundColor: o.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

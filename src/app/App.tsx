@@ -126,7 +126,8 @@ type Screen =
   | "broadcasts"
   | "analytics"
   | "settings"
-  | "import";
+  | "import"
+  | "marketing-automation";
 
 // ─── Mock data ────────────────────────────────────────────────────
 
@@ -675,6 +676,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
           {[
             { label: "+ Lead", bg: VIOLET, text: "#fff", action: onAddLead },
             { label: "+ Task", bg: "#fff", text: VIOLET, border: true, screen: "tasks" as Screen },
+            { label: "Automation", bg: "#EDE9FF", text: VIOLET, screen: "marketing-automation" as Screen },
             { label: "Import Excel", bg: "#fff", text: VIOLET, border: true, screen: "import" as Screen },
             { label: "WhatsApp Hub", bg: WA, text: "#fff", screen: "whatsapp" as Screen },
           ].map((a, i) => (
@@ -686,6 +688,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
             >
               {a.label === "Import Excel" && <Upload size={12} />}
               {a.label === "WhatsApp Hub" && <MessageCircle size={12} />}
+              {a.label === "Automation" && <Zap size={12} />}
               {a.label}
             </button>
           ))}
@@ -2644,6 +2647,7 @@ function ProfileTab({ go }: { go: (s: Screen) => void }) {
     { label: "Pipeline", sub: "Track deals by stage", icon: BarChart2, screen: "pipeline" },
     { label: "Follow-ups", sub: "Manage your callbacks", icon: Clock, screen: "followups" },
     { label: "Tasks", sub: `${overdueTasksCount} overdue, ${pendingTasksCount} pending`, icon: CheckCircle2, screen: "tasks" },
+    { label: "Marketing Automation", sub: "Triggers, follow-ups & auto drip", icon: Zap, screen: "marketing-automation" },
     { label: "WhatsApp Hub", sub: "Broadcasts, templates & more", icon: MessageCircle, screen: "whatsapp" },
     { label: "Broadcasts", sub: "Send to many leads at once", icon: Share2, screen: "broadcasts" },
     { label: "Analytics", sub: "Performance & revenue", icon: TrendingUp, screen: "analytics" },
@@ -3655,6 +3659,8 @@ export default function App() {
         return <SettingsScreen onBack={back} />;
       case "import":
         return <ImportScreen onBack={back} />;
+      case "marketing-automation":
+        return <MarketingAutomationScreen onBack={back} />;
       default:
         return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
     }
@@ -3742,6 +3748,190 @@ export default function App() {
         </div>
       </div>
     </AppContext.Provider>
+  );
+}
+
+function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
+  const { leads, refreshData } = useContext(AppContext)!;
+  const [selectedLeadId, setSelectedLeadId] = useState<string>("");
+  const [selectedTrigger, setSelectedTrigger] = useState("Qualified");
+  const [logs, setLogs] = useState<string[]>([]);
+  const [simulating, setSimulating] = useState(false);
+  const [campaigns, setCampaigns] = useState([
+    { id: 1, name: "New Lead Welcome Sequence", description: "Triggered on new lead addition. Sends brochure & checks back in 2 days.", steps: 3, enabled: true },
+    { id: 2, name: "Post-Viewing Nurturer", description: "Triggered when site visit is completed. Drives negotiations.", steps: 4, enabled: true },
+    { id: 3, name: "Cold Re-engagement", description: "Triggered after 14 days of no contact. Shares pricing drops.", steps: 2, enabled: false }
+  ]);
+
+  const toggleCampaign = (id: number) => {
+    setCampaigns(prev => prev.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c));
+  };
+
+  const handleSimulate = async () => {
+    if (!selectedLeadId) {
+      alert("Please select a lead first!");
+      return;
+    }
+    const lead = leads.find(l => l.id === parseInt(selectedLeadId));
+    if (!lead) return;
+
+    setSimulating(true);
+    setLogs([]);
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    setLogs(prev => [...prev, `⏳ Listening for triggers on lead: "${lead.name}"...`]);
+    await sleep(600);
+    setLogs(prev => [...prev, `⚡ Trigger detected: Lead Status changed to "${selectedTrigger}"`]);
+    await sleep(800);
+    setLogs(prev => [...prev, `🔍 Matching active automation rules for status "${selectedTrigger}"...`]);
+    await sleep(700);
+
+    let messageText = "";
+    if (selectedTrigger === "Qualified") {
+      messageText = `Hi ${lead.name.split(" ")[0]}, thank you for confirming your requirements. I've prepared a customized list of premium units in ${lead.project}. Let me know if you would like me to share it!`;
+      setLogs(prev => [...prev, `🚀 Firing Meta WhatsApp Cloud API request payload to: ${lead.phone}`]);
+      await sleep(1000);
+      setLogs(prev => [...prev, `📨 Message Content: "${messageText}"`]);
+      await sleep(600);
+      setLogs(prev => [...prev, `✅ Meta response: 200 OK (wamid: ${Math.random().toString(36).substring(7)})`]);
+    } else if (selectedTrigger === "Visit Scheduled") {
+      messageText = `Hi ${lead.name.split(" ")[0]}, looking forward to meeting you for the site visit at ${lead.project}. Please ensure you carry a valid ID card. See you soon!`;
+      setLogs(prev => [...prev, `🚀 Firing Meta WhatsApp Cloud API request payload to: ${lead.phone}`]);
+      await sleep(1000);
+      setLogs(prev => [...prev, `📨 Message Content: "${messageText}"`]);
+      await sleep(600);
+      setLogs(prev => [...prev, `✅ Meta response: 200 OK (wamid: ${Math.random().toString(36).substring(7)})`]);
+      await sleep(500);
+      setLogs(prev => [...prev, `📅 Creating automatic Calendar reminder...`]);
+      try {
+        await api.createAppointment({
+          time: "Tomorrow at 10:00 AM",
+          title: `Auto-Remind: Site Visit with ${lead.name}`,
+          sub: `Confirm client is on the way to ${lead.project}`,
+          type: "call",
+          color: "#10B981"
+        });
+        setLogs(prev => [...prev, `✅ Added to calendar: "Auto-Remind: Site Visit with ${lead.name}"`]);
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setLogs(prev => [...prev, `⚠️ No matching WhatsApp API template configured for: ${selectedTrigger}`]);
+    }
+
+    await sleep(500);
+    setLogs(prev => [...prev, `🏁 Automation run complete.`]);
+    setSimulating(false);
+    refreshData();
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-slate-50 pb-24" style={{ scrollbarWidth: "none" }}>
+      <ScreenHeader title="Marketing & Automation" onBack={onBack} />
+      <div className="px-5 py-5 space-y-6">
+        
+        {/* Campaigns Panel */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Drip Campaigns</h3>
+          <div className="space-y-3">
+            {campaigns.map(c => (
+              <div key={c.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-800">{c.name}</h4>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={c.enabled ? { backgroundColor: "#ECFDF5", color: "#059669" } : { backgroundColor: "#F1F5F9", color: "#64748B" }}>
+                      {c.enabled ? "ACTIVE" : "PAUSED"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">{c.description}</p>
+                  <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wider">{c.steps} automated steps</p>
+                </div>
+                <button
+                  onClick={() => toggleCampaign(c.id)}
+                  className="px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all"
+                  style={c.enabled ? { backgroundColor: "#FEE2E2", color: "#EF4444" } : { backgroundColor: VIOLET, color: "white" }}
+                >
+                  {c.enabled ? "Pause" : "Activate"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Triggers Panel */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>System Triggers</h3>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Rule #1: Lead Status Qualified</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Send custom property listing introduction template.</p>
+              </div>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Rule #2: Lead Status Visit Scheduled</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Send preparation templates and schedule calendar callbacks.</p>
+              </div>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Simulator Panel */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Automation Simulator</h3>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Select Lead</label>
+              <select
+                value={selectedLeadId}
+                onChange={e => setSelectedLeadId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800"
+                style={{ outline: "none" }}
+              >
+                <option value="">Choose a Lead...</option>
+                {leads.map(l => (
+                  <option key={l.id} value={l.id}>{l.name} ({l.phone})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Simulate Status Transition</label>
+              <select
+                value={selectedTrigger}
+                onChange={e => setSelectedTrigger(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800"
+                style={{ outline: "none" }}
+              >
+                <option value="Qualified">Qualified (Interested)</option>
+                <option value="Visit Scheduled">Visit Scheduled</option>
+              </select>
+            </div>
+            <button
+              onClick={handleSimulate}
+              disabled={simulating}
+              className="w-full rounded-xl text-xs font-bold text-white py-3 transition-all hover:opacity-95 flex items-center justify-center gap-1.5 shadow-sm"
+              style={{ backgroundColor: VIOLET }}
+            >
+              <Zap size={13} /> {simulating ? "Simulating..." : "Trigger Simulated Event"}
+            </button>
+
+            {/* Live Logs Console */}
+            {logs.length > 0 && (
+              <div className="bg-slate-900 rounded-xl p-4 font-mono text-[10px] text-emerald-400 space-y-1.5 overflow-hidden max-h-60 overflow-y-auto">
+                <p className="text-slate-400 border-b border-slate-800 pb-1 mb-2">Automation Console Output:</p>
+                {logs.map((log, index) => (
+                  <p key={index} className="leading-relaxed">{log}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }
 

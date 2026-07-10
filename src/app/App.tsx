@@ -1108,53 +1108,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     }
   };
 
-  const [chatMessages, setChatMessages] = useState<any[]>([
-    { id: 1, sent: true, text: `Hello ${lead.name.split(" ")[0]}! Thank you for your interest in ${lead.project}. I'm Sarah from Heitkamp Realty.`, time: "10:02 AM", st: "read" },
-    { id: 2, sent: false, text: "Hi! Yes, I saw the listing online. Can you share the pricing details?", time: "10:05 AM", st: "" },
-    { id: 3, sent: true, text: `Sure! Units start at ${lead.budget}. Shall I send the full brochure?`, time: "10:08 AM", st: "read" },
-    { id: 4, sent: false, text: "Yes please, and the floor plan too.", time: "10:12 AM", st: "" },
-    { id: 5, sent: true, text: "📄 Brochure.pdf\nFloor plans coming separately.", time: "10:15 AM", st: "delivered" },
-    { id: 6, sent: true, text: "Available for a site visit this weekend?", time: "10:16 AM", st: "failed" },
-  ]);
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      sent: true,
-      text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      st: "sent"
-    };
-    setChatMessages((prev) => [...prev, newMsg]);
-    setMsgText("");
-    openWhatsApp(lead.phone, text);
-
-    // Simulate checkmarks updating
-    setTimeout(() => {
-      setChatMessages((prev) =>
-        prev.map((m) => (m.id === newMsg.id ? { ...m, st: "delivered" } : m))
-      );
-    }, 1000);
-
-    setTimeout(() => {
-      setChatMessages((prev) =>
-        prev.map((m) => (m.id === newMsg.id ? { ...m, st: "read" } : m))
-      );
-    }, 2000);
-
-    // Simulate mock reply after 3 seconds
-    setTimeout(() => {
-      const reply = {
-        id: Date.now() + 1,
-        sent: false,
-        text: `Thanks for the update! I will review this and get back to you shortly.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        st: ""
-      };
-      setChatMessages((prev) => [...prev, reply]);
-    }, 3500);
-  };
 
   const handleTemplateClick = async (temp: string) => {
     let text = "";
@@ -1188,8 +1142,6 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       default:
         text = `Hello ${nameFirst}`;
     }
-    setMsgText(text);
-
     if (newStatus) {
       try {
         await api.updateLead(lead.id, { status: newStatus });
@@ -1197,6 +1149,10 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       } catch (err) {
         console.error("Failed to update lead status:", err);
       }
+    }
+
+    if (text) {
+      openWhatsApp(lead.phone, text);
     }
   };
 
@@ -1271,82 +1227,28 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       </div>
 
       {tab === "WhatsApp" && (
-        <div>
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-2">
-              {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => (
-                <button
-                  key={t}
-                  onClick={() => handleTemplateClick(t)}
-                  className="bg-white rounded-xl p-3 text-center border border-border transition-all hover:bg-slate-50 active:scale-95"
-                >
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center mx-auto mb-1" style={{ backgroundColor: "#ECFDF5" }}>
-                    <MessageSquare size={12} style={{ color: WA }} />
-                  </div>
-                  <div className="text-[11px] font-semibold text-foreground">{t}</div>
-                  {i < 3 && <div className="text-[9px] font-semibold mt-0.5" style={{ color: GR }}>✓ APPROVED</div>}
-                </button>
-              ))}
-            </div>
+        <div className="p-4 space-y-4">
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
+            <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span>💬</span> WhatsApp Approved Templates
+            </h4>
+            <p className="text-[11px] text-slate-500 mt-1">Select an approved marketing template below to send it directly to this lead via WhatsApp.</p>
           </div>
-          <div className="px-4 pb-4 space-y-3">
-            {chatMessages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sent ? "justify-end" : "justify-start"}`}>
-                <div
-                  className="max-w-[80%] px-3 py-2.5 rounded-2xl"
-                  style={{
-                    backgroundColor: msg.sent ? "#EDE9FF" : "#F5F5F5",
-                    borderTopLeftRadius: msg.sent ? 16 : 4,
-                    borderTopRightRadius: msg.sent ? 4 : 16,
-                    border: msg.st === "failed" ? `1px solid ${RD}` : "none",
-                  }}
-                >
-                  <p className="text-sm whitespace-pre-line text-foreground">{msg.text}</p>
-                  <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[10px] text-muted-foreground">{msg.time}</span>
-                    {msg.st === "read" && <span className="text-[10px]" style={{ color: VIOLET }}>✓✓</span>}
-                    {msg.st === "delivered" && <span className="text-[10px] text-muted-foreground">✓✓</span>}
-                    {msg.st === "failed" && <span className="text-[10px]" style={{ color: RD }}>✗ Failed · <u>Retry</u></span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {["Sure!", "Send brochure", "Call you soon", "Site visit?"].map((r) => (
+          <div className="grid grid-cols-3 gap-2">
+            {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => (
               <button
-                key={r}
-                onClick={() => sendMessage(r)}
-                className="flex-shrink-0 px-3 rounded-full text-xs font-medium bg-white transition-all hover:bg-slate-50 active:scale-95"
-                style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 34 }}
+                key={t}
+                onClick={() => handleTemplateClick(t)}
+                className="bg-white rounded-xl p-3 text-center border border-border transition-all hover:bg-slate-50 active:scale-95 shadow-sm"
               >
-                {r}
+                <div className="w-6 h-6 rounded-md flex items-center justify-center mx-auto mb-1" style={{ backgroundColor: "#ECFDF5" }}>
+                  <MessageSquare size={12} style={{ color: WA }} />
+                </div>
+                <div className="text-[11px] font-semibold text-foreground">{t}</div>
+                {i < 3 && <div className="text-[9px] font-semibold mt-0.5" style={{ color: GR }}>✓ APPROVED</div>}
               </button>
             ))}
           </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              sendMessage(msgText);
-            }}
-            className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border"
-          >
-            <button type="button" className="text-muted-foreground"><Paperclip size={20} /></button>
-            <input
-              className="flex-1 px-3 rounded-xl text-sm"
-              style={{ border: `1px solid ${BR}`, height: 44, outline: "none", color: DK }}
-              placeholder="Type a message..."
-              value={msgText}
-              onChange={(e) => setMsgText(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: WA }}
-            >
-              <Send size={15} style={{ transform: "translateX(1px)" }} />
-            </button>
-          </form>
         </div>
       )}
 

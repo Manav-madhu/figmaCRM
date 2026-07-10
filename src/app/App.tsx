@@ -839,7 +839,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
 
 // ─── Tab: Leads ─────────────────────────────────────────────────────
 
-function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
+function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void; onScheduleVisit: (lead: any) => void }) {
   const { leads, refreshData } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
@@ -847,6 +847,13 @@ function LeadsTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLe
 
   const handleQuickStatus = async (leadId: number, status: LeadStatus) => {
     try {
+      if (status === "Visit Scheduled") {
+        const lead = leads.find(l => l.id === leadId);
+        if (lead) {
+          onScheduleVisit(lead);
+          return;
+        }
+      }
       await api.updateLead(leadId, { status });
       refreshData();
     } catch (err) {
@@ -1052,6 +1059,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const [msgText, setMsgText] = useState("");
   const [showSharePropModal, setShowSharePropModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showLocalScheduleVisit, setShowLocalScheduleVisit] = useState(false);
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
 
   const handleSharePropertySelect = (prop: any) => {
@@ -1227,6 +1235,43 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
             <Mail size={15} /> Email
           </button>
         </div>
+
+        {/* Quick status responses */}
+        <div className="flex gap-2 mt-3.5">
+          <button
+            onClick={async () => {
+              try {
+                await api.updateLead(lead.id, { status: "Interested" });
+                refreshData();
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all border border-emerald-200/30 flex items-center justify-center gap-1 active:scale-95"
+          >
+            <span>🟢</span> Interested
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await api.updateLead(lead.id, { status: "Lost" });
+                refreshData();
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 transition-all border border-red-200/30 flex items-center justify-center gap-1 active:scale-95"
+          >
+            <span>🔴</span> Not Interested
+          </button>
+          <button
+            onClick={() => setShowLocalScheduleVisit(true)}
+            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all border border-violet-200/30 flex items-center justify-center gap-1 active:scale-95"
+          >
+            <span>📅</span> Site Visit
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-2 mt-4 text-left">
           {[
             { icon: MapPin, label: "City", value: lead.city },
@@ -1464,6 +1509,14 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           onSave={refreshData}
         />
       )}
+
+      {showLocalScheduleVisit && (
+        <ScheduleVisitModal
+          lead={lead}
+          onClose={() => setShowLocalScheduleVisit(false)}
+          onSave={refreshData}
+        />
+      )}
     </div>
   );
 }
@@ -1574,6 +1627,59 @@ function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => vo
           </div>
           <button type="submit" className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90" style={{ backgroundColor: VIOLET }}>
             Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () => void; onSave: () => void }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date || !time) return;
+    setSubmitting(true);
+    try {
+      await api.updateLead(lead.id, { status: "Visit Scheduled" });
+      const appointmentTime = `${date} at ${time}`;
+      await api.createAppointment({
+        time: appointmentTime,
+        title: `Site Visit: ${lead.project}`,
+        sub: `Client: ${lead.name} (${lead.phone})`,
+        type: "viewing",
+        color: VIOLET
+      });
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[80%] overflow-y-auto text-left" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Schedule Site Visit</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+          <p className="text-xs text-slate-500">Confirm the site visit date and time for <strong>{lead.name}</strong> to view <strong>{lead.project}</strong>.</p>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Select Date</label>
+            <input required type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Select Time</label>
+            <input required type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }} />
+          </div>
+          <button type="submit" disabled={submitting} className="w-full rounded-xl text-sm font-semibold text-white py-3 mt-4 transition-all hover:opacity-90 flex items-center justify-center" style={{ backgroundColor: VIOLET }}>
+            {submitting ? "Scheduling..." : "Confirm Site Visit"}
           </button>
         </form>
       </div>
@@ -3505,6 +3611,7 @@ export default function App() {
   // Modal Visibility States
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
   const [addLeadStage, setAddLeadStage] = useState<LeadStatus>("New");
+  const [schedulingLead, setSchedulingLead] = useState<any | null>(null);
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
@@ -3613,7 +3720,14 @@ export default function App() {
       case "dashboard":
         return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
       case "leads":
-        return <LeadsTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
+        return (
+          <LeadsTab
+            go={go}
+            openLead={openLead}
+            onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }}
+            onScheduleVisit={(lead) => setSchedulingLead(lead)}
+          />
+        );
       case "properties":
         return (
           <PropertiesTab
@@ -3726,6 +3840,13 @@ export default function App() {
             <AddLeadModal
               stage={addLeadStage}
               onClose={() => setShowAddLeadModal(false)}
+              onSave={refreshData}
+            />
+          )}
+          {schedulingLead && (
+            <ScheduleVisitModal
+              lead={schedulingLead}
+              onClose={() => setSchedulingLead(null)}
               onSave={refreshData}
             />
           )}

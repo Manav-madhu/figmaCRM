@@ -2247,6 +2247,7 @@ function BroadcastsScreen({ onBack }: { onBack: () => void }) {
 function AnalyticsScreen({ onBack }: { onBack: () => void }) {
   const { leads, analytics } = useContext(AppContext)!;
   const [range, setRange] = useState("30d");
+  const [subTab, setSubTab] = useState<"Overview" | "Performance" | "Quality">("Overview");
 
   const weeklyData = analytics?.weekly || WEEKLY;
   const revenueData = analytics?.revenue || REVENUE;
@@ -2332,98 +2333,311 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
         }
       />
       <div className="px-5 py-5 space-y-5">
-        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-          {[
-            { label: "Total Leads", value: String(leads.length), color: VIOLET },
-            { label: "Revenue", value: "$198k", color: GR },
-            { label: "Avg Deal", value: "$640k", color: "#3B82F6" },
-            { label: "Conversion", value: conversionRate, color: GR },
-            { label: "Hot Leads", value: String(hotLeadsCount), color: AMBER },
-          ].map((k, i) => (
-            <Card key={i} className="p-4 flex-shrink-0" style={{ minWidth: 110 }}>
-              <div className="text-xl font-bold leading-tight" style={{ color: k.color === AMBER ? DK : k.color }}>{k.value}</div>
-              <div className="text-[11px] mt-1 text-muted-foreground">{k.label}</div>
-            </Card>
+        
+        {/* Sub tabs navigation */}
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-2xl no-print">
+          {["Overview", "Performance", "Quality"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSubTab(tab as any)}
+              className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
+              style={{
+                backgroundColor: subTab === tab ? "white" : "transparent",
+                color: subTab === tab ? VIOLET : "#6B6B8A",
+                boxShadow: subTab === tab ? "0 1px 3px rgba(0,0,0,0.05)" : "none"
+              }}
+            >
+              {tab === "Quality" ? "Quality & Bookings" : tab}
+            </button>
           ))}
         </div>
 
-        <Card className="p-4">
-          <h2 className="text-[15px] font-semibold mb-1 text-foreground">Weekly Trend</h2>
-          <div className="flex gap-4 mb-3">
-            {[{ color: VIOLET, label: "New Leads" }, { color: GR, label: "Booked" }].map((l) => (
-              <div key={l.label} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: l.color }} />
-                <span className="text-[11px]" style={{ color: BD }}>{l.label}</span>
-              </div>
-            ))}
-          </div>
-          <ResponsiveContainer width="100%" height={150}>
-            <AreaChart data={weeklyData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BR}` }} />
-              <Area type="monotone" dataKey="leads" stroke={VIOLET} fill={`${VIOLET}22`} strokeWidth={2} />
-              <Area type="monotone" dataKey="booked" stroke={GR} fill={`${GR}22`} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-4">
-          <h2 className="text-[15px] font-semibold mb-4 text-foreground">Monthly Revenue ($k)</h2>
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={revenueData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BR}` }} formatter={(v: any) => [`$${v}k`]} />
-              <Bar dataKey="v" radius={[4, 4, 0, 0]}>
-                {revenueData.map((_, i) => <Cell key={i} fill={i === revenueData.length - 1 ? GR : VIOLET} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-4">
-          <h2 className="text-[15px] font-semibold mb-4 text-foreground">Lead Sources</h2>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width={130} height={130}>
-              <PieChart>
-                <Pie data={sourcesData} cx="50%" cy="50%" innerRadius={38} outerRadius={62} dataKey="value" paddingAngle={3}>
-                  {sourcesData.map((s, i) => <Cell key={i} fill={s.color} />)}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2 flex-1">
-              {sourcesData.map((s, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="text-xs" style={{ color: BD }}>{s.name}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-foreground">{s.value}%</span>
-                </div>
+        {/* 1. Overview Subtab */}
+        {subTab === "Overview" && (
+          <div className="space-y-5">
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {[
+                { label: "Total Leads", value: String(leads.length), color: VIOLET },
+                { label: "Revenue", value: "$198k", color: GR },
+                { label: "Avg Deal", value: "$640k", color: "#3B82F6" },
+                { label: "Conversion", value: conversionRate, color: GR },
+                { label: "Hot Leads", value: String(hotLeadsCount), color: AMBER },
+              ].map((k, i) => (
+                <Card key={i} className="p-4 flex-shrink-0" style={{ minWidth: 110 }}>
+                  <div className="text-xl font-bold leading-tight" style={{ color: k.color === AMBER ? DK : k.color }}>{k.value}</div>
+                  <div className="text-[11px] mt-1 text-muted-foreground">{k.label}</div>
+                </Card>
               ))}
             </div>
-          </div>
-        </Card>
 
-        <Card className="p-4">
-          <h2 className="text-[15px] font-semibold mb-4 text-foreground">Sales Funnel</h2>
-          <div className="space-y-2">
-            {funnelStages.map((f) => (
-              <div key={f.stage} className="flex items-center gap-2">
-                <span className="text-[11px] w-24 flex-shrink-0" style={{ color: BD }}>{f.stage}</span>
-                <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: BR }}>
-                  <div className="h-full rounded-full flex items-center px-2" style={{ width: `${f.pct || 4}%`, backgroundColor: f.color, minWidth: 24 }}>
-                    {f.pct > 12 && <span className="text-[10px] font-bold text-white truncate">{f.count}</span>}
+            <Card className="p-4">
+              <h2 className="text-[15px] font-semibold mb-1 text-foreground">Weekly Trend</h2>
+              <div className="flex gap-4 mb-3">
+                {[{ color: VIOLET, label: "New Leads" }, { color: GR, label: "Booked" }].map((l) => (
+                  <div key={l.label} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: l.color }} />
+                    <span className="text-[11px]" style={{ color: BD }}>{l.label}</span>
+                  </div>
+                ))}
+              </div>
+              <ResponsiveContainer width="100%" height={150}>
+                <AreaChart data={weeklyData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BR}` }} />
+                  <Area type="monotone" dataKey="leads" stroke={VIOLET} fill={`${VIOLET}22`} strokeWidth={2} />
+                  <Area type="monotone" dataKey="booked" stroke={GR} fill={`${GR}22`} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="p-4">
+              <h2 className="text-[15px] font-semibold mb-4 text-foreground">Monthly Revenue Growth ($k)</h2>
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={revenueData} margin={{ top: 5, right: 0, left: -28, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={BR} vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: MT }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BR}` }} formatter={(v: any) => [`$${v}k`]} />
+                  <Bar dataKey="v" radius={[4, 4, 0, 0]}>
+                    {revenueData.map((_, i) => <Cell key={i} fill={i === revenueData.length - 1 ? GR : VIOLET} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="p-4">
+              <h2 className="text-[15px] font-semibold mb-4 text-foreground">Lead Sources</h2>
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width={130} height={130}>
+                  <PieChart>
+                    <Pie data={sourcesData} cx="50%" cy="50%" innerRadius={38} outerRadius={62} dataKey="value" paddingAngle={3}>
+                      {sourcesData.map((s, i) => <Cell key={i} fill={s.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 flex-1">
+                  {sourcesData.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                        <span className="text-xs" style={{ color: BD }}>{s.name}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-foreground">{s.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <h2 className="text-[15px] font-semibold mb-4 text-foreground">Sales Conversion Funnel</h2>
+              <div className="space-y-2">
+                {funnelStages.map((f) => (
+                  <div key={f.stage} className="flex items-center gap-2">
+                    <span className="text-[11px] w-24 flex-shrink-0 text-left" style={{ color: BD }}>{f.stage}</span>
+                    <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: BR }}>
+                      <div className="h-full rounded-full flex items-center px-2" style={{ width: `${f.pct || 4}%`, backgroundColor: f.color, minWidth: 24 }}>
+                        {f.pct > 12 && <span className="text-[10px] font-bold text-white truncate">{f.count}</span>}
+                      </div>
+                    </div>
+                    <span className="text-[11px] w-7 text-right flex-shrink-0 text-muted-foreground">{f.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* 2. Performance Subtab */}
+        {subTab === "Performance" && (
+          <div className="space-y-5">
+            {/* Call Performance */}
+            <Card className="p-4 space-y-4">
+              <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2 text-left">
+                <span>📞</span> Call Performance Report
+              </h2>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-slate-800">452</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Total Dialed</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-emerald-600">82.4%</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Answer Rate</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-violet-600">4.2 min</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Avg Duration</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">Call Outcome Distribution</h3>
+                {[
+                  { label: "Interested / Qualified", pct: 45, count: 203, color: "#10B981" },
+                  { label: "Scheduled Callbacks", pct: 30, count: 135, color: VIOLET },
+                  { label: "Line Busy Outcomes", pct: 15, count: 68, color: AMBER },
+                  { label: "No Answer / Lost Leads", pct: 10, count: 46, color: "#EF4444" }
+                ].map(o => (
+                  <div key={o.label} className="flex items-center gap-2 text-xs">
+                    <span className="w-32 text-left text-slate-600 font-medium truncate">{o.label}</span>
+                    <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${o.pct}%`, backgroundColor: o.color }} />
+                    </div>
+                    <span className="w-12 text-right text-slate-400 font-semibold">{o.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Follow-up Performance */}
+            <Card className="p-4 space-y-4">
+              <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2 text-left">
+                <span>⏱️</span> Follow-up Performance
+              </h2>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-slate-800">184</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Callbacks Set</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-emerald-600">95.1%</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">On-Time Rate</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-rose-600">3.5%</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Overdue Rate</div>
+                </div>
+              </div>
+              <div className="bg-violet-50/40 border border-violet-100/50 p-3 rounded-2xl space-y-1 text-left">
+                <h4 className="text-[11px] font-bold text-violet-800">💡 Follow-up Completion Insights</h4>
+                <p className="text-[10px] text-violet-600 leading-normal">On-time follow-ups lead to a <b>2.4x</b> higher site visit booking rate compared to callbacks delayed by more than 2 hours.</p>
+              </div>
+            </Card>
+
+            {/* Team Performance */}
+            <Card className="p-4 space-y-3">
+              <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2 text-left">
+                <span>👥</span> Team Performance Reports
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      <th className="pb-2 text-left">Agent</th>
+                      <th className="pb-2 text-right">Closed</th>
+                      <th className="pb-2 text-right">Revenue</th>
+                      <th className="pb-2 text-right">Response</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                    {[
+                      { name: "Sarah Mitchell (You)", closed: 34, rev: "$142k", speed: "12 min" },
+                      { name: "Jim Halpert", closed: 22, rev: "$84k", speed: "18 min" },
+                      { name: "Michael Scott", closed: 12, rev: "$45k", speed: "42 min" },
+                      { name: "Dwight Schrute", closed: 31, rev: "$110k", speed: "14 min" }
+                    ].map((agent, i) => (
+                      <tr key={i}>
+                        <td className="py-2.5 text-left text-slate-800 font-bold">{agent.name}</td>
+                        <td className="py-2.5 text-right text-emerald-600 font-bold">{agent.closed}</td>
+                        <td className="py-2.5 text-right font-bold">{agent.rev}</td>
+                        <td className="py-2.5 text-right text-slate-500">{agent.speed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* 3. Quality & Bookings Subtab */}
+        {subTab === "Quality" && (
+          <div className="space-y-5">
+            {/* Lead Quality */}
+            <Card className="p-4 space-y-4">
+              <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2 text-left">
+                <span>⭐</span> Lead Quality Analytics
+              </h2>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-slate-800">42%</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Hot Ratio</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-emerald-600">8.4 / 10</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Avg Score</div>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-2xl">
+                  <div className="text-base font-bold text-violet-600">Portal</div>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">Top Source</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">Source Conversion Rates</h3>
+                {[
+                  { source: "WhatsApp Broadcasts", pct: 72, color: WA },
+                  { source: "Real Estate Portals", pct: 54, color: VIOLET },
+                  { source: "Cold Call Campaigns", pct: 28, color: AMBER },
+                  { source: "Client Referrals", pct: 90, color: "#10B981" }
+                ].map(s => (
+                  <div key={s.source} className="flex items-center justify-between text-xs">
+                    <span className="text-slate-600 font-semibold text-left truncate">{s.source}</span>
+                    <div className="flex items-center gap-2 flex-1 max-w-[150px] justify-end">
+                      <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${s.pct}%`, backgroundColor: s.color }} />
+                      </div>
+                      <span className="w-7 text-right text-slate-500 font-bold">{s.pct}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Booking Report */}
+            <Card className="p-4 space-y-4">
+              <h2 className="text-[15px] font-bold text-foreground flex items-center gap-2 text-left">
+                <span>📅</span> Booking & Site Visit Report
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-2xl flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 font-bold text-base">84</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Total Visits</h4>
+                    <p className="text-[9px] text-muted-foreground">Scheduled visits</p>
                   </div>
                 </div>
-                <span className="text-[11px] w-7 text-right flex-shrink-0 text-muted-foreground">{f.pct}%</span>
+                <div className="bg-slate-50 p-3 rounded-2xl flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-base">32</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800">Conversions</h4>
+                    <p className="text-[9px] text-muted-foreground">Visits to deals</p>
+                  </div>
+                </div>
               </div>
-            ))}
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">Site Visit Progress Outcomes</h3>
+                {[
+                  { label: "Completed Site Visits", pct: 75, count: 63, color: "#10B981" },
+                  { label: "Pending Scheduled Visits", pct: 15, count: 13, color: VIOLET },
+                  { label: "Rescheduled / Delayed", pct: 7, count: 6, color: AMBER },
+                  { label: "Cancelled Visits", pct: 3, count: 2, color: "#EF4444" }
+                ].map(o => (
+                  <div key={o.label} className="space-y-1 text-left">
+                    <div className="flex justify-between text-[11px] font-semibold text-slate-600">
+                      <span>{o.label}</span>
+                      <span>{o.count} ({o.pct}%)</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${o.pct}%`, backgroundColor: o.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
           </div>
-        </Card>
+        )}
       </div>
     </div>
   );

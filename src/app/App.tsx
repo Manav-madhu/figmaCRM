@@ -2269,23 +2269,65 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
     pct: Math.round((f.count / totalInFunnel) * 100)
   }));
 
+  const handleDownloadPDF = () => {
+    const style = document.createElement("style");
+    style.id = "print-pdf-styles";
+    style.innerHTML = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #analytics-pdf-content, #analytics-pdf-content * {
+          visibility: visible;
+        }
+        #analytics-pdf-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 20px;
+          background: white;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => {
+      const el = document.getElementById("print-pdf-styles");
+      if (el) el.remove();
+    }, 1000);
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
+    <div id="analytics-pdf-content" className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <ScreenHeader
         title="Analytics"
         onBack={onBack}
         right={
-          <div className="flex gap-1 p-1 rounded-full" style={{ backgroundColor: "#EDE9FF" }}>
-            {["30d", "90d", "12m"].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className="px-3 rounded-full text-xs font-semibold"
-                style={{ backgroundColor: range === r ? VIOLET : "transparent", color: range === r ? "#fff" : VIOLET, height: 28 }}
-              >
-                {r}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 p-1 rounded-full no-print" style={{ backgroundColor: "#EDE9FF" }}>
+              {["30d", "90d", "12m"].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className="px-3 rounded-full text-xs font-semibold"
+                  style={{ backgroundColor: range === r ? VIOLET : "transparent", color: range === r ? "#fff" : VIOLET, height: 28 }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 transition-all hover:bg-slate-200 active:scale-95 no-print"
+              title="Download PDF Report"
+              style={{ minWidth: 32 }}
+            >
+              <Download size={15} />
+            </button>
           </div>
         }
       />

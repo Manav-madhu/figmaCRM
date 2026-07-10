@@ -648,7 +648,7 @@ function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; op
       </div>
 
       {/* Stats */}
-      <div className="px-5 -mt-5">
+      <div className="px-5 mt-5">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {stats.map((s) => {
             const Icon = getIcon(s.label);

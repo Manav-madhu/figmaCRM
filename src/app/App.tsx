@@ -1068,8 +1068,9 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const handleSharePropertySelect = (prop: any) => {
     const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${lead.id}`;
     const nameFirst = lead.name.split(" ")[0];
-    setMsgText(`Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`);
+    const text = `Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`;
     setShowSharePropModal(false);
+    openWhatsApp(lead.phone, text);
   };
 
   const [notes, setNotes] = useState<any[]>([

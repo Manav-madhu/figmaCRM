@@ -1236,42 +1236,6 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           </button>
         </div>
 
-        {/* Quick status responses */}
-        <div className="flex gap-2 mt-3.5">
-          <button
-            onClick={async () => {
-              try {
-                await api.updateLead(lead.id, { status: "Interested" });
-                refreshData();
-              } catch (e) {
-                console.error(e);
-              }
-            }}
-            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all border border-emerald-200/30 flex items-center justify-center gap-1 active:scale-95"
-          >
-            <span>🟢</span> Interested
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await api.updateLead(lead.id, { status: "Lost" });
-                refreshData();
-              } catch (e) {
-                console.error(e);
-              }
-            }}
-            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-red-700 bg-red-50 hover:bg-red-100 transition-all border border-red-200/30 flex items-center justify-center gap-1 active:scale-95"
-          >
-            <span>🔴</span> Not Interested
-          </button>
-          <button
-            onClick={() => setShowLocalScheduleVisit(true)}
-            className="flex-1 py-2 px-3 rounded-xl text-[11px] font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all border border-violet-200/30 flex items-center justify-center gap-1 active:scale-95"
-          >
-            <span>📅</span> Site Visit
-          </button>
-        </div>
-
         <div className="grid grid-cols-2 gap-2 mt-4 text-left">
           {[
             { icon: MapPin, label: "City", value: lead.city },

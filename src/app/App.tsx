@@ -1200,18 +1200,20 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     let text = "";
     let newStatus: LeadStatus | null = null;
     const nameFirst = lead.name.split(" ")[0];
+    let shouldRedirect = true;
+
     switch (temp) {
       case "Interested":
-        text = `Hi ${nameFirst}, thank you for your interest! I'm glad you're looking into ${lead.project}. When would be a good time to discuss details?`;
         newStatus = "Interested";
+        shouldRedirect = false;
         break;
       case "Not Interested":
-        text = `Understood, ${nameFirst}. Thank you for letting me know. I'll update your status for ${lead.project}. Let me know if your requirements change in the future.`;
         newStatus = "Lost";
+        shouldRedirect = false;
         break;
       case "Site Visit":
-        text = `Hi ${nameFirst}, would you be available for a site visit this weekend to see the model unit at ${lead.project}?`;
         setShowLocalScheduleVisit(true);
+        shouldRedirect = false;
         break;
       case "Pricing Request":
         text = `Sure! Pricing details for ${lead.project} start around ${lead.budget}. Let me know if you would like the payment schedule.`;
@@ -1228,6 +1230,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       default:
         text = `Hello ${nameFirst}`;
     }
+
     if (newStatus) {
       try {
         await api.updateLead(lead.id, { status: newStatus });
@@ -1237,7 +1240,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
       }
     }
 
-    if (text) {
+    if (shouldRedirect && text) {
       openWhatsApp(lead.phone, text);
     }
   };

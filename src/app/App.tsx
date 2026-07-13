@@ -1327,19 +1327,34 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
             <p className="text-[11px] text-slate-500 mt-1">Select an approved marketing template below to send it directly to this lead via WhatsApp.</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => (
-              <button
-                key={t}
-                onClick={() => handleTemplateClick(t)}
-                className="bg-white rounded-xl p-3 text-center border border-border transition-all hover:bg-slate-50 active:scale-95 shadow-sm"
-              >
-                <div className="w-6 h-6 rounded-md flex items-center justify-center mx-auto mb-1" style={{ backgroundColor: "#ECFDF5" }}>
-                  <MessageSquare size={12} style={{ color: WA }} />
-                </div>
-                <div className="text-[11px] font-semibold text-foreground">{t}</div>
-                {i < 3 && <div className="text-[9px] font-semibold mt-0.5" style={{ color: GR }}>✓ APPROVED</div>}
-              </button>
-            ))}
+            {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => {
+              const isSelected = 
+                (t === "Interested" && lead.status === "Interested") ||
+                (t === "Not Interested" && lead.status === "Lost") ||
+                (t === "Site Visit" && lead.status === "Visit Scheduled");
+
+              return (
+                <button
+                  key={t}
+                  onClick={() => handleTemplateClick(t)}
+                  className={`rounded-xl p-3 text-center border transition-all hover:bg-slate-50 active:scale-95 shadow-sm ${
+                    isSelected 
+                      ? "bg-emerald-50/40 border-emerald-300" 
+                      : "bg-white border-border"
+                  }`}
+                >
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center mx-auto mb-1" style={{ backgroundColor: "#ECFDF5" }}>
+                    <MessageSquare size={12} style={{ color: WA }} />
+                  </div>
+                  <div className="text-[11px] font-semibold text-foreground">{t}</div>
+                  {isSelected ? (
+                    <div className="text-[9px] font-extrabold mt-0.5 text-emerald-600">✓ SELECTED</div>
+                  ) : (
+                    i < 3 && <div className="text-[9px] font-semibold mt-0.5" style={{ color: GR }}>✓ APPROVED</div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

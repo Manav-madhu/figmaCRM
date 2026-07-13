@@ -1147,11 +1147,37 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const [showLocalScheduleVisit, setShowLocalScheduleVisit] = useState(false);
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
 
-  const handleSharePropertySelect = (prop: any) => {
+  const handleSharePropertySelect = async (prop: any) => {
     const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${lead.id}`;
     const nameFirst = lead.name.split(" ")[0];
     const text = `Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`;
     setShowSharePropModal(false);
+
+    // Auto-create a note describing that we shared the link and are waiting for response
+    setNotes((prev) => [
+      { note: `System Note: Shared property listing "${prop.name}". Waiting for lead response.`, time: "Just now" },
+      ...prev
+    ]);
+
+    // Auto-create a scheduled follow-up in the database for 24 hours from now
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const followTime = tomorrow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " " + tomorrow.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      await api.createFollowup({
+        leadId: lead.id,
+        name: lead.name,
+        initials: lead.initials,
+        color: lead.avatarBg,
+        note: `Follow-up: No response from lead after sharing property ${prop.name}`,
+        time: followTime,
+        overdue: false
+      });
+      refreshData();
+    } catch (err) {
+      console.error("Failed to create automatic follow-up:", err);
+    }
+
     openWhatsApp(lead.phone, text);
   };
 

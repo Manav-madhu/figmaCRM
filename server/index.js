@@ -176,6 +176,14 @@ app.put('/api/leads/:id', async (req, res) => {
       `, [req.params.id, updatedName, updatedInitials, current.avatarBg, `Status changed to ${status}`, 'Just now']);
     }
 
+    // Clear automatic "No response" followups if lead responded
+    if (status && ['Interested', 'Lost', 'Visit Scheduled'].includes(status)) {
+      await run(`
+        DELETE FROM followups 
+        WHERE leadId = ? AND note LIKE '%No response from lead%'
+      `, [req.params.id]);
+    }
+
     res.json({ message: 'Lead updated successfully' });
   } catch (err) {
     console.error(err);

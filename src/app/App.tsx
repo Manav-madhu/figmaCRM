@@ -25,6 +25,7 @@ import {
   Plus,
   Filter,
   MoreHorizontal,
+  MoreVertical,
   MessageSquare,
   MessageCircle,
   Bed,
@@ -872,12 +873,61 @@ function DashboardTab({
 // ─── Tab: Leads ─────────────────────────────────────────────────────
 
 function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void; onScheduleVisit: (lead: any) => void }) {
-  const { leads, refreshData } = useContext(AppContext)!;
+  const { leads, refreshData, setLeads } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
   const [activePill, setActivePill] = useState<"All" | "Hot">("All");
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"recent" | "alphabetical">("recent");
+
+  const [activeDropdownLeadId, setActiveDropdownLeadId] = useState<number | null>(null);
+  const [sharePropLead, setSharePropLead] = useState<any | null>(null);
+
+  const handleStatusChange = async (lead: any, newStatus: LeadStatus) => {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === lead.id ? { ...l, status: newStatus } : l))
+    );
+
+    try {
+      const updateData: any = { status: newStatus };
+      if (newStatus === "Interested") updateData.linkResponse = "Interested";
+      if (newStatus === "Lost") updateData.linkResponse = "Not Interested";
+      
+      await api.updateLead(lead.id, updateData);
+      refreshData();
+    } catch (err) {
+      console.error("Failed to update lead status:", err);
+    }
+  };
+
+  const handleSharePropertySelect = async (prop: any) => {
+    if (!sharePropLead) return;
+    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${sharePropLead.id}`;
+    const nameFirst = sharePropLead.name.split(" ")[0];
+    const text = `Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`;
+    setSharePropLead(null);
+
+    // Auto-create a scheduled follow-up in the database for 24 hours from now
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const followTime = tomorrow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " " + tomorrow.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      await api.createFollowup({
+        leadId: sharePropLead.id,
+        name: sharePropLead.name,
+        initials: sharePropLead.initials,
+        color: sharePropLead.avatarBg,
+        note: `Follow-up: No response from lead after sharing property ${prop.name}`,
+        time: followTime,
+        overdue: false
+      });
+      refreshData();
+    } catch (err) {
+      console.error("Failed to create automatic follow-up:", err);
+    }
+
+    openWhatsApp(sharePropLead.phone, text);
+  };
 
   const activeLeads = leads.filter(l => l.status !== "Lost");
   const allActiveCount = activeLeads.length;
@@ -1102,16 +1152,79 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-2.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     <a
                       href={`tel:${lead.phone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-9 h-9 rounded-full bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all border border-emerald-100 active:scale-90"
+                      className="w-8 h-8 rounded-full bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all border border-emerald-100 active:scale-90"
                       title={`Call ${lead.name}`}
                     >
-                      <Phone size={14} />
+                      <Phone size={13} />
                     </a>
-                    <div className="flex flex-col items-end gap-1">
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveDropdownLeadId(activeDropdownLeadId === lead.id ? null : lead.id)}
+                        className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors active:scale-95"
+                        title="Quick Actions"
+                      >
+                        <MoreVertical size={15} />
+                      </button>
+
+                      {activeDropdownLeadId === lead.id && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setActiveDropdownLeadId(null)} />
+                          <div className="absolute right-0 mt-1.5 w-40 bg-white border border-slate-200/80 rounded-2xl shadow-xl p-1 z-50 text-left flex flex-col">
+                            <button
+                              onClick={() => {
+                                handleStatusChange(lead, "Interested");
+                                setActiveDropdownLeadId(null);
+                              }}
+                              className="w-full px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>👍</span> Interested
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleStatusChange(lead, "Lost");
+                                setActiveDropdownLeadId(null);
+                              }}
+                              className="w-full px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>❌</span> Not Interested
+                            </button>
+                            <button
+                              onClick={() => {
+                                onScheduleVisit(lead);
+                                setActiveDropdownLeadId(null);
+                              }}
+                              className="w-full px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>🏠</span> Site Visit
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleStatusChange(lead, "Busy");
+                                setActiveDropdownLeadId(null);
+                              }}
+                              className="w-full px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>📞</span> Call Later
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSharePropLead(lead);
+                                setActiveDropdownLeadId(null);
+                              }}
+                              className="w-full px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                              <span>💬</span> Send Details
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 min-w-[70px]">
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide"
                         style={{ backgroundColor: statusDisplay.bg, color: statusDisplay.text }}
@@ -1141,6 +1254,13 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
       >
         <Plus size={28} strokeWidth={2.5} />
       </button>
+
+      {sharePropLead && (
+        <SharePropertyModal
+          onClose={() => setSharePropLead(null)}
+          onSelect={handleSharePropertySelect}
+        />
+      )}
     </div>
   );
 }
@@ -1318,6 +1438,41 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           <button className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold opacity-40" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>
             <Mail size={15} /> Email
           </button>
+        </div>
+
+        {/* Link Response Banner */}
+        <div className="mt-4 px-4 py-2.5 rounded-2xl flex items-center justify-between border text-xs font-semibold text-left"
+          style={
+            lead.linkResponse === "Interested"
+              ? { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0", color: "#065F46" }
+              : lead.linkResponse === "Not Interested"
+              ? { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5", color: "#991B1B" }
+              : lead.linkResponse === "Scheduled Site Visit"
+              ? { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE", color: "#5B21B6" }
+              : { backgroundColor: "#FFFBEB", borderColor: "#FDE68A", color: "#92400E" }
+          }
+        >
+          <div className="flex items-center gap-1.5 truncate">
+            <span>
+              {lead.linkResponse === "Interested"
+                ? "🟢"
+                : lead.linkResponse === "Not Interested"
+                ? "🔴"
+                : lead.linkResponse === "Scheduled Site Visit"
+                ? "📅"
+                : "⏳"}
+            </span>
+            <span className="truncate">
+              {lead.linkResponse === "Interested"
+                ? "Responded: Interested in shared property link"
+                : lead.linkResponse === "Not Interested"
+                ? "Responded: Not interested in shared property link"
+                : lead.linkResponse === "Scheduled Site Visit"
+                ? "Responded: Scheduled site visit via shared link"
+                : "Waiting for response on shared property link"}
+            </span>
+          </div>
+          <span className="text-[10px] font-bold opacity-70 flex-shrink-0 ml-2">SHARED LINK</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 mt-4 text-left">
@@ -5095,7 +5250,7 @@ function PublicPropertyView({ propertyId, leadId }: { propertyId: number; leadId
   const handleInterested = async () => {
     setSubmitting(true);
     try {
-      await api.updateLead(lead.id, { status: "Interested" });
+      await api.updateLead(lead.id, { status: "Interested", linkResponse: "Interested" });
       setStatusMsg("Thank you! We have registered your interest in this property. Sarah Mitchell (your agent) has been notified and will reach out to you soon.");
       refreshData();
     } catch (e) {
@@ -5108,7 +5263,7 @@ function PublicPropertyView({ propertyId, leadId }: { propertyId: number; leadId
   const handleNotInterested = async () => {
     setSubmitting(true);
     try {
-      await api.updateLead(lead.id, { status: "Lost" });
+      await api.updateLead(lead.id, { status: "Lost", linkResponse: "Not Interested" });
       setStatusMsg("Thank you for your feedback. We have recorded your response and will update your search preferences accordingly.");
       refreshData();
     } catch (e) {
@@ -5123,7 +5278,7 @@ function PublicPropertyView({ propertyId, leadId }: { propertyId: number; leadId
     if (!date || !time) return;
     setSubmitting(true);
     try {
-      await api.updateLead(lead.id, { status: "Visit Scheduled" });
+      await api.updateLead(lead.id, { status: "Visit Scheduled", linkResponse: "Scheduled Site Visit" });
 
       const appointmentTime = `${date} at ${time}`;
       await api.createAppointment({

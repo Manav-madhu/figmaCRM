@@ -129,7 +129,7 @@ app.post('/api/leads', async (req, res) => {
 app.put('/api/leads/:id', async (req, res) => {
   const {
     name, type, status, priority, project, city, tags, budget,
-    lastContact, assigned, phone, email, task, taskDue
+    lastContact, assigned, phone, email, task, taskDue, linkResponse
   } = req.body;
 
   try {
@@ -155,17 +155,18 @@ app.put('/api/leads/:id', async (req, res) => {
     const updatedEmail = email !== undefined ? email : current.email;
     const updatedTask = task !== undefined ? task : current.task;
     const updatedTaskDue = taskDue !== undefined ? taskDue : current.taskDue;
+    const updatedLinkResponse = linkResponse !== undefined ? linkResponse : current.linkResponse;
 
     const updateSQL = `
       UPDATE leads
-      SET name = ?, initials = ?, type = ?, status = ?, priority = ?, project = ?, city = ?, tags = ?, budget = ?, lastContact = ?, assigned = ?, phone = ?, email = ?, task = ?, taskDue = ?
+      SET name = ?, initials = ?, type = ?, status = ?, priority = ?, project = ?, city = ?, tags = ?, budget = ?, lastContact = ?, assigned = ?, phone = ?, email = ?, task = ?, taskDue = ?, linkResponse = ?
       WHERE id = ?
     `;
     await run(updateSQL, [
       updatedName, updatedInitials, updatedType, updatedStatus, updatedPriority,
       updatedProject, updatedCity, updatedTags, updatedBudget, updatedLastContact,
       updatedAssigned, updatedPhone, updatedEmail, updatedTask, updatedTaskDue,
-      req.params.id
+      updatedLinkResponse, req.params.id
     ]);
 
     // If status changed to Negotiation/Booked, add follow-ups or complete tasks

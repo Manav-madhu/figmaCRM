@@ -114,6 +114,7 @@ export async function initDb() {
       email VARCHAR(255),
       task VARCHAR(255),
       taskDue VARCHAR(100),
+      linkResponse VARCHAR(100),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   ` : `
@@ -135,6 +136,7 @@ export async function initDb() {
       email TEXT,
       task TEXT,
       taskDue TEXT,
+      linkResponse TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `;

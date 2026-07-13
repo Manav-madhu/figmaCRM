@@ -178,7 +178,7 @@ app.put('/api/leads/:id', async (req, res) => {
     }
 
     // Clear automatic "No response" followups if lead responded
-    if (status && ['Interested', 'Lost', 'Visit Scheduled'].includes(status)) {
+    if (status && ['Send Details', 'Not Interested', 'Site Visit'].includes(status)) {
       await run(`
         DELETE FROM followups 
         WHERE leadId = ? AND note LIKE '%No response from lead%'

@@ -111,33 +111,17 @@ const AppContext = createContext<{
 
 const STATUS_CONFIG = {
   New: { bg: "#EDE9FF", text: VIOLET },
-  Contacted: { bg: "#EFF6FF", text: "#3B82F6" },
-  Interested: { bg: "#ECFDF5", text: "#10B981" },
-  Qualified: { bg: "#FFF7ED", text: "#B45309" },
-  "Visit Scheduled": { bg: "#ECFDF5", text: "#059669" },
-  Negotiation: { bg: "#FFF7E6", text: "#B45309", border: AMBER },
-  Booked: { bg: "#D1FAE5", text: "#065F46" },
-  Lost: { bg: "#FEE2E2", text: "#991B1B" },
-  Busy: { bg: "#F3F4F6", text: "#4B5563" },
-  "No Answer": { bg: "#FFF1F2", text: "#E11D48" },
+  "Not Interested": { bg: "#FEE2E2", text: "#991B1B" },
+  "Site Visit": { bg: "#FFEFE6", text: "#FF7A00" },
+  "Call Later": { bg: "#F3F4F6", text: "#4B5563" },
+  "Send Details": { bg: "#ECFDF5", text: "#10B981" },
 } as const;
 
 type LeadStatus = keyof typeof STATUS_CONFIG;
 
 function getStatusDisplay(status: LeadStatus) {
-  switch (status) {
-    case "New":
-      return { label: "New Lead", bg: "#EDE9FF", text: "#7C5CFC" };
-    case "Visit Scheduled":
-      return { label: "Site Visit", bg: "#FFEFE6", text: "#FF7A00" };
-    case "Negotiation":
-      return { label: "Negotiation", bg: "#FFF4E6", text: "#D97706" };
-    case "Contacted":
-      return { label: "Follow-up", bg: "#E6F9F0", text: "#10B981" };
-    default:
-      const config = STATUS_CONFIG[status] || { bg: "#EDE9FF", text: "#7C5CFC" };
-      return { label: status, bg: config.bg, text: config.text };
-  }
+  const config = STATUS_CONFIG[status] || { bg: "#EDE9FF", text: "#7C5CFC" };
+  return { label: status, bg: config.bg, text: config.text };
 }
 type Tab = "dashboard" | "leads" | "properties" | "calendar" | "profile";
 type Screen =
@@ -169,7 +153,7 @@ const leads = [
     initials: "CK",
     avatarBg: VIOLET,
     type: "Buyer",
-    status: "Negotiation" as LeadStatus,
+    status: "Send Details" as LeadStatus,
     priority: "High",
     project: "Harbour View Tower",
     city: "San Francisco",
@@ -188,7 +172,7 @@ const leads = [
     initials: "AB",
     avatarBg: "#10B981",
     type: "Seller",
-    status: "Visit Scheduled" as LeadStatus,
+    status: "Site Visit" as LeadStatus,
     priority: "Medium",
     project: "Skyline Residences",
     city: "Chicago",
@@ -207,7 +191,7 @@ const leads = [
     initials: "TJ",
     avatarBg: "#3B82F6",
     type: "Investor",
-    status: "Qualified" as LeadStatus,
+    status: "Call Later" as LeadStatus,
     priority: "High",
     project: "Harbour View Tower",
     city: "New York",
@@ -245,7 +229,7 @@ const leads = [
     initials: "DH",
     avatarBg: "#EC4899",
     type: "Buyer",
-    status: "Booked" as LeadStatus,
+    status: "Site Visit" as LeadStatus,
     priority: "Medium",
     project: "Oak Park Flats",
     city: "Chicago",
@@ -391,12 +375,10 @@ const TASKS_DATA = [
 
 const PIPELINE_STAGES = [
   { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
-  { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
-  { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
-  { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
-  { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },
-  { stage: "Booked" as LeadStatus, leads: leads.filter((l) => l.status === "Booked") },
-  { stage: "Lost" as LeadStatus, leads: leads.filter((l) => l.status === "Lost") },
+  { stage: "Call Later" as LeadStatus, leads: leads.filter((l) => l.status === "Call Later") },
+  { stage: "Send Details" as LeadStatus, leads: leads.filter((l) => l.status === "Send Details") },
+  { stage: "Site Visit" as LeadStatus, leads: leads.filter((l) => l.status === "Site Visit") },
+  { stage: "Not Interested" as LeadStatus, leads: leads.filter((l) => l.status === "Not Interested") },
 ];
 
 const WEEKLY = [
@@ -974,8 +956,8 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
 
     try {
       const updateData: any = { status: newStatus };
-      if (newStatus === "Interested") updateData.linkResponse = "Interested";
-      if (newStatus === "Lost") updateData.linkResponse = "Not Interested";
+      if (newStatus === "Send Details") updateData.linkResponse = "Interested";
+      if (newStatus === "Not Interested") updateData.linkResponse = "Not Interested";
       
       await api.updateLead(lead.id, updateData);
       refreshData();
@@ -1013,7 +995,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
     openWhatsApp(sharePropLead.phone, text);
   };
 
-  const activeLeads = leads.filter(l => l.status !== "Lost");
+  const activeLeads = leads.filter(l => l.status !== "Not Interested");
   const allActiveCount = activeLeads.length;
   
   const hotLeads = activeLeads.filter(l => {
@@ -1036,7 +1018,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
   
   // Count how many follow-ups or contacted leads
   const followupTodayCount = activeLeads.filter(l => {
-    const isContacted = l.status === "Contacted";
+    const isContacted = l.status === "Call Later";
     const isTaskToday = l.taskDue?.toLowerCase().includes("today");
     return isContacted || isTaskToday;
   }).length;
@@ -1046,7 +1028,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
     const matchesSearch = l.name.toLowerCase().includes(q) || l.phone.includes(search);
     const matchesStatus = showFilters
       ? (activeStatus === "All" ? true : l.status === activeStatus)
-      : l.status !== "Lost";
+      : l.status !== "Not Interested";
     return matchesSearch && matchesStatus;
   });
 
@@ -1058,7 +1040,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
     }
   });
 
-  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost", "Busy", "No Answer"];
+  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Not Interested", "Site Visit", "Call Later", "Send Details"];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
@@ -1446,11 +1428,11 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
 
     switch (temp) {
       case "Interested":
-        newStatus = "Interested";
+        newStatus = "Send Details";
         shouldRedirect = false;
         break;
       case "Not Interested":
-        newStatus = "Lost";
+        newStatus = "Not Interested";
         shouldRedirect = false;
         break;
       case "Site Visit":
@@ -1606,9 +1588,9 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
           <div className="grid grid-cols-3 gap-2">
             {["Interested", "Not Interested", "Site Visit", "Pricing Request", "Shared Brochure", "Follow up", "Share Property"].map((t, i) => {
               const isSelected = 
-                (t === "Interested" && lead.status === "Interested") ||
-                (t === "Not Interested" && lead.status === "Lost") ||
-                (t === "Site Visit" && lead.status === "Visit Scheduled");
+                (t === "Interested" && lead.status === "Send Details") ||
+                (t === "Not Interested" && lead.status === "Not Interested") ||
+                (t === "Site Visit" && lead.status === "Site Visit");
 
               return (
                 <button
@@ -1885,13 +1867,10 @@ function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => vo
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Status</label>
               <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full px-2 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800" style={{ outline: "none" }}>
                 <option value="New">New</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Interested">Interested</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Visit Scheduled">Visit Scheduled</option>
-                <option value="Negotiation">Negotiation</option>
-                <option value="Booked">Booked</option>
-                <option value="Lost">Lost</option>
+                <option value="Not Interested">Not Interested</option>
+                <option value="Site Visit">Site Visit</option>
+                <option value="Call Later">Call Later</option>
+                <option value="Send Details">Send Details</option>
               </select>
             </div>
           </div>
@@ -1915,7 +1894,7 @@ function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () 
     if (!date || !time) return;
     setSubmitting(true);
     setLeads((prev) =>
-      prev.map((l) => (l.id === lead.id ? { ...l, status: "Visit Scheduled" as LeadStatus } : l))
+      prev.map((l) => (l.id === lead.id ? { ...l, status: "Site Visit" as LeadStatus } : l))
     );
     const appointmentTime = `${date} at ${time}`;
     const newApt = {
@@ -1929,7 +1908,7 @@ function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () 
     };
     setAppointments((prev) => [...prev, newApt]);
     try {
-      await api.updateLead(lead.id, { status: "Visit Scheduled" });
+      await api.updateLead(lead.id, { status: "Site Visit" });
       await api.createAppointment({
         time: appointmentTime,
         title: `Site Visit: ${lead.project}`,
@@ -2060,13 +2039,10 @@ function PipelineScreen({ onBack, openLead, onAddLead }: { onBack: () => void; o
   const { leads } = useContext(AppContext)!;
   const pipelineStages = [
     { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
-    { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
-    { stage: "Interested" as LeadStatus, leads: leads.filter((l) => l.status === "Interested") },
-    { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
-    { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
-    { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },
-    { stage: "Booked" as LeadStatus, leads: leads.filter((l) => l.status === "Booked") },
-    { stage: "Lost" as LeadStatus, leads: leads.filter((l) => l.status === "Lost") },
+    { stage: "Call Later" as LeadStatus, leads: leads.filter((l) => l.status === "Call Later") },
+    { stage: "Send Details" as LeadStatus, leads: leads.filter((l) => l.status === "Send Details") },
+    { stage: "Site Visit" as LeadStatus, leads: leads.filter((l) => l.status === "Site Visit") },
+    { stage: "Not Interested" as LeadStatus, leads: leads.filter((l) => l.status === "Not Interested") },
   ];
 
   return (
@@ -2725,11 +2701,10 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
   const totalInFunnel = leads.length || 1;
   const funnelStages = [
     { stage: "New", count: leads.filter(l => l.status === "New").length, color: VIOLET },
-    { stage: "Contacted", count: leads.filter(l => l.status === "Contacted").length, color: "#3B82F6" },
-    { stage: "Qualified", count: leads.filter(l => l.status === "Qualified").length, color: "#B45309" },
-    { stage: "Visit Scheduled", count: leads.filter(l => l.status === "Visit Scheduled").length, color: GR },
-    { stage: "Negotiation", count: leads.filter(l => l.status === "Negotiation").length, color: AMBER },
-    { stage: "Booked", count: leads.filter(l => l.status === "Booked").length, color: "#065F46" },
+    { stage: "Call Later", count: leads.filter(l => l.status === "Call Later").length, color: "#3B82F6" },
+    { stage: "Send Details", count: leads.filter(l => l.status === "Send Details").length, color: AMBER },
+    { stage: "Site Visit", count: leads.filter(l => l.status === "Site Visit").length, color: GR },
+    { stage: "Not Interested", count: leads.filter(l => l.status === "Not Interested").length, color: "#991B1B" },
   ].map(f => ({
     ...f,
     pct: Math.round((f.count / totalInFunnel) * 100)
@@ -4986,7 +4961,7 @@ export default function App() {
 function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
   const { leads, refreshData } = useContext(AppContext)!;
   const [selectedLeadId, setSelectedLeadId] = useState<string>("");
-  const [selectedTrigger, setSelectedTrigger] = useState("Qualified");
+  const [selectedTrigger, setSelectedTrigger] = useState("Send Details");
   const [logs, setLogs] = useState<string[]>([]);
   const [simulating, setSimulating] = useState(false);
   const [campaigns, setCampaigns] = useState([
@@ -5019,14 +4994,14 @@ function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
     await sleep(700);
 
     let messageText = "";
-    if (selectedTrigger === "Qualified") {
+    if (selectedTrigger === "Send Details") {
       messageText = `Hi ${lead.name.split(" ")[0]}, thank you for confirming your requirements. I've prepared a customized list of premium units in ${lead.project}. Let me know if you would like me to share it!`;
       setLogs(prev => [...prev, `🚀 Firing Meta WhatsApp Cloud API request payload to: ${lead.phone}`]);
       await sleep(1000);
       setLogs(prev => [...prev, `📨 Message Content: "${messageText}"`]);
       await sleep(600);
       setLogs(prev => [...prev, `✅ Meta response: 200 OK (wamid: ${Math.random().toString(36).substring(7)})`]);
-    } else if (selectedTrigger === "Visit Scheduled") {
+    } else if (selectedTrigger === "Site Visit") {
       messageText = `Hi ${lead.name.split(" ")[0]}, looking forward to meeting you for the site visit at ${lead.project}. Please ensure you carry a valid ID card. See you soon!`;
       setLogs(prev => [...prev, `🚀 Firing Meta WhatsApp Cloud API request payload to: ${lead.phone}`]);
       await sleep(1000);
@@ -5096,14 +5071,14 @@ function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-50 pb-3">
               <div>
-                <p className="text-xs font-semibold text-slate-800">Rule #1: Lead Status Qualified</p>
+                <p className="text-xs font-semibold text-slate-800">Rule #1: Lead Status Send Details</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">Send custom property listing introduction template.</p>
               </div>
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-800">Rule #2: Lead Status Visit Scheduled</p>
+                <p className="text-xs font-semibold text-slate-800">Rule #2: Lead Status Site Visit</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">Send preparation templates and schedule calendar callbacks.</p>
               </div>
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -5137,8 +5112,8 @@ function MarketingAutomationScreen({ onBack }: { onBack: () => void }) {
                 className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-100 font-semibold text-slate-800"
                 style={{ outline: "none" }}
               >
-                <option value="Qualified">Qualified (Interested)</option>
-                <option value="Visit Scheduled">Visit Scheduled</option>
+                <option value="Send Details">Send Details</option>
+                <option value="Site Visit">Site Visit</option>
               </select>
             </div>
             <button
@@ -5364,7 +5339,7 @@ function PublicPropertyView({ propertyId, leadId }: { propertyId: number; leadId
     if (!date || !time) return;
     setSubmitting(true);
     try {
-      await api.updateLead(lead.id, { status: "Visit Scheduled", linkResponse: "Scheduled Site Visit" });
+      await api.updateLead(lead.id, { status: "Site Visit", linkResponse: "Scheduled Site Visit" });
 
       const appointmentTime = `${date} at ${time}`;
       await api.createAppointment({

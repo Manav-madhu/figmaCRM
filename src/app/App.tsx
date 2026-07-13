@@ -961,7 +961,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
     const q = search.toLowerCase();
     const matchesSearch = l.name.toLowerCase().includes(q) || l.phone.includes(search);
     const matchesStatus = showFilters
-      ? (activeStatus === "All" ? l.status !== "Lost" : l.status === activeStatus)
+      ? (activeStatus === "All" ? true : l.status === activeStatus)
       : l.status !== "Lost";
     return matchesSearch && matchesStatus;
   });

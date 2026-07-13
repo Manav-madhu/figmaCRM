@@ -8,6 +8,8 @@ import {
   User,
   Search,
   Bell,
+  ArrowUpRight,
+  ArrowDownRight,
   ChevronRight,
   ChevronLeft,
   TrendingUp,
@@ -490,350 +492,323 @@ function ScreenHeader({ title, onBack, right }: { title: string; onBack: () => v
 
 // ─── Tab: Dashboard ────────────────────────────────────────────────
 
-function DashboardTab({ go, openLead, onAddLead }: { go: (s: Screen) => void; openLead: (id: number) => void; onAddLead: () => void }) {
-  const { leads, stats, tasks, refreshData, properties } = useContext(AppContext)!;
-  const [searchQuery, setSearchQuery] = useState("");
+const revenueChartData = [
+  { day: 1, revenue: 50000 },
+  { day: 5, revenue: 80000 },
+  { day: 10, revenue: 110000 },
+  { day: 15, revenue: 140000 },
+  { day: 20, revenue: 160000 },
+  { day: 22, revenue: 230000 },
+  { day: 25, revenue: 180000 },
+  { day: 28, revenue: 220000 },
+  { day: 30, revenue: 200000 },
+];
 
-  const filteredLeads = searchQuery.trim() ? leads.filter(l => 
-    l.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (l.phone && l.phone.includes(searchQuery)) ||
-    (l.email && l.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (l.project && l.project.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (l.city && l.city.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) : [];
+const recentEarnings = [
+  {
+    name: "Rohit Sharma",
+    initials: "RS",
+    config: "3BHK Apartment",
+    amount: "+$25,000",
+    time: "Today",
+    leadId: 1,
+    bg: "#EFF0FE",
+    fg: "#7C5CFC",
+  },
+  {
+    name: "Pooja Patel",
+    initials: "PP",
+    config: "2BHK Apartment",
+    amount: "+$15,000",
+    time: "Yesterday",
+    leadId: 2,
+    bg: "#EEFBF6",
+    fg: "#10B981",
+  },
+  {
+    name: "Amit Kumar",
+    initials: "AS",
+    config: "4BHK Apartment",
+    amount: "+$18,000",
+    time: "2 Days ago",
+    leadId: 3,
+    bg: "#FFF9F2",
+    fg: "#F59E0B",
+  },
+];
 
-  const filteredProperties = searchQuery.trim() && properties ? properties.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.address && p.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (p.type && p.type.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) : [];
-
-  const toggleTask = async (id: number) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    try {
-      await api.toggleTask(id, !task.completed);
-      refreshData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const [greeting] = useState(() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  });
-
-  const getIcon = (label: string) => {
-    switch (label) {
-      case "Active Leads": return Target;
-      case "Properties": return Building2;
-      case "Revenue": return DollarSign;
-      case "Tasks Due": return Zap;
-      default: return Target;
-    }
-  };
-
-  const pipelineStages = [
-    { stage: "New" as LeadStatus, leads: leads.filter((l) => l.status === "New") },
-    { stage: "Contacted" as LeadStatus, leads: leads.filter((l) => l.status === "Contacted") },
-    { stage: "Qualified" as LeadStatus, leads: leads.filter((l) => l.status === "Qualified") },
-    { stage: "Visit Scheduled" as LeadStatus, leads: leads.filter((l) => l.status === "Visit Scheduled") },
-    { stage: "Negotiation" as LeadStatus, leads: leads.filter((l) => l.status === "Negotiation") },
-    { stage: "Booked" as LeadStatus, leads: leads.filter((l) => l.status === "Booked") },
-    { stage: "Lost" as LeadStatus, leads: leads.filter((l) => l.status === "Lost") },
-  ];
-
-  const maxPipeline = Math.max(...pipelineStages.map((p) => p.leads.length));
-
+function DashboardTab({
+  go,
+  goTab,
+  back,
+  setSelectedLeadId,
+}: {
+  go: (s: Screen) => void;
+  goTab: (t: Tab) => void;
+  back: () => void;
+  setSelectedLeadId: (id: number) => void;
+}) {
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      {/* Header */}
-      <div
-        className="px-5 pt-12 pb-8 relative"
-        style={{ background: `linear-gradient(135deg, #5B3FD9 0%, ${VIOLET} 60%, #9D7FFF 100%)` }}
-      >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-b-none">
-          <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10" style={{ background: "white", transform: "translate(30%, -30%)" }} />
-          <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10" style={{ background: "white", transform: "translate(-30%, 30%)" }} />
-        </div>
-        <div className="flex items-start justify-between mb-6 relative">
-          <div>
-            <p className="text-white/70 text-sm font-medium">{greeting}</p>
-            <h1 className="text-white text-2xl font-bold mt-0.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Sarah Mitchell
-            </h1>
-            <p className="text-white/60 text-xs mt-0.5">Senior Agent · Heitkamp Realty</p>
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-3 bg-[#F8F9FE] flex-shrink-0 z-10">
+        <button
+          onClick={back}
+          className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <h1
+          className="text-slate-900 text-lg font-bold"
+          style={{ fontFamily: "Plus Jakarta Sans" }}
+        >
+          Revenue
+        </h1>
+        <div className="relative">
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-xs cursor-pointer select-none">
+            <span className="text-[11px] font-bold text-slate-700">This Month</span>
+            <ChevronDown size={14} className="text-slate-500" strokeWidth={2.5} />
           </div>
-          <div className="relative">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Bell size={18} className="text-white" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 rounded-full flex items-center justify-center">
-              <span className="text-[8px] text-white font-bold">5</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-2.5 relative z-50">
-          <Search size={16} className="text-white/60" />
-          <input
-            type="text"
-            placeholder="Search leads, properties..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-white text-sm placeholder:text-white/50 w-full"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-white/60 hover:text-white flex-shrink-0">
-              <X size={14} />
-            </button>
-          )}
-
-          {/* Search Dropdown Overlay */}
-          {searchQuery.trim() && (
-            <div className="absolute top-12 left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-3 z-50 max-h-80 overflow-y-auto text-left">
-              {/* Leads */}
-              <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-0.5">Leads</p>
-                {filteredLeads.length > 0 ? (
-                  filteredLeads.slice(0, 5).map(l => (
-                    <div
-                      key={l.id}
-                      onClick={() => {
-                        setSearchQuery("");
-                        openLead(l.id);
-                      }}
-                      className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer active:scale-[0.98]"
-                    >
-                      <Avatar initials={l.initials} bg={l.avatarBg} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{l.name}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{l.phone} · {l.project}</p>
-                      </div>
-                      <ChevronRight size={10} className="text-muted-foreground" />
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-[11px] text-muted-foreground px-2 italic font-normal">No matching leads</p>
-                )}
-              </div>
-
-              {/* Properties */}
-              <div className="border-t border-slate-100 pt-2">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-0.5">Properties</p>
-                {filteredProperties.length > 0 ? (
-                  filteredProperties.slice(0, 5).map(p => (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setSearchQuery("");
-                        go("properties");
-                      }}
-                      className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer active:scale-[0.98]"
-                    >
-                      <img src={p.image} className="w-8 h-8 rounded-lg object-cover" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{p.price} · {p.address}</p>
-                      </div>
-                      <ChevronRight size={10} className="text-muted-foreground" />
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-[11px] text-muted-foreground px-2 italic font-normal">No matching properties</p>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="px-5 mt-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {stats.map((s) => {
-            const Icon = getIcon(s.label);
-            return (
-              <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: s.bg }}>
-                    <Icon size={16} style={{ color: s.color }} />
-                  </div>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: s.bg, color: s.color }}>
-                    {s.delta}
+      {/* Main Container */}
+      <div
+        className="flex-1 overflow-y-auto px-5 pb-6 space-y-5"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {/* Purple Card with AreaChart */}
+        <div
+          onClick={() => goTab("profile")}
+          className="bg-gradient-to-br from-[#7C5CFC] via-[#6340FD] to-[#5131D7] rounded-3xl p-5 shadow-lg shadow-violet-500/15 flex flex-col relative overflow-hidden cursor-pointer"
+        >
+          {/* Card Info */}
+          <div>
+            <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">
+              Total Revenue
+            </p>
+            <h2 className="text-white text-3xl font-extrabold mt-1 tracking-tight">
+              $198,000
+            </h2>
+            <div className="flex items-center gap-1 mt-1 text-white/90 text-xs">
+              <span className="text-emerald-400 font-bold flex items-center">
+                <ArrowUpRight size={14} strokeWidth={3} className="mr-0.5" /> 8%
+              </span>
+              <span className="text-white/60">vs last month</span>
+            </div>
+          </div>
+
+          {/* Area Chart */}
+          <div className="h-32 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={revenueChartData}
+                margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ffffff" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#ffffff" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(255, 255, 255, 0.6)", fontSize: 10, fontWeight: "bold" }}
+                  ticks={[1, 10, 20, 30]}
+                  dy={5}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(255, 255, 255, 0.6)", fontSize: 10, fontWeight: "bold" }}
+                  ticks={[0, 100000, 200000, 300000]}
+                  tickFormatter={(val) => (val === 0 ? "0" : `${val / 1000}k`)}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(30, 27, 75, 0.95)",
+                    border: "none",
+                    borderRadius: "12px",
+                    color: "#fff",
+                    fontSize: "11px",
+                  }}
+                  formatter={(value: any) => [`$${value.toLocaleString()}`, "Revenue"]}
+                  labelFormatter={(label) => `Day ${label}`}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#revenueGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Revenue Overview Section */}
+        <div>
+          <h3
+            className="text-slate-900 font-bold text-sm mb-3 px-0.5 tracking-tight"
+            style={{ fontFamily: "Plus Jakarta Sans" }}
+          >
+            Revenue Overview
+          </h3>
+
+          <div
+            className="flex items-center gap-2.5 overflow-x-auto pb-1"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {/* Card 1: Total Earnings */}
+            <div
+              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+            >
+              <span className="text-[10px] text-slate-500 font-bold leading-tight block h-6">
+                Total Earnings
+              </span>
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
+                $198,000
+              </span>
+              <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+                <ArrowUpRight size={10} strokeWidth={3} /> 8%
+              </span>
+            </div>
+
+            {/* Card 2: Paid */}
+            <div
+              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+            >
+              {/* Paid Badge Graphic */}
+              <div className="h-6 flex items-center justify-center">
+                <div className="bg-[#EEF1FF] border border-[#D5DCFF] px-2 py-0.5 rounded-full">
+                  <span
+                    className="text-[9px] font-black text-[#5B3FD9] uppercase tracking-wider"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    Paid
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="px-5 mt-6">
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-          {[
-            { label: "+ Lead", bg: VIOLET, text: "#fff", action: onAddLead },
-            { label: "+ Task", bg: "#fff", text: VIOLET, border: true, screen: "tasks" as Screen },
-            { label: "Automation", bg: "#EDE9FF", text: VIOLET, screen: "marketing-automation" as Screen },
-            { label: "Import Excel", bg: "#fff", text: VIOLET, border: true, screen: "import" as Screen },
-            { label: "WhatsApp Hub", bg: WA, text: "#fff", screen: "whatsapp" as Screen },
-          ].map((a, i) => (
-            <button
-              key={i}
-              onClick={() => a.action ? a.action() : a.screen && go(a.screen)}
-              className="flex-shrink-0 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all hover:opacity-90 active:scale-95"
-              style={{ backgroundColor: a.bg, color: a.text, border: a.border ? `1.5px solid ${VIOLET}` : "none", height: 40 }}
-            >
-              {a.label === "Import Excel" && <Upload size={12} />}
-              {a.label === "WhatsApp Hub" && <MessageCircle size={12} />}
-              {a.label === "Automation" && <Zap size={12} />}
-              {a.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Pipeline */}
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Lead Pipeline</h2>
-          <button className="text-xs font-semibold" style={{ color: VIOLET }} onClick={() => go("pipeline")}>Kanban →</button>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="space-y-2.5">
-            {pipelineStages.map((s) => {
-              const pct = maxPipeline > 0 ? (s.leads.length / maxPipeline) * 100 : 0;
-              const barCol = s.stage === "Negotiation" ? AMBER : s.stage === "Booked" ? GR : s.stage === "Lost" ? MT : VIOLET;
-              return (
-                <div key={s.stage} className="flex items-center gap-3">
-                  <span className="text-xs w-28 flex-shrink-0 text-muted-foreground">{s.stage}</span>
-                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: BR }}>
-                    <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: barCol, transition: "width 0.6s ease-in-out" }} />
-                  </div>
-                  <span className="text-xs font-semibold w-4 text-right flex-shrink-0 text-foreground">{s.leads.length}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Grid container for Tasks and Recent Leads on Desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-        {/* Tasks Due */}
-        <div className="px-5 mt-6">
-          <SectionHeader title="Tasks Due Today" action="View all →" onAction={() => go("tasks")} />
-          <Card>
-            {tasks.filter((t) => !t.completed).slice(0, 3).map((t, i, arr) => (
-              <div
-                key={t.id}
-                className="flex items-start gap-3 px-4 py-3"
-                style={{ backgroundColor: t.overdue ? "#FFF5F5" : "#fff", borderBottom: i < arr.length - 1 ? `1px solid ${BR}` : "none" }}
-              >
-                <button
-                  onClick={() => toggleTask(t.id)}
-                  className="w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all hover:bg-slate-50 active:scale-90"
-                  style={{ borderColor: t.overdue ? RD : VIOLET }}
-                >
-                  {t.completed && <Check size={10} style={{ color: GR }} />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-foreground">{t.title}</div>
-                  {t.lead && (
-                    <span className="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>
-                      {t.lead}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] flex-shrink-0" style={{ color: t.overdue ? RD : MT }}>{t.due}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
-
-        {/* Recent Leads */}
-        <div className="px-5 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Recent Leads</h2>
-            <button className="text-xs font-semibold" style={{ color: VIOLET }} onClick={() => go("leads")}>See all</button>
-          </div>
-          <div className="flex flex-col gap-3">
-            {leads.slice(0, 3).map((lead) => (
-              <div
-                key={lead.id}
-                onClick={() => openLead(lead.id)}
-                className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
-              >
-                <Avatar initials={lead.initials} bg={lead.avatarBg} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm text-foreground truncate">{lead.name}</p>
-                    <LeadStatusBadge status={lead.status} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{lead.type} · {lead.budget}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-[10px] text-muted-foreground">{lead.lastContact}</p>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center mt-1" style={{ backgroundColor: "#EDE9FF" }}>
-                    <MessageSquare size={12} style={{ color: VIOLET }} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Message Queue */}
-      <div className="px-5 mt-6">
-        <SectionHeader title="Message Queue" action="WhatsApp Hub →" onAction={() => go("whatsapp")} />
-        <Card className="p-4">
-          <div className="mb-3 px-3 py-2.5 rounded-xl text-xs font-medium" style={{ backgroundColor: "#FFF7E6", borderLeft: `3px solid ${AMBER}`, color: "#92400E" }}>
-            ⚠ 1 message failed to send
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { label: "Pending", value: "4", color: VIOLET },
-              { label: "Processing", value: "1", color: AMBER },
-              { label: "Failed", value: "1", color: RD },
-              { label: "Sent Today", value: "28", color: GR },
-            ].map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="text-xl font-bold leading-tight" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-[10px] mt-0.5 text-muted-foreground">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Today's Appointments */}
-      <div className="px-5 mt-6 mb-2">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Today's Schedule</h2>
-          <button className="text-xs font-semibold" style={{ color: VIOLET }} onClick={() => go("calendar")}>Full calendar</button>
-        </div>
-        <div className="flex flex-col gap-2">
-          {appointments.slice(0, 3).map((apt) => (
-            <div key={apt.time} className="bg-white rounded-2xl px-4 py-3 shadow-sm flex items-center gap-3">
-              <div className="text-center w-12 flex-shrink-0">
-                <p className="text-xs font-bold" style={{ color: apt.color }}>{apt.time}</p>
-              </div>
-              <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: apt.color + "40" }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{apt.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{apt.sub}</p>
-              </div>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: apt.color + "15" }}>
-                <ChevronRight size={12} style={{ color: apt.color }} />
-              </div>
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
+                $128,000
+              </span>
+              <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+                <ArrowUpRight size={10} strokeWidth={3} /> 12%
+              </span>
             </div>
-          ))}
+
+            {/* Card 3: Pending Amount */}
+            <div
+              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+            >
+              {/* Pending Badge Graphic */}
+              <div className="h-6 flex items-center justify-center">
+                <div className="bg-[#FFF8F2] border border-[#FFE7D4] px-1.5 py-0.5 rounded-full">
+                  <span
+                    className="text-[9px] font-black text-[#F59E0B] uppercase tracking-wider"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    Pending
+                  </span>
+                </div>
+              </div>
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
+                $70,000
+              </span>
+              <span className="text-[#F59E0B] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+                <ArrowDownRight size={10} strokeWidth={3} /> 5%
+              </span>
+            </div>
+
+            {/* Card 4: Closed */}
+            <div
+              onClick={() => goTab("leads")}
+              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+            >
+              {/* Closed Badge Graphic */}
+              <div className="h-6 flex items-center justify-center">
+                <div className="bg-[#F0FDF4] border border-[#DCFCE7] px-2 py-0.5 rounded-full">
+                  <span
+                    className="text-[9px] font-bold text-[#166534] uppercase tracking-wider"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    Closed
+                  </span>
+                </div>
+              </div>
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
+                12
+              </span>
+              <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+                <ArrowUpRight size={10} strokeWidth={3} /> 2 Deals
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Earnings Section */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h3
+              className="text-slate-900 font-bold text-sm tracking-tight"
+              style={{ fontFamily: "Plus Jakarta Sans" }}
+            >
+              Recent Earnings
+            </h3>
+            <button
+              onClick={() => goTab("leads")}
+              className="text-[#7C5CFC] text-xs font-bold hover:underline"
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {recentEarnings.map((earning, idx) => (
+              <div
+                key={idx}
+                onClick={() => {
+                  setSelectedLeadId(earning.leadId);
+                  go("lead-detail");
+                }}
+                className="bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.98] flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  {/* Initials Circle */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{
+                      backgroundColor: earning.bg,
+                      color: earning.fg,
+                    }}
+                  >
+                    {earning.initials}
+                  </div>
+                  <div>
+                    <h4 className="text-slate-800 text-xs font-extrabold tracking-tight">
+                      {earning.name}
+                    </h4>
+                    <p className="text-[10px] text-slate-450 mt-0.5 font-medium">
+                      {earning.config}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-emerald-500 text-xs font-black block">
+                    {earning.amount}
+                  </span>
+                  <span className="text-[10px] text-slate-450 mt-0.5 block font-medium">
+                    {earning.time}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -4123,7 +4098,14 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case "dashboard":
-        return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
+        return (
+          <DashboardTab
+            go={go}
+            goTab={goTab}
+            back={back}
+            setSelectedLeadId={setSelectedLeadId}
+          />
+        );
       case "leads":
         return (
           <LeadsTab

@@ -1138,7 +1138,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
 // ─── Screen: Lead Detail ────────────────────────────────────────────
 
 function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => void }) {
-  const { leads, followups, refreshData } = useContext(AppContext)!;
+  const { leads, followups, refreshData, setLeads } = useContext(AppContext)!;
   const lead = leads.find((l) => l.id === leadId) ?? leads[0];
   const [tab, setTab] = useState("WhatsApp");
   const [msgText, setMsgText] = useState("");
@@ -1232,6 +1232,9 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
     }
 
     if (newStatus) {
+      setLeads((prevLeads) =>
+        prevLeads.map((l) => (l.id === lead.id ? { ...l, status: newStatus as LeadStatus } : l))
+      );
       try {
         await api.updateLead(lead.id, { status: newStatus });
         refreshData();
@@ -1477,6 +1480,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
 }
 
 function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => void; onSave: () => void }) {
+  const { setLeads } = useContext(AppContext)!;
   const [name, setName] = useState(lead.name);
   const [phone, setPhone] = useState(lead.phone);
   const [email, setEmail] = useState(lead.email);
@@ -1490,6 +1494,25 @@ function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => vo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    setLeads((prev) =>
+      prev.map((l) =>
+        l.id === lead.id
+          ? {
+              ...l,
+              name,
+              phone,
+              email,
+              budget,
+              project,
+              city,
+              type,
+              priority,
+              status,
+              tags: [type]
+            }
+          : l
+      )
+    );
     try {
       await api.updateLead(lead.id, {
         name,
@@ -1590,6 +1613,7 @@ function EditLeadModal({ lead, onClose, onSave }: { lead: any; onClose: () => vo
 }
 
 function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () => void; onSave: () => void }) {
+  const { setLeads, setAppointments } = useContext(AppContext)!;
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1598,15 +1622,29 @@ function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () 
     e.preventDefault();
     if (!date || !time) return;
     setSubmitting(true);
+    setLeads((prev) =>
+      prev.map((l) => (l.id === lead.id ? { ...l, status: "Visit Scheduled" as LeadStatus } : l))
+    );
+    const appointmentTime = `${date} at ${time}`;
+    const newApt = {
+      id: Date.now(),
+      time: appointmentTime,
+      title: `Site Visit: ${lead.project}`,
+      sub: `Client: ${lead.name} (${lead.phone})`,
+      type: "viewing",
+      color: VIOLET,
+      priority: "Medium"
+    };
+    setAppointments((prev) => [...prev, newApt]);
     try {
       await api.updateLead(lead.id, { status: "Visit Scheduled" });
-      const appointmentTime = `${date} at ${time}`;
       await api.createAppointment({
         time: appointmentTime,
         title: `Site Visit: ${lead.project}`,
         sub: `Client: ${lead.name} (${lead.phone})`,
         type: "viewing",
-        color: VIOLET
+        color: VIOLET,
+        priority: "Medium"
       });
       onSave();
       onClose();

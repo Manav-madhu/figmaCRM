@@ -1,75 +1,83 @@
+const handleResponse = async (r: Response) => {
+  if (!r.ok) {
+    const errText = await r.text();
+    throw new Error(errText || `Request failed with status ${r.status}`);
+  }
+  return r.json();
+};
+
 export const api = {
-  getLeads: () => fetch('/api/leads').then(r => r.json()),
-  getLead: (id: number) => fetch(`/api/leads/${id}`).then(r => r.json()),
+  getLeads: () => fetch('/api/leads').then(handleResponse),
+  getLead: (id: number) => fetch(`/api/leads/${id}`).then(handleResponse),
   createLead: (lead: any) => fetch('/api/leads', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(lead)
-  }).then(r => r.json()),
+  }).then(handleResponse),
   updateLead: (id: number, lead: any) => fetch(`/api/leads/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(lead)
-  }).then(r => r.json()),
+  }).then(handleResponse),
   deleteLead: (id: number) => fetch(`/api/leads/${id}`, {
     method: 'DELETE'
-  }).then(r => r.json()),
+  }).then(handleResponse),
   importLeads: (leads: any[]) => fetch('/api/leads/import', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ leads })
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getProperties: () => fetch('/api/properties').then(r => r.json()),
+  getProperties: () => fetch('/api/properties').then(handleResponse),
   createProperty: (prop: any) => fetch('/api/properties', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(prop)
-  }).then(r => r.json()),
+  }).then(handleResponse),
   updateProperty: (id: number, prop: any) => fetch(`/api/properties/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(prop)
-  }).then(r => r.json()),
+  }).then(handleResponse),
   deleteProperty: (id: number) => fetch(`/api/properties/${id}`, {
     method: 'DELETE'
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getTasks: () => fetch('/api/tasks').then(r => r.json()),
+  getTasks: () => fetch('/api/tasks').then(handleResponse),
   createTask: (task: any) => fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(task)
-  }).then(r => r.json()),
+  }).then(handleResponse),
   toggleTask: (id: number, completed: boolean) => fetch(`/api/tasks/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ completed })
-  }).then(r => r.json()),
+  }).then(handleResponse),
   deleteTask: (id: number) => fetch(`/api/tasks/${id}`, {
     method: 'DELETE'
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getAppointments: () => fetch('/api/appointments').then(r => r.json()),
+  getAppointments: () => fetch('/api/appointments').then(handleResponse),
   createAppointment: (apt: any) => fetch('/api/appointments', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(apt)
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getFollowups: () => fetch('/api/followups').then(r => r.json()),
+  getFollowups: () => fetch('/api/followups').then(handleResponse),
   createFollowup: (fup: any) => fetch('/api/followups', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(fup)
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getBroadcasts: () => fetch('/api/broadcasts').then(r => r.json()),
+  getBroadcasts: () => fetch('/api/broadcasts').then(handleResponse),
   createBroadcast: (broadcast: any) => fetch('/api/broadcasts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(broadcast)
-  }).then(r => r.json()),
+  }).then(handleResponse),
 
-  getAnalytics: () => fetch('/api/analytics').then(r => r.json()),
+  getAnalytics: () => fetch('/api/analytics').then(handleResponse),
 };

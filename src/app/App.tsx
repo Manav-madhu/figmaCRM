@@ -18,6 +18,7 @@ import {
   Mail,
   Clock,
   Star,
+  Heart,
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -50,6 +51,7 @@ import {
   X,
   Share2,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import {
   AreaChart,
@@ -120,6 +122,22 @@ const STATUS_CONFIG = {
 } as const;
 
 type LeadStatus = keyof typeof STATUS_CONFIG;
+
+function getStatusDisplay(status: LeadStatus) {
+  switch (status) {
+    case "New":
+      return { label: "New Lead", bg: "#EDE9FF", text: "#7C5CFC" };
+    case "Visit Scheduled":
+      return { label: "Site Visit", bg: "#FFEFE6", text: "#FF7A00" };
+    case "Negotiation":
+      return { label: "Negotiation", bg: "#FFF4E6", text: "#D97706" };
+    case "Contacted":
+      return { label: "Follow-up", bg: "#E6F9F0", text: "#10B981" };
+    default:
+      const config = STATUS_CONFIG[status] || { bg: "#EDE9FF", text: "#7C5CFC" };
+      return { label: status, bg: config.bg, text: config.text };
+  }
+}
 type Tab = "dashboard" | "leads" | "properties" | "calendar" | "profile";
 type Screen =
   | Tab
@@ -412,11 +430,47 @@ const BROADCASTS_DATA = [
 // ─── Shared micro-components ──────────────────────────────────────
 
 function Avatar({ initials, bg, size = "md" }: { initials: string; bg: string; size?: "sm" | "md" | "lg" | "xl" }) {
-  const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-lg", xl: "w-20 h-20 text-2xl" };
+  const sizes = { sm: "w-8 h-8 text-[10px]", md: "w-11 h-11 text-xs", lg: "w-14 h-14 text-lg", xl: "w-20 h-20 text-2xl" };
+  
+  let finalBg = bg;
+  let finalTextColor = "#fff";
+  
+  if (bg) {
+    const bgLower = bg.toLowerCase();
+    if (bgLower === "#7c5cfc" || bgLower === "violet") {
+      finalBg = "#EFF0FE";
+      finalTextColor = "#7C5CFC";
+    } else if (bgLower === "#10b981") {
+      finalBg = "#EEFBF6";
+      finalTextColor = "#10B981";
+    } else if (bgLower === "#3b82f6") {
+      finalBg = "#EEF6FF";
+      finalTextColor = "#3B82F6";
+    } else if (bgLower === "#8b5cf6") {
+      finalBg = "#F5F3FF";
+      finalTextColor = "#8B5CF6";
+    } else if (bgLower === "#ec4899") {
+      finalBg = "#FDF2F8";
+      finalTextColor = "#EC4899";
+    } else if (bgLower === "#f59e0b" || bgLower === "#d97706") {
+      finalBg = "#FFF9F2";
+      finalTextColor = "#D97706";
+    } else if (bgLower === "#ef4444") {
+      finalBg = "#FEE2E2";
+      finalTextColor = "#EF4444";
+    } else if (bgLower === "#6b6b8a") {
+      finalBg = "#F1F1F5";
+      finalTextColor = "#6B6B8A";
+    } else if (bg.startsWith("#")) {
+      finalBg = bg + "1A"; // 10% opacity
+      finalTextColor = bg;
+    }
+  }
+
   return (
     <div
-      className={`${sizes[size]} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
-      style={{ backgroundColor: bg }}
+      className={`${sizes[size]} rounded-full flex items-center justify-center font-extrabold flex-shrink-0 select-none`}
+      style={{ backgroundColor: finalBg, color: finalTextColor }}
     >
       {initials}
     </div>
@@ -821,209 +875,262 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
   const { leads, refreshData } = useContext(AppContext)!;
   const [search, setSearch] = useState("");
   const [activeStatus, setStatus] = useState<"All" | LeadStatus>("All");
-  const [activeLeadDropdown, setActiveLeadDropdown] = useState<number | null>(null);
+  const [activePill, setActivePill] = useState<"All" | "Hot">("All");
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<"recent" | "alphabetical">("recent");
 
-  const handleQuickStatus = async (leadId: number, status: LeadStatus) => {
-    try {
-      if (status === "Visit Scheduled") {
-        const lead = leads.find(l => l.id === leadId);
-        if (lead) {
-          onScheduleVisit(lead);
-          return;
-        }
+  const activeLeads = leads.filter(l => l.status !== "Lost");
+  const allActiveCount = activeLeads.length;
+  
+  const hotLeads = activeLeads.filter(l => {
+    // Parse tags safely if it's a string from SQLite or already an array
+    let tagsList: string[] = [];
+    if (Array.isArray(l.tags)) {
+      tagsList = l.tags;
+    } else if (typeof l.tags === "string") {
+      try {
+        tagsList = JSON.parse(l.tags);
+      } catch (e) {
+        tagsList = l.tags ? l.tags.split(",") : [];
       }
-      await api.updateLead(leadId, { status });
-      refreshData();
-    } catch (err) {
-      console.error(err);
     }
-  };
-  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost", "Busy", "No Answer"];
+    return tagsList.includes("Hot") || l.priority === "High";
+  });
+  const hotLeadsCount = hotLeads.length;
 
-  const filtered = leads.filter((l) => {
+  const newThisWeekCount = activeLeads.filter(l => l.status === "New").length;
+  
+  // Count how many follow-ups or contacted leads
+  const followupTodayCount = activeLeads.filter(l => {
+    const isContacted = l.status === "Contacted";
+    const isTaskToday = l.taskDue?.toLowerCase().includes("today");
+    return isContacted || isTaskToday;
+  }).length;
+
+  const displayLeads = (activePill === "All" ? activeLeads : hotLeads).filter((l) => {
     const q = search.toLowerCase();
-    return (
-      (activeStatus === "All" || l.status === activeStatus) &&
-      (l.name.toLowerCase().includes(q) || l.phone.includes(search))
-    );
+    const matchesSearch = l.name.toLowerCase().includes(q) || l.phone.includes(search);
+    const matchesStatus = !showFilters || activeStatus === "All" || l.status === activeStatus;
+    return matchesSearch && matchesStatus;
   });
 
+  const sortedLeads = [...displayLeads].sort((a, b) => {
+    if (sortBy === "alphabetical") {
+      return a.name.localeCompare(b.name);
+    } else {
+      return b.id - a.id;
+    }
+  });
+
+  const statuses: ("All" | LeadStatus)[] = ["All", "New", "Contacted", "Interested", "Qualified", "Visit Scheduled", "Negotiation", "Booked", "Lost", "Busy", "No Answer"];
+
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      <div className="px-5 pt-12 pb-5 bg-white border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Leads</h1>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>{leads.length}</span>
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <button
+          onClick={() => go("dashboard")}
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <h1
+          className="text-slate-900 text-lg font-bold"
+          style={{ fontFamily: "Plus Jakarta Sans" }}
+        >
+          Active Leads
+        </h1>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+            showFilters ? "bg-violet-50 text-violet-600" : "hover:bg-slate-50 text-slate-800"
+          }`}
+        >
+          <Filter size={20} strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Horizontal Filter Pills */}
+      <div className="px-5 py-4 bg-white flex gap-3 flex-shrink-0 border-b border-slate-100/50">
+        <button
+          onClick={() => {
+            setActivePill("All");
+            setStatus("All");
+          }}
+          className="flex-1 py-3 px-4 rounded-full text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+          style={{
+            backgroundColor: activePill === "All" ? VIOLET : "#FFF",
+            color: activePill === "All" ? "#FFF" : "#475569",
+            border: activePill === "All" ? `1.5px solid ${VIOLET}` : "1.5px solid #E2E8F0"
+          }}
+        >
+          All Leads
+          <span
+            className="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+            style={{
+              backgroundColor: activePill === "All" ? "rgba(255,255,255,0.25)" : "#F1F5F9",
+              color: activePill === "All" ? "#FFF" : "#64748B"
+            }}
+          >
+            {allActiveCount}
+          </span>
+        </button>
+        <button
+          onClick={() => {
+            setActivePill("Hot");
+          }}
+          className="flex-1 py-3 px-4 rounded-full text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+          style={{
+            backgroundColor: activePill === "Hot" ? VIOLET : "#FFF",
+            color: activePill === "Hot" ? "#FFF" : "#475569",
+            border: activePill === "Hot" ? `1.5px solid ${VIOLET}` : "1.5px solid #E2E8F0"
+          }}
+        >
+          Hot Leads
+          <span
+            className="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+            style={{
+              backgroundColor: activePill === "Hot" ? "rgba(255,255,255,0.25)" : "#F1F5F9",
+              color: activePill === "Hot" ? "#FFF" : "#64748B"
+            }}
+          >
+            {hotLeadsCount}
+          </span>
+        </button>
+      </div>
+
+      {/* Advanced Filters (Toggleable via filter button) */}
+      {showFilters && (
+        <div className="px-5 py-4 bg-slate-50/50 border-b border-slate-100 flex flex-col gap-3 flex-shrink-0">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              className="w-full pl-9 pr-9 rounded-2xl text-sm py-2.5 bg-white border border-slate-200 focus:border-violet-500 focus:outline-none text-slate-800"
+              placeholder="Search leads by name or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}>
+                <X size={16} className="text-slate-400" />
+              </button>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {statuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatus(s)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                  activeStatus === s
+                    ? "bg-violet-600 text-white border-violet-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end">
             <button
               onClick={() => go("import")}
-              className="flex items-center gap-1.5 px-3.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 active:scale-95 shadow-sm"
-              style={{ backgroundColor: VIOLET, height: 38 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 transition-colors"
             >
-              <Upload size={13} /> Import Leads
+              <Upload size={12} /> Import from Excel
             </button>
           </div>
         </div>
+      )}
 
-        <div className="relative mb-3">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            className="w-full pl-9 pr-9 rounded-2xl text-sm py-3"
-            style={{ border: `1.5px solid ${search ? VIOLET : BR}`, backgroundColor: "#fff", outline: "none", color: DK }}
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}>
-              <X size={16} className="text-muted-foreground" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          {statuses.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatus(s)}
-              className="flex-shrink-0 px-3 rounded-full text-xs font-semibold"
-              style={{
-                backgroundColor: activeStatus === s ? VIOLET : "#EDE9FF",
-                color: activeStatus === s ? "#fff" : VIOLET,
-                height: 32,
-              }}
-            >
-              {s}
-            </button>
-          ))}
+      {/* Stats Cards Section */}
+      <div className="px-5 pt-4 bg-[#F8F9FE] flex-shrink-0">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl py-3 px-2 text-center shadow-xs border border-slate-100/50">
+            <div className="text-2xl font-extrabold text-slate-800 tracking-tight">{allActiveCount}</div>
+            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider leading-tight">Total Active</div>
+          </div>
+          <div className="bg-white rounded-2xl py-3 px-2 text-center shadow-xs border border-slate-100/50">
+            <div className="text-2xl font-extrabold text-slate-800 tracking-tight">{newThisWeekCount}</div>
+            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider leading-tight">New This Week</div>
+          </div>
+          <div className="bg-white rounded-2xl py-3 px-2 text-center shadow-xs border border-slate-100/50">
+            <div className="text-2xl font-extrabold text-slate-800 tracking-tight">{followupTodayCount}</div>
+            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider leading-tight">Follow-up Today</div>
+          </div>
         </div>
       </div>
 
-      <div className="px-5 pt-4">
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center py-16 text-center">
+      {/* Leads List Header */}
+      <div className="px-5 pt-5 pb-2 bg-[#F8F9FE] flex items-center justify-between flex-shrink-0">
+        <h2 className="text-[15px] font-extrabold text-slate-800" style={{ fontFamily: "Plus Jakarta Sans" }}>
+          Active Leads
+        </h2>
+        <button
+          onClick={() => setSortBy(sortBy === "recent" ? "alphabetical" : "recent")}
+          className="flex items-center gap-1.5 text-xs font-bold text-violet-600 hover:text-violet-800 transition-colors bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/50 shadow-xs"
+        >
+          Sort {sortBy === "alphabetical" ? "A-Z" : "⇅"}
+        </button>
+      </div>
+
+      {/* Leads List */}
+      <div className="flex-1 overflow-y-auto px-5 pb-2 bg-[#F8F9FE]" style={{ scrollbarWidth: "none" }}>
+        {sortedLeads.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center bg-white rounded-3xl p-5 shadow-xs border border-slate-100 mt-2">
             <div className="text-5xl mb-4">🔍</div>
-            <p className="text-base font-semibold text-foreground">No leads found</p>
-            <p className="text-xs mt-1 text-muted-foreground">Try adjusting your filters</p>
-            <button
-              onClick={() => go("import")}
-              className="mt-6 px-6 rounded-xl font-semibold text-sm flex items-center gap-2"
-              style={{ backgroundColor: AMBER, color: DK, height: 48 }}
-            >
-              <Upload size={14} /> Import from Excel
-            </button>
+            <p className="text-base font-semibold text-slate-800">No leads found</p>
+            <p className="text-xs mt-1 text-slate-400">Try adjusting your filters or search query</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {filtered.map((lead) => (
-              <div
-                key={lead.id}
-                className="bg-white rounded-2xl shadow-sm relative"
-                style={{ borderLeft: lead.priority === "High" ? `3px solid ${AMBER}` : "3px solid transparent" }}
-              >
-                <div className="p-4 pb-3">
-                  <div className="flex items-start gap-3">
+          <div className="bg-white rounded-3xl p-4 shadow-xs border border-slate-100 mt-2 flex flex-col divide-y divide-slate-100/70">
+            {sortedLeads.map((lead) => {
+              const statusDisplay = getStatusDisplay(lead.status);
+              return (
+                <div
+                  key={lead.id}
+                  onClick={() => openLead(lead.id)}
+                  className="flex items-center justify-between py-3.5 first:pt-1 last:pb-1 cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
                     <Avatar initials={lead.initials} bg={lead.avatarBg} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <span
-                          onClick={() => openLead(lead.id)}
-                          className="text-[15px] font-bold text-slate-800 hover:text-violet-700 hover:underline cursor-pointer transition-all"
-                        >
-                          {lead.name}
-                        </span>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-[13px] font-bold" style={{ color: VIOLET }}>{lead.budget}</span>
-                          <LeadStatusBadge status={lead.status} />
-                        </div>
-                      </div>
-                      <div className="text-xs mt-0.5 text-muted-foreground">{lead.phone}</div>
-                      <div className="text-xs mt-0.5" style={{ color: BD }}>{lead.project} · {lead.city}</div>
-                      <div className="flex gap-1.5 mt-2 flex-wrap">
-                        {lead.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                            style={{ backgroundColor: tag === "Hot" ? AMBER : "#EDE9FF", color: tag === "Hot" ? DK : VIOLET }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-[14px] leading-tight group-hover:text-violet-600 transition-colors">
+                        {lead.name}
+                      </span>
+                      <span className="text-[11px] text-slate-400 mt-0.5 font-medium">
+                        {lead.project} {lead.budget ? `| ${lead.budget}` : ""}
+                      </span>
                     </div>
                   </div>
-                </div>
-                <div className="flex border-t border-border">
-                  <button onClick={() => openWhatsApp(lead.phone)} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 rounded-bl-2xl" style={{ backgroundColor: WA, height: 44 }}>
-                    <MessageCircle size={15} /> WhatsApp
-                  </button>
-                  <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold border-l border-border hover:bg-slate-50 transition-all" style={{ color: VIOLET, height: 44 }}>
-                    <Phone size={15} /> Call
-                  </a>
-                  <div className="relative">
-                    <button
-                      className="px-4 flex items-center justify-center border-l border-border text-muted-foreground hover:bg-slate-50 transition-all"
-                      style={{ height: 44 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveLeadDropdown(activeLeadDropdown === lead.id ? null : lead.id);
-                      }}
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide"
+                      style={{ backgroundColor: statusDisplay.bg, color: statusDisplay.text }}
                     >
-                      <MoreHorizontal size={18} />
-                    </button>
-                    {activeLeadDropdown === lead.id && (
-                      <div className="absolute right-0 bottom-12 w-40 bg-white border border-slate-100 rounded-xl shadow-lg z-50 py-1 text-left">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveLeadDropdown(null);
-                            handleQuickStatus(lead.id, "Interested");
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
-                        >
-                          🟢 Interested
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveLeadDropdown(null);
-                            handleQuickStatus(lead.id, "Lost");
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-1.5 border-t border-slate-50"
-                        >
-                          🔴 Not Interested
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveLeadDropdown(null);
-                            handleQuickStatus(lead.id, "Visit Scheduled");
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-violet-600 hover:bg-violet-50 flex items-center gap-1.5 border-t border-slate-50"
-                        >
-                          📅 Site Visit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveLeadDropdown(null);
-                            openLead(lead.id);
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 border-t border-slate-50"
-                        >
-                          👁 View Profile
-                        </button>
-                      </div>
-                    )}
+                      {statusDisplay.label}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                      {lead.lastContact || "Today"}
+                    </span>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Floating Action Button (FAB) */}
+      <button
+        onClick={onAddLead}
+        className="fixed right-6 bottom-6 w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:opacity-95 active:scale-95 transition-all z-40"
+        style={{
+          backgroundColor: VIOLET,
+          boxShadow: "0 8px 30px rgba(124, 92, 252, 0.4)"
+        }}
+      >
+        <Plus size={28} strokeWidth={2.5} />
+      </button>
     </div>
   );
 }
@@ -2850,103 +2957,230 @@ function AnalyticsScreen({ onBack }: { onBack: () => void }) {
 // ─── Tab: Properties (unchanged from original design) ─────────────────
 
 function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { onAddProperty: () => void; onEditProperty: (prop: any) => void; onDeleteProperty: (id: number) => void }) {
-  const { properties } = useContext(AppContext)!;
+  const { properties, refreshData } = useContext(AppContext)!;
+  const [activeTab, setActiveTab] = useState<"All" | "HighDemand" | "My">("HighDemand");
+  const [showFilters, setShowFilters] = useState(false);
   const [typeFilter, setTypeFilter] = useState("All");
 
-  const filtered = properties.filter((p) => typeFilter === "All" || p.type === typeFilter || p.type === "Both");
+  const highDemandCount = properties.filter(p => (p.inquiries || 0) > 5).length;
+
+  const displayProperties = properties.filter(p => {
+    // Filter by Tab
+    if (activeTab === "HighDemand") {
+      if ((p.inquiries || 0) <= 5) return false;
+    } else if (activeTab === "My") {
+      // Mock "My Properties" with a subset (e.g. odd IDs)
+      if (p.id % 2 === 0) return false;
+    }
+
+    // Filter by Advanced Filters (Type: Sale / Rent)
+    if (showFilters && typeFilter !== "All") {
+      if (p.type !== typeFilter && p.type !== "Both") return false;
+    }
+
+    return true;
+  });
+
+  const getPropertyTitle = (p: any) => {
+    if (p.beds && p.beds > 0) {
+      return `${p.beds}BHK Apartment`;
+    }
+    return "Residential Plot";
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent, prop: any) => {
+    e.stopPropagation();
+    try {
+      await api.updateProperty(prop.id, { favorite: prop.favorite ? 0 : 1 });
+      refreshData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Setup tabs config
+  const tabs = [
+    { id: "All" as const, label: "All Properties", count: properties.length },
+    { id: "HighDemand" as const, label: "High Demand", count: highDemandCount },
+    { id: "My" as const, label: "My Properties", count: Math.ceil(properties.length / 2) }
+  ];
+
+  const getTabHeader = () => {
+    switch (activeTab) {
+      case "HighDemand":
+        return {
+          title: "High Demand Properties",
+          subtitle: "Properties with high interest & inquiries"
+        };
+      case "My":
+        return {
+          title: "My Properties",
+          subtitle: "Listings managed by you"
+        };
+      default:
+        return {
+          title: "All Properties",
+          subtitle: "Browse all available listings"
+        };
+    }
+  };
+
+  const headerInfo = getTabHeader();
 
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      <div className="px-5 pt-12 pb-5 bg-white border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Properties</h1>
-          <button onClick={onAddProperty} className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET }}>
-            <Plus size={16} className="text-white" />
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-2 flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {["All", "Sale", "Rent"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setTypeFilter(f)}
-                className="flex-shrink-0 text-xs font-semibold px-4 py-2 rounded-full transition-all"
-                style={typeFilter === f ? { backgroundColor: VIOLET, color: "white" } : { backgroundColor: "#EDE9FF", color: VIOLET }}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#EDE9FF" }}>
-            <Filter size={14} style={{ color: VIOLET }} />
-          </button>
-        </div>
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <button
+          onClick={() => {}} // Could trigger back or screen transitions if navigation is defined
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <h1
+          className="text-slate-900 text-lg font-bold"
+          style={{ fontFamily: "Plus Jakarta Sans" }}
+        >
+          Properties
+        </h1>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+            showFilters ? "bg-violet-50 text-violet-600" : "hover:bg-slate-50 text-slate-800"
+          }`}
+        >
+          <Filter size={20} strokeWidth={2} />
+        </button>
       </div>
 
-      <div className="px-5 pt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filtered.map((prop) => (
-          <div key={prop.id} className="bg-white rounded-3xl overflow-hidden shadow-sm">
-            <div className="relative">
-              <img src={prop.image} alt={prop.name} className="w-full h-44 object-cover" />
-              {prop.featured && (
-                <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ backgroundColor: VIOLET }}>
-                  <Star size={10} className="text-white fill-white" />
-                  <span className="text-white text-[10px] font-bold">Featured</span>
-                </div>
+      {/* Horizontal Pill Tabs */}
+      <div className="px-5 py-4 bg-white flex gap-3 flex-shrink-0 border-b border-slate-100/50 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        {tabs.map((tab) => {
+          const isSelected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="flex-shrink-0 py-3 px-4 rounded-full text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              style={{
+                backgroundColor: isSelected ? VIOLET : "#FFF",
+                color: isSelected ? "#FFF" : "#475569",
+                border: isSelected ? `1.5px solid ${VIOLET}` : "1.5px solid #E2E8F0"
+              }}
+            >
+              {tab.label}
+              {tab.id === "HighDemand" && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                  style={{
+                    backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : "#F1F5F9",
+                    color: isSelected ? "#FFF" : "#64748B"
+                  }}
+                >
+                  {tab.count}
+                </span>
               )}
-              <div className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: prop.statusColor + "22", color: prop.statusColor }}>
-                {prop.status}
-              </div>
-              <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-xl backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                <p className="text-white font-bold text-base">{prop.price}</p>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-1">
-                <div>
-                  <h3 className="font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{prop.name}</h3>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin size={10} className="text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">{prop.address}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Advanced Filters (Toggleable via filter button) */}
+      {showFilters && (
+        <div className="px-5 py-3.5 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2 flex-shrink-0">
+          <span className="text-xs font-bold text-slate-500 mr-1 uppercase tracking-wider">Type:</span>
+          {["All", "Sale", "Rent"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setTypeFilter(f)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                typeFilter === f
+                  ? "bg-violet-600 text-white border-violet-600"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Active Tab Info Header */}
+      <div className="px-5 pt-5 pb-2 bg-[#F8F9FE] flex-shrink-0">
+        <h2 className="text-[17px] font-extrabold text-slate-800" style={{ fontFamily: "Plus Jakarta Sans" }}>
+          {headerInfo.title}
+        </h2>
+        <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
+          {headerInfo.subtitle}
+        </p>
+      </div>
+
+      {/* Properties List */}
+      <div className="flex-1 overflow-y-auto px-5 pb-4 bg-[#F8F9FE]" style={{ scrollbarWidth: "none" }}>
+        <div className="flex flex-col gap-4 mt-2">
+          {displayProperties.map((prop) => {
+            const displayTitle = getPropertyTitle(prop);
+            return (
+              <div
+                key={prop.id}
+                onClick={() => onEditProperty(prop)}
+                className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100/50 flex gap-4 cursor-pointer hover:shadow-md transition-shadow relative"
+              >
+                {/* Heart Icon (Favorite) */}
+                <button
+                  onClick={(e) => toggleFavorite(e, prop)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-xs z-10"
+                >
+                  <Heart
+                    size={16}
+                    className={prop.favorite ? "text-red-500 fill-red-500" : "text-slate-400"}
+                  />
+                </button>
+
+                {/* Left Thumbnail Image */}
+                <div className="w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0">
+                  <img
+                    src={prop.image}
+                    alt={prop.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Right Details */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-[15px] leading-tight truncate">
+                      {displayTitle}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1 font-semibold truncate">
+                      {prop.name}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="font-extrabold text-slate-800 text-[15px] leading-none">
+                      {prop.price}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                      <span>{prop.inquiries || 0} Inquiries</span>
+                      <span className="text-slate-300">•</span>
+                      <span>{prop.siteVisits || 0} Site Visit{prop.siteVisits === 1 ? "" : "s"}</span>
+                    </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                <div className="flex items-center gap-1">
-                  <Bed size={12} className="text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{prop.beds} Beds</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Bath size={12} className="text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{prop.baths} Baths</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Square size={12} className="text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{prop.sqft} sqft</span>
-                </div>
-                <span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>
-                  {prop.type}
-                </span>
-              </div>
-              <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                <button
-                  onClick={() => onEditProperty(prop)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-all active:scale-95"
-                  style={{ border: `1px solid ${VIOLET}`, color: VIOLET, height: 40 }}
-                >
-                  <Edit size={13} /> Edit
-                </button>
-                <button
-                  onClick={() => onDeleteProperty(prop.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-red-100 transition-all active:scale-95"
-                  style={{ backgroundColor: "#FEF2F2", color: RD, border: "1px solid #FECACA", height: 40 }}
-                >
-                  <Trash2 size={13} /> Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="p-4 bg-white border-t border-slate-100/80 flex-shrink-0">
+        <button
+          onClick={onAddProperty}
+          className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm shadow-violet-500/10 text-sm"
+        >
+          <Plus size={18} strokeWidth={3} /> Add New Property
+        </button>
       </div>
     </div>
   );
@@ -2954,112 +3188,218 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
 
 // ─── Tab: Calendar (unchanged) ──────────────────────────────────────────
 
-function CalendarTab({ onAddAppointment }: { onAddAppointment: () => void }) {
+function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddAppointment: () => void }) {
   const { appointments } = useContext(AppContext)!;
+  const [completedIds, setCompletedIds] = useState<number[]>([]);
+  const [sortBy, setSortBy] = useState<"time" | "priority">("time");
 
-  // Generate current week dates dynamically (Monday through Sunday)
-  const now = new Date();
-  const currentDay = now.getDay();
-  const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + distanceToMonday);
+  const totalTasks = appointments.length;
+  const highPriorityCount = appointments.filter(a => a.priority === "High").length;
+  
+  // Tasks due today: all of them in this daily task view minus completed
+  const dueTodayCount = appointments.length - completedIds.length;
+  const completedCount = completedIds.length;
 
-  const weekDatesObj = Array.from({ length: 7 }).map((_, idx) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + idx);
-    return d;
-  });
-
-  const initialTodayIdx = weekDatesObj.findIndex(d => d.toDateString() === now.toDateString());
-  const [activeDay, setActiveDay] = useState(initialTodayIdx !== -1 ? initialTodayIdx : 0);
-
-  const activeDate = weekDatesObj[activeDay];
-
-  // Helper to match appointments to activeDate
-  const isAppointmentOnDate = (apt: any, targetDate: Date) => {
-    if (/^\d{4}-\d{2}-\d{2}/.test(apt.time)) {
-      const aptDateStr = apt.time.substring(0, 10);
-      const targetDateStr = targetDate.toISOString().substring(0, 10);
-      return aptDateStr === targetDateStr;
-    }
-    // Treat legacy static times ("09:00", etc.) as today
-    const todayStr = new Date().toDateString();
-    return targetDate.toDateString() === todayStr;
+  const toggleCompleted = (id: number) => {
+    setCompletedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
-  const filteredAppointments = appointments.filter(apt => isAppointmentOnDate(apt, activeDate));
+  const getPriorityWeight = (priority: string) => {
+    switch (priority) {
+      case "High": return 3;
+      case "Medium": return 2;
+      case "Low": return 1;
+      default: return 0;
+    }
+  };
+
+  const sortedTasks = [...appointments].sort((a, b) => {
+    if (sortBy === "priority") {
+      return getPriorityWeight(b.priority) - getPriorityWeight(a.priority);
+    } else {
+      // Sort by time string (e.g. 10:00 AM)
+      return a.time.localeCompare(b.time);
+    }
+  });
+
+  const getTaskIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "call":
+        return {
+          icon: <Phone size={18} className="text-emerald-600" />,
+          bg: "#E6F9F0"
+        };
+      case "viewing":
+      case "site visit":
+        return {
+          icon: <MapPin size={18} className="text-blue-600" />,
+          bg: "#EEF6FF"
+        };
+      case "document":
+        return {
+          icon: <FileText size={18} className="text-violet-600" />,
+          bg: "#F5F3FF"
+        };
+      case "payment":
+        return {
+          icon: <DollarSign size={18} className="text-emerald-600" />,
+          bg: "#E6F9F0"
+        };
+      default:
+        return {
+          icon: <CalendarDays size={18} className="text-slate-600" />,
+          bg: "#F1F5F9"
+        };
+    }
+  };
+
+  const getPriorityStyle = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return { bg: "#FEE2E2", text: "#EF4444" };
+      case "Medium":
+        return { bg: "#FFF3EB", text: "#D97706" };
+      case "Low":
+        return { bg: "#EEF6FF", text: "#3B82F6" };
+      default:
+        return { bg: "#F1F5F9", text: "#64748B" };
+    }
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
-      <div className="px-5 pt-12 pb-5 bg-white border-b border-border">
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Calendar</h1>
-          <p className="text-sm text-muted-foreground font-medium">
-            {activeDate.toLocaleString("default", { month: "long", year: "numeric" })}
-          </p>
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <button
+          onClick={() => go("dashboard")}
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <h1
+          className="text-slate-900 text-lg font-bold"
+          style={{ fontFamily: "Plus Jakarta Sans" }}
+        >
+          Tasks Due
+        </h1>
+        <button
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <MoreHorizontal size={20} strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Horizontal Stats Cards */}
+      <div className="px-5 py-4 bg-white flex gap-3 flex-shrink-0 border-b border-slate-100/50 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        {/* Total Tasks Card (Purple Theme) */}
+        <div className="flex-1 min-w-[76px] bg-[#F3F0FF] rounded-2xl py-3 px-1 text-center border border-[#E9E3FF]">
+          <div className="text-2xl font-extrabold text-[#7C5CFC] tracking-tight">{totalTasks}</div>
+          <div className="text-[10px] font-bold text-[#6D4AE7] mt-1 whitespace-nowrap leading-tight">Total Tasks</div>
         </div>
-        <div className="flex gap-1">
-          {weekDatesObj.map((d, i) => {
-            const isToday = d.toDateString() === now.toDateString();
-            const dayName = d.toLocaleString("default", { weekday: "short" });
-            const dateNum = d.getDate();
-            return (
-              <button
-                key={i}
-                onClick={() => setActiveDay(i)}
-                className="flex-1 flex flex-col items-center py-2 rounded-2xl transition-all"
-                style={activeDay === i ? { backgroundColor: VIOLET } : {}}
-              >
-                <span className="text-[10px] font-semibold mb-1" style={{ color: activeDay === i ? "rgba(255,255,255,0.7)" : "#6B6B8A" }}>
-                  {dayName}
-                </span>
-                <span className="text-sm font-bold" style={{ color: activeDay === i ? "white" : isToday ? VIOLET : "#1A1A2E" }}>
-                  {dateNum}
-                </span>
-                {isToday && activeDay !== i && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: VIOLET }} />}
-              </button>
-            );
-          })}
+        {/* High Priority Card (Red Theme) */}
+        <div className="flex-1 min-w-[76px] bg-[#FFF2F2] rounded-2xl py-3 px-1 text-center border border-[#FFE2E2]">
+          <div className="text-2xl font-extrabold text-[#EF4444] tracking-tight">{highPriorityCount}</div>
+          <div className="text-[10px] font-bold text-[#D32F2F] mt-1 whitespace-nowrap leading-tight">High Priority</div>
+        </div>
+        {/* Due Today Card (Orange Theme) */}
+        <div className="flex-1 min-w-[76px] bg-[#FFF8F2] rounded-2xl py-3 px-1 text-center border border-[#FFEFE0]">
+          <div className="text-2xl font-extrabold text-[#F59E0B] tracking-tight">{dueTodayCount}</div>
+          <div className="text-[10px] font-bold text-[#D97706] mt-1 whitespace-nowrap leading-tight">Due Today</div>
+        </div>
+        {/* Completed Card (Green Theme) */}
+        <div className="flex-1 min-w-[76px] bg-[#F0FDF4] rounded-2xl py-3 px-1 text-center border border-[#DCFCE7]">
+          <div className="text-2xl font-extrabold text-[#10B981] tracking-tight">{completedCount}</div>
+          <div className="text-[10px] font-bold text-[#15803D] mt-1 whitespace-nowrap leading-tight">Completed</div>
         </div>
       </div>
 
-      <div className="px-5 pt-5">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-semibold text-muted-foreground">
-            {activeDate.toDateString() === now.toDateString() ? "Today" : activeDate.toLocaleString("default", { weekday: "short", day: "numeric", month: "short" })} — {filteredAppointments.length} events
-          </p>
-          <button onClick={onAddAppointment} className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: VIOLET }}>
-            <Plus size={14} className="text-white" />
-          </button>
-        </div>
-        <div className="flex flex-col gap-3">
-          {filteredAppointments.map((apt, i) => {
-            const displayTime = /^\d{4}-\d{2}-\d{2}/.test(apt.time) ? apt.time.split(" at ")[1] || apt.time : apt.time;
-            return (
-              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm flex gap-4 border border-slate-50">
-                <div className="flex flex-col items-center gap-2 pt-1">
-                  <span className="text-xs font-bold" style={{ color: apt.color }}>{displayTime}</span>
-                  <div className="w-0.5 flex-1 rounded-full min-h-6" style={{ backgroundColor: apt.color + "30" }} />
+      {/* List Title & Sort */}
+      <div className="px-5 pt-5 pb-2 bg-[#F8F9FE] flex items-center justify-between flex-shrink-0">
+        <h2 className="text-[15px] font-extrabold text-slate-800" style={{ fontFamily: "Plus Jakarta Sans" }}>
+          Today's Tasks
+        </h2>
+        <button
+          onClick={() => setSortBy(sortBy === "time" ? "priority" : "time")}
+          className="flex items-center gap-1.5 text-xs font-bold text-violet-600 hover:text-violet-800 transition-colors bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/50 shadow-xs"
+        >
+          Sort {sortBy === "priority" ? "Priority" : "Time"} ⇅
+        </button>
+      </div>
+
+      {/* Tasks List Container */}
+      <div className="flex-1 overflow-y-auto px-5 pb-4 bg-[#F8F9FE]" style={{ scrollbarWidth: "none" }}>
+        {sortedTasks.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center bg-white rounded-3xl p-5 shadow-xs border border-slate-100 mt-2">
+            <div className="text-5xl mb-4">📭</div>
+            <p className="text-base font-semibold text-slate-800">No tasks due today</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-4 shadow-xs border border-slate-100/85 mt-2 flex flex-col divide-y divide-slate-100/70">
+            {sortedTasks.map((apt) => {
+              const isCompleted = completedIds.includes(apt.id);
+              const taskStyle = getTaskIcon(apt.type);
+              const priorityStyle = getPriorityStyle(apt.priority);
+
+              return (
+                <div
+                  key={apt.id}
+                  className="flex items-center justify-between py-3.5 first:pt-1 last:pb-1 group transition-all"
+                  style={{ opacity: isCompleted ? 0.6 : 1 }}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Left Circular Action Icon */}
+                    <button
+                      onClick={() => toggleCompleted(apt.id)}
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90 flex-shrink-0"
+                      style={{ backgroundColor: isCompleted ? "#DCFCE7" : taskStyle.bg }}
+                    >
+                      {isCompleted ? (
+                        <Check size={18} className="text-emerald-600" />
+                      ) : (
+                        taskStyle.icon
+                      )}
+                    </button>
+                    <div className="flex flex-col">
+                      <span className={`font-bold text-slate-800 text-[14px] leading-tight transition-all ${
+                        isCompleted ? "line-through text-slate-400 font-medium" : ""
+                      }`}>
+                        {apt.title}
+                      </span>
+                      <span className="text-[11px] text-slate-400 mt-0.5 font-medium">
+                        {apt.sub}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Right Details */}
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <span className="text-[11px] font-bold text-slate-700">
+                      {apt.time}
+                    </span>
+                    <span
+                      className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider"
+                      style={{ backgroundColor: priorityStyle.bg, color: priorityStyle.text }}
+                    >
+                      {apt.priority || "Medium"}
+                    </span>
+                  </div>
                 </div>
-                <div className="w-1 rounded-full flex-shrink-0" style={{ backgroundColor: apt.color }} />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">{apt.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{apt.sub}</p>
-                  <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2" style={{ backgroundColor: apt.color + "15", color: apt.color }}>
-                    {apt.type.charAt(0).toUpperCase() + apt.type.slice(1)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          {filteredAppointments.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-white rounded-2xl p-6 border border-slate-50">
-              <span className="text-3xl">📭</span>
-              <p className="text-xs font-semibold text-slate-800 mt-2">No appointments scheduled</p>
-              <p className="text-[10px] text-slate-500 mt-0.5">There are no tasks or viewings for this day.</p>
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Button Bar */}
+      <div className="p-4 bg-white border-t border-slate-100/80 flex-shrink-0">
+        <button
+          onClick={onAddAppointment}
+          className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm shadow-violet-500/10 text-sm"
+        >
+          <Plus size={18} strokeWidth={3} /> Add New Task
+        </button>
       </div>
     </div>
   );
@@ -4139,7 +4479,7 @@ export default function App() {
           />
         );
       case "calendar":
-        return <CalendarTab onAddAppointment={() => setShowAddAppointmentModal(true)} />;
+        return <CalendarTab go={go} onAddAppointment={() => setShowAddAppointmentModal(true)} />;
       case "profile":
         return <ProfileTab go={go} />;
       case "lead-detail":

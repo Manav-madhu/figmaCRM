@@ -154,6 +154,9 @@ export async function initDb() {
       statusColor VARCHAR(50),
       image TEXT,
       featured BOOLEAN DEFAULT FALSE,
+      inquiries INTEGER DEFAULT 0,
+      siteVisits INTEGER DEFAULT 0,
+      favorite BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   ` : `
@@ -171,6 +174,9 @@ export async function initDb() {
       statusColor TEXT,
       image TEXT,
       featured INTEGER DEFAULT 0,
+      inquiries INTEGER DEFAULT 0,
+      siteVisits INTEGER DEFAULT 0,
+      favorite INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -205,6 +211,7 @@ export async function initDb() {
       sub VARCHAR(255),
       type VARCHAR(50),
       color VARCHAR(50),
+      priority VARCHAR(50),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   ` : `
@@ -215,6 +222,7 @@ export async function initDb() {
       sub TEXT,
       type TEXT,
       color TEXT,
+      priority TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -290,130 +298,112 @@ export async function initDb() {
     const VIOLET = "#7C5CFC";
     const initialLeads = [
       {
-        name: "Christopher Kane",
-        initials: "CK",
-        avatarBg: VIOLET,
+        name: "Rohit Sharma",
+        initials: "RS",
+        avatarBg: "#7C5CFC",
         type: "Buyer",
-        status: "Negotiation",
-        priority: "High",
-        project: "Harbour View Tower",
-        city: "San Francisco",
-        tags: JSON.stringify(["Hot", "Investor"]),
-        budget: "$850,000",
-        lastContact: "2h ago",
-        assigned: "You",
-        phone: "+1 415-553-0186",
-        email: "c.kane@gmail.com",
-        task: "Prospecting Update",
-        taskDue: "Jun 28, 2025"
-      },
-      {
-        name: "Addie Bradford",
-        initials: "AB",
-        avatarBg: "#10B981",
-        type: "Seller",
-        status: "Visit Scheduled",
-        priority: "Medium",
-        project: "Skyline Residences",
-        city: "Chicago",
-        tags: JSON.stringify(["Seller"]),
-        budget: "$1.2M",
-        lastContact: "1d ago",
-        assigned: "Sara M.",
-        phone: "+1 312-440-9921",
-        email: "addie.b@outlook.com",
-        task: "Schedule Viewing",
-        taskDue: "Jul 3, 2025"
-      },
-      {
-        name: "Thor Johnson",
-        initials: "TJ",
-        avatarBg: "#3B82F6",
-        type: "Investor",
-        status: "Qualified",
-        priority: "High",
-        project: "Harbour View Tower",
-        city: "New York",
-        tags: JSON.stringify(["Investor"]),
-        budget: "$3.4M",
-        lastContact: "3d ago",
-        assigned: "You",
-        phone: "+1 646-210-3348",
-        email: "thor.j@ventures.co",
-        task: "Portfolio Review",
-        taskDue: "Jul 5, 2025"
-      },
-      {
-        name: "Gora Williams",
-        initials: "GW",
-        avatarBg: "#8B5CF6",
-        type: "Renter",
         status: "New",
-        priority: "Low",
-        project: "Green Courtyard",
-        city: "Chicago",
-        tags: JSON.stringify(["Renter"]),
-        budget: "$4,200/mo",
-        lastContact: "5m ago",
+        priority: "High",
+        project: "3BHK Apartment",
+        city: "Mumbai",
+        tags: JSON.stringify(["Hot", "Buyer"]),
+        budget: "₹80L",
+        lastContact: "Today",
         assigned: "You",
-        phone: "+1 929-771-0044",
-        email: "gora.w@email.com",
-        task: "Send Listings",
+        phone: "+91 98765 43210",
+        email: "rohit.sharma@gmail.com",
+        task: "Call back to discuss layout",
         taskDue: "Today"
       },
       {
-        name: "Diana Hess",
-        initials: "DH",
-        avatarBg: "#EC4899",
+        name: "Pooja Patel",
+        initials: "PP",
+        avatarBg: "#D97706",
         type: "Buyer",
-        status: "Booked",
-        priority: "Medium",
-        project: "Oak Park Flats",
-        city: "Chicago",
-        tags: JSON.stringify(["Closed Deal"]),
-        budget: "$620,000",
-        lastContact: "1w ago",
-        assigned: "Tom R.",
-        phone: "+1 305-882-6610",
-        email: "diana.hess@me.com",
-        task: "Post-sale Follow-up",
-        taskDue: "Jul 10, 2025"
+        status: "Visit Scheduled",
+        priority: "High",
+        project: "2BHK Apartment",
+        city: "Pune",
+        tags: JSON.stringify(["Hot", "Buyer"]),
+        budget: "₹60L",
+        lastContact: "Today",
+        assigned: "You",
+        phone: "+91 98765 43211",
+        email: "pooja.patel@outlook.com",
+        task: "Accompany for site tour",
+        taskDue: "Today"
       },
       {
-        name: "Marcus Chen",
-        initials: "MC",
-        avatarBg: "#F59E0B",
+        name: "Amit Kumar",
+        initials: "AK",
+        avatarBg: "#EF4444",
         type: "Buyer",
-        status: "Contacted",
+        status: "Negotiation",
         priority: "Medium",
-        project: "Oak Park Flats",
-        city: "Chicago",
-        tags: JSON.stringify(["End User"]),
-        budget: "$410,000",
-        lastContact: "6h ago",
+        project: "4BHK Apartment",
+        city: "Delhi NCR",
+        tags: JSON.stringify(["Investor"]),
+        budget: "₹1.2Cr",
+        lastContact: "Yesterday",
         assigned: "You",
-        phone: "+1 773-555-0199",
-        email: "marcus.c@mail.com",
-        task: "Send Floor Plans",
+        phone: "+91 98765 43212",
+        email: "amit.kumar@ventures.co",
+        task: "Review discount offer",
         taskDue: "Tomorrow"
       },
       {
-        name: "Naomi Cole",
-        initials: "NC",
-        avatarBg: "#6B6B8A",
-        type: "Investor",
-        status: "Lost",
+        name: "Neha Tiwari",
+        initials: "NT",
+        avatarBg: "#8B5CF6",
+        type: "Buyer",
+        status: "New",
         priority: "Low",
-        project: "Skyline Residences",
-        city: "Chicago",
-        tags: JSON.stringify(["Investor"]),
-        budget: "$2.1M",
-        lastContact: "2w ago",
-        assigned: "Tom R.",
-        phone: "+1 872-555-0142",
-        email: "naomi.cole@corp.com",
-        task: "Archive",
-        taskDue: "—"
+        project: "2BHK Apartment",
+        city: "Bangalore",
+        tags: JSON.stringify(["Buyer"]),
+        budget: "₹55L",
+        lastContact: "2 Days ago",
+        assigned: "You",
+        phone: "+91 98765 43213",
+        email: "neha.tiwari@gmail.com",
+        task: "Send property brochures",
+        taskDue: "Today"
+      },
+      {
+        name: "Vikram Singh",
+        initials: "VK",
+        avatarBg: "#10B981",
+        type: "Buyer",
+        status: "Contacted",
+        priority: "Medium",
+        project: "3BHK Apartment",
+        city: "Noida",
+        tags: JSON.stringify(["Buyer"]),
+        budget: "₹70L",
+        lastContact: "2 Days ago",
+        assigned: "You",
+        phone: "+91 98765 43214",
+        email: "vikram.singh@mail.com",
+        task: "WhatsApp project details",
+        taskDue: "Today"
+      },
+      {
+        name: "Arjun Singh",
+        initials: "AS",
+        avatarBg: "#6B6B8A",
+        type: "Buyer",
+        status: "New",
+        priority: "Low",
+        project: "Residential Plot",
+        city: "Gurugram",
+        tags: JSON.stringify(["Buyer"]),
+        budget: "₹45L",
+        lastContact: "3 Days ago",
+        assigned: "You",
+        phone: "+91 98765 43215",
+        email: "arjun.singh@gmail.com",
+        task: "Verify plot map availability",
+        taskDue: "Today"
       }
     ];
 
@@ -431,88 +421,100 @@ export async function initDb() {
     // Seed Properties
     const initialProperties = [
       {
-        name: "Green Courtyard",
-        address: "1923 Elmwood Ave, Unit 304",
-        price: "$2,340/mo",
-        salePrice: "$485,000",
-        type: "Rent",
-        beds: 2,
-        baths: 2,
-        sqft: "1,180",
+        name: "Green Valley Residency",
+        address: "Sector 45, Gurgaon",
+        price: "₹85 Lakh",
+        salePrice: "₹85 Lakh",
+        type: "Sale",
+        beds: 3,
+        baths: 3,
+        sqft: "1,550",
         status: "Available",
         statusColor: "#10B981",
         image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=260&fit=crop&auto=format",
-        featured: !useSQLite ? true : 1
+        featured: !useSQLite ? true : 1,
+        inquiries: 12,
+        siteVisits: 3,
+        favorite: !useSQLite ? false : 0
       },
       {
-        name: "Skyline Residences",
-        address: "850 Marina Blvd, Unit 21B",
-        price: "$2,340/mo",
-        salePrice: "$690,000",
+        name: "Sunrise Enclave",
+        address: "Kharadi, Pune",
+        price: "₹62 Lakh",
+        salePrice: "₹62 Lakh",
         type: "Sale",
-        beds: 3,
+        beds: 2,
         baths: 2,
-        sqft: "1,560",
-        status: "Pending",
-        statusColor: "#F59E0B",
-        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format",
-        featured: !useSQLite ? false : 0
-      },
-      {
-        name: "Oak Park Flats",
-        address: "312 Oak Dr, Unit 7",
-        price: "$1,890/mo",
-        salePrice: "$385,000",
-        type: "Rent",
-        beds: 1,
-        baths: 1,
-        sqft: "780",
+        sqft: "1,120",
         status: "Available",
         statusColor: "#10B981",
-        image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&auto=format",
-        featured: !useSQLite ? false : 0
+        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format",
+        featured: !useSQLite ? false : 0,
+        inquiries: 8,
+        siteVisits: 2,
+        favorite: !useSQLite ? false : 0
       },
       {
-        name: "Harbour View Tower",
-        address: "7 Harbour Ln, Floor 12",
-        price: "$5,800/mo",
-        salePrice: "$1,250,000",
-        type: "Both",
+        name: "Lakeview Heights",
+        address: "Whitefield, Bangalore",
+        price: "₹1.25 Cr",
+        salePrice: "₹1.25 Cr",
+        type: "Sale",
         beds: 4,
-        baths: 3,
-        sqft: "2,780",
-        status: "Exclusive",
-        statusColor: VIOLET,
+        baths: 4,
+        sqft: "2,450",
+        status: "Available",
+        statusColor: "#10B981",
         image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=260&fit=crop&auto=format",
-        featured: !useSQLite ? false : 0
+        featured: !useSQLite ? true : 1,
+        inquiries: 15,
+        siteVisits: 4,
+        favorite: !useSQLite ? true : 1
+      },
+      {
+        name: "City Prime Plots",
+        address: "Super Corridor, Indore",
+        price: "₹48 Lakh",
+        salePrice: "₹48 Lakh",
+        type: "Sale",
+        beds: 0,
+        baths: 0,
+        sqft: "1,800",
+        status: "Available",
+        statusColor: "#10B981",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=260&fit=crop&auto=format",
+        featured: !useSQLite ? false : 0,
+        inquiries: 10,
+        siteVisits: 1,
+        favorite: !useSQLite ? false : 0
       }
     ];
 
     for (const prop of initialProperties) {
       await run(`
-        INSERT INTO properties (name, address, price, salePrice, type, beds, baths, sqft, status, statusColor, image, featured)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO properties (name, address, price, salePrice, type, beds, baths, sqft, status, statusColor, image, featured, inquiries, siteVisits, favorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         prop.name, prop.address, prop.price, prop.salePrice, prop.type,
         prop.beds, prop.baths, prop.sqft, prop.status, prop.statusColor,
-        prop.image, prop.featured
+        prop.image, prop.featured, prop.inquiries, prop.siteVisits, prop.favorite
       ]);
     }
 
     // Seed Appointments
     const initialAppointments = [
-      { time: "09:00", title: "Property Viewing", sub: "Christopher Kane · Oak Park Flats", type: "viewing", color: VIOLET },
-      { time: "11:30", title: "Follow-up Call", sub: "Thor Johnson · Portfolio Review", type: "call", color: "#10B981" },
-      { time: "14:00", title: "Lease Signing", sub: "Gora Williams · Green Courtyard", type: "signing", color: "#F59E0B" },
-      { time: "15:45", title: "New Lead Meeting", sub: "Addie Bradford · Introductory", type: "meeting", color: "#3B82F6" },
-      { time: "17:00", title: "Team Sync", sub: "All Agents · Weekly Pipeline", type: "internal", color: "#8B5CF6" }
+      { time: "10:00 AM", title: "Call Rohit Sharma", sub: "Follow-up for 3BHK Apartment", type: "call", color: "#10B981", priority: "High" },
+      { time: "11:30 AM", title: "Site Visit at Green Valley", sub: "3BHK Apartment", type: "viewing", color: "#3B82F6", priority: "Medium" },
+      { time: "01:00 PM", title: "Follow-up with Pooja Patel", sub: "Discuss pricing & offers", type: "call", color: "#EF4444", priority: "High" },
+      { time: "03:30 PM", title: "Document Verification", sub: "Amit Kumar - Agreement", type: "document", color: "#8B5CF6", priority: "Low" },
+      { time: "05:00 PM", title: "Payment Follow-up", sub: "Check payment from Vikram Singh", type: "payment", color: "#25D366", priority: "Medium" }
     ];
 
     for (const apt of initialAppointments) {
       await run(`
-        INSERT INTO appointments (time, title, sub, type, color)
-        VALUES (?, ?, ?, ?, ?)
-      `, [apt.time, apt.title, apt.sub, apt.type, apt.color]);
+        INSERT INTO appointments (time, title, sub, type, color, priority)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [apt.time, apt.title, apt.sub, apt.type, apt.color, apt.priority]);
     }
 
     // Seed Follow-ups

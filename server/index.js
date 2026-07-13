@@ -306,7 +306,7 @@ app.post('/api/properties', async (req, res) => {
 
 // PUT update property
 app.put('/api/properties/:id', async (req, res) => {
-  const { name, address, price, salePrice, type, beds, baths, sqft, status, featured } = req.body;
+  const { name, address, price, salePrice, type, beds, baths, sqft, status, featured, inquiries, siteVisits, favorite } = req.body;
   try {
     const checkProp = await query('SELECT * FROM properties WHERE id = ?', [req.params.id]);
     if (checkProp.rowCount === 0) {
@@ -325,14 +325,18 @@ app.put('/api/properties/:id', async (req, res) => {
     const updatedStatus = status !== undefined ? status : current.status;
     const updatedStatusColor = updatedStatus === 'Available' ? '#10B981' : updatedStatus === 'Pending' ? '#F59E0B' : '#7C5CFC';
     const updatedFeatured = featured !== undefined ? (!useSQLite ? featured : (featured ? 1 : 0)) : current.featured;
+    const updatedInquiries = inquiries !== undefined ? inquiries : (current.inquiries || 0);
+    const updatedSiteVisits = siteVisits !== undefined ? siteVisits : (current.siteVisits || 0);
+    const updatedFavorite = favorite !== undefined ? (!useSQLite ? favorite : (favorite ? 1 : 0)) : current.favorite;
 
     await run(`
       UPDATE properties
-      SET name = ?, address = ?, price = ?, salePrice = ?, type = ?, beds = ?, baths = ?, sqft = ?, status = ?, statusColor = ?, featured = ?
+      SET name = ?, address = ?, price = ?, salePrice = ?, type = ?, beds = ?, baths = ?, sqft = ?, status = ?, statusColor = ?, featured = ?, inquiries = ?, siteVisits = ?, favorite = ?
       WHERE id = ?
     `, [
       updatedName, updatedAddress, updatedPrice, updatedSalePrice, updatedType,
       updatedBeds, updatedBaths, updatedSqft, updatedStatus, updatedStatusColor, updatedFeatured,
+      updatedInquiries, updatedSiteVisits, updatedFavorite,
       req.params.id
     ]);
 
@@ -475,18 +479,18 @@ app.get('/api/appointments', async (req, res) => {
 });
 
 app.post('/api/appointments', async (req, res) => {
-  const { time, title, sub, type, color = '#7C5CFC' } = req.body;
+  const { time, title, sub, type, color = '#7C5CFC', priority = 'Medium' } = req.body;
   if (!title || !time) {
     return res.status(400).json({ error: 'Title and time are required' });
   }
 
   try {
     const result = await run(`
-      INSERT INTO appointments (time, title, sub, type, color)
-      VALUES (?, ?, ?, ?, ?)
-    `, [time, title, sub || '', type || 'viewing', color]);
+      INSERT INTO appointments (time, title, sub, type, color, priority)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [time, title, sub || '', type || 'viewing', color, priority]);
 
-    res.status(201).json({ id: result.lastID, time, title, sub, type, color });
+    res.status(201).json({ id: result.lastID, time, title, sub, type, color, priority });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create appointment' });
@@ -647,6 +651,6 @@ app.get('*', (req, res, next) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });

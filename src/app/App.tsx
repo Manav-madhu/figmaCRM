@@ -1273,7 +1273,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
         <p className="text-sm mt-1 text-muted-foreground">{lead.phone}</p>
         <div className="flex justify-center mt-2"><LeadStatusBadge status={lead.status} /></div>
         <div className="flex gap-3 mt-4">
-          <button onClick={() => openWhatsApp(lead.phone)} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 46 }}>
+          <button onClick={() => setShowSharePropModal(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ backgroundColor: WA, height: 46 }}>
             <MessageCircle size={15} /> WhatsApp
           </button>
           <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all" style={{ border: `1.5px solid ${VIOLET}`, color: VIOLET, height: 46 }}>

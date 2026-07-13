@@ -32,7 +32,7 @@ import {
   Square,
   Zap,
   Target,
-  DollarSign,
+  IndianRupee,
   ArrowLeft,
   Upload,
   Download,
@@ -157,7 +157,7 @@ type Screen =
 const stats = [
   { label: "Active Leads", value: "142", delta: "+12%", icon: Target, color: "#7C5CFC", bg: "#EDE9FF" },
   { label: "Properties", value: "38", delta: "+4", icon: Building2, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Revenue", value: "$198k", delta: "+8%", icon: DollarSign, color: "#F59E0B", bg: "#FEF3C7" },
+  { label: "Revenue", value: "₹1.98L", delta: "+8%", icon: IndianRupee, color: "#F59E0B", bg: "#FEF3C7" },
   { label: "Tasks Due", value: "17", delta: "Urgent", icon: Zap, color: "#EF4444", bg: "#FEE2E2" },
 ];
 
@@ -173,7 +173,7 @@ const leads = [
     project: "Harbour View Tower",
     city: "San Francisco",
     tags: ["Hot", "Investor"],
-    budget: "$850,000",
+    budget: "₹8.5L",
     lastContact: "2h ago",
     assigned: "You",
     phone: "+1 415-553-0186",
@@ -192,7 +192,7 @@ const leads = [
     project: "Skyline Residences",
     city: "Chicago",
     tags: ["Seller"],
-    budget: "$1.2M",
+    budget: "₹1.2Cr",
     lastContact: "1d ago",
     assigned: "Sara M.",
     phone: "+1 312-440-9921",
@@ -211,7 +211,7 @@ const leads = [
     project: "Harbour View Tower",
     city: "New York",
     tags: ["Investor"],
-    budget: "$3.4M",
+    budget: "₹3.4Cr",
     lastContact: "3d ago",
     assigned: "You",
     phone: "+1 646-210-3348",
@@ -230,7 +230,7 @@ const leads = [
     project: "Green Courtyard",
     city: "Chicago",
     tags: ["Renter"],
-    budget: "$4,200/mo",
+    budget: "₹4,200/mo",
     lastContact: "5m ago",
     assigned: "You",
     phone: "+1 929-771-0044",
@@ -249,7 +249,7 @@ const leads = [
     project: "Oak Park Flats",
     city: "Chicago",
     tags: ["Closed Deal"],
-    budget: "$620,000",
+    budget: "₹6.2L",
     lastContact: "1w ago",
     assigned: "Tom R.",
     phone: "+1 305-882-6610",
@@ -268,7 +268,7 @@ const leads = [
     project: "Oak Park Flats",
     city: "Chicago",
     tags: ["End User"],
-    budget: "$410,000",
+    budget: "₹4.1L",
     lastContact: "6h ago",
     assigned: "You",
     phone: "+1 773-555-0199",
@@ -287,7 +287,7 @@ const leads = [
     project: "Skyline Residences",
     city: "Chicago",
     tags: ["Investor"],
-    budget: "$2.1M",
+    budget: "₹2.1Cr",
     lastContact: "2w ago",
     assigned: "Tom R.",
     phone: "+1 872-555-0142",
@@ -302,8 +302,8 @@ const properties = [
     id: 1,
     name: "Green Courtyard",
     address: "1923 Elmwood Ave, Unit 304",
-    price: "$2,340/mo",
-    salePrice: "$485,000",
+    price: "₹2,340/mo",
+    salePrice: "₹4.85L",
     type: "Rent",
     beds: 2,
     baths: 2,
@@ -317,8 +317,8 @@ const properties = [
     id: 2,
     name: "Skyline Residences",
     address: "850 Marina Blvd, Unit 21B",
-    price: "$2,340/mo",
-    salePrice: "$690,000",
+    price: "₹2,340/mo",
+    salePrice: "₹6.9L",
     type: "Sale",
     beds: 3,
     baths: 2,
@@ -332,8 +332,8 @@ const properties = [
     id: 3,
     name: "Oak Park Flats",
     address: "312 Oak Dr, Unit 7",
-    price: "$1,890/mo",
-    salePrice: "$385,000",
+    price: "₹1,890/mo",
+    salePrice: "₹3.85L",
     type: "Rent",
     beds: 1,
     baths: 1,
@@ -347,8 +347,8 @@ const properties = [
     id: 4,
     name: "Harbour View Tower",
     address: "7 Harbour Ln, Floor 12",
-    price: "$5,800/mo",
-    salePrice: "$1,250,000",
+    price: "₹5,800/mo",
+    salePrice: "₹1.25Cr",
     type: "Both",
     beds: 4,
     baths: 3,
@@ -563,7 +563,7 @@ const recentEarnings = [
     name: "Rohit Sharma",
     initials: "RS",
     config: "3BHK Apartment",
-    amount: "+$25,000",
+    amount: "+₹25,000",
     time: "Today",
     leadId: 1,
     bg: "#EFF0FE",
@@ -573,7 +573,7 @@ const recentEarnings = [
     name: "Pooja Patel",
     initials: "PP",
     config: "2BHK Apartment",
-    amount: "+$15,000",
+    amount: "+₹15,000",
     time: "Yesterday",
     leadId: 2,
     bg: "#EEFBF6",
@@ -583,7 +583,7 @@ const recentEarnings = [
     name: "Amit Kumar",
     initials: "AS",
     config: "4BHK Apartment",
-    amount: "+$18,000",
+    amount: "+₹18,000",
     time: "2 Days ago",
     leadId: 3,
     bg: "#FFF9F2",
@@ -642,7 +642,7 @@ function DashboardTab({
               Total Revenue
             </p>
             <h2 className="text-white text-3xl font-extrabold mt-1 tracking-tight">
-              $198,000
+              ₹1,98,000
             </h2>
             <div className="flex items-center gap-1 mt-1 text-white/90 text-xs">
               <span className="text-emerald-400 font-bold flex items-center">
@@ -688,7 +688,7 @@ function DashboardTab({
                     color: "#fff",
                     fontSize: "11px",
                   }}
-                  formatter={(value: any) => [`$${value.toLocaleString()}`, "Revenue"]}
+                  formatter={(value: any) => [`₹${value.toLocaleString()}`, "Revenue"]}
                   labelFormatter={(label) => `Day ${label}`}
                 />
                 <Area
@@ -725,7 +725,7 @@ function DashboardTab({
                 Total Earnings
               </span>
               <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                $198,000
+                ₹1,98,000
               </span>
               <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight size={10} strokeWidth={3} /> 8%
@@ -748,7 +748,7 @@ function DashboardTab({
                 </div>
               </div>
               <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                $128,000
+                ₹1,28,000
               </span>
               <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight size={10} strokeWidth={3} /> 12%
@@ -771,7 +771,7 @@ function DashboardTab({
                 </div>
               </div>
               <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                $70,000
+                ₹70,000
               </span>
               <span className="text-[#F59E0B] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowDownRight size={10} strokeWidth={3} /> 5%
@@ -3244,7 +3244,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
         };
       case "payment":
         return {
-          icon: <DollarSign size={18} className="text-emerald-600" />,
+          icon: <IndianRupee size={18} className="text-emerald-600" />,
           bg: "#E6F9F0"
         };
       default:

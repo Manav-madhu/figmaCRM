@@ -1682,21 +1682,67 @@ function ScheduleVisitModal({ lead, onClose, onSave }: { lead: any; onClose: () 
 
 function SharePropertyModal({ onClose, onSelect }: { onClose: () => void; onSelect: (prop: any) => void }) {
   const { properties } = useContext(AppContext)!;
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"All" | "Sale" | "Rent">("All");
+
+  const filteredProperties = properties.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
+    const matchesType = typeFilter === "All" || p.type === typeFilter || p.type === "Both";
+    return matchesSearch && matchesType;
+  });
+
   return (
     <div className="absolute inset-0 bg-black/60 z-50 flex items-end justify-center">
-      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[80%] overflow-y-auto" style={{ borderTop: `4px solid ${VIOLET}` }}>
-        <div className="flex items-center justify-between">
+      <div className="w-full bg-white rounded-t-[32px] p-5 pb-8 space-y-4 max-h-[85%] flex flex-col" style={{ borderTop: `4px solid ${VIOLET}` }}>
+        {/* Header */}
+        <div className="flex items-center justify-between flex-shrink-0">
           <h3 className="text-base font-bold text-foreground">Select Property to Share</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><X size={16} /></button>
         </div>
-        <div className="space-y-2 mt-2">
-          {properties.map(p => (
+
+        {/* Filters */}
+        <div className="space-y-2.5 flex-shrink-0">
+          {/* Search bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search properties by name or location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/50 rounded-2xl text-xs font-medium focus:bg-white transition-all outline-none"
+              style={{ color: DK }}
+            />
+            <span className="absolute left-3.5 top-3 text-slate-400 text-xs">🔍</span>
+          </div>
+          
+          {/* Type tabs */}
+          <div className="flex gap-1.5">
+            {(["All", "Sale", "Rent"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold border transition-all ${
+                  typeFilter === t
+                    ? "bg-violet-650 text-white border-violet-650"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                }`}
+                style={typeFilter === t ? { backgroundColor: VIOLET, borderColor: VIOLET } : {}}
+              >
+                {t === "All" ? "All Types" : t === "Sale" ? "For Sale" : "For Rent"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Properties List */}
+        <div className="flex-grow overflow-y-auto space-y-2 mt-2" style={{ scrollbarWidth: "none" }}>
+          {filteredProperties.map(p => (
             <div
               key={p.id}
               onClick={() => onSelect(p)}
               className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all active:scale-[0.98]"
             >
-              <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
+              <img src={p.image} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-sm font-semibold text-foreground truncate">{p.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{p.address}</div>
@@ -1704,8 +1750,11 @@ function SharePropertyModal({ onClose, onSelect }: { onClose: () => void; onSele
               </div>
             </div>
           ))}
-          {properties.length === 0 && (
-            <p className="text-xs text-muted-foreground italic text-center py-4">No properties available to share.</p>
+          {filteredProperties.length === 0 && (
+            <div className="text-center py-8 text-slate-400">
+              <span className="text-2xl">🏠</span>
+              <p className="text-[11px] font-semibold text-slate-500 mt-2">No matching properties found.</p>
+            </div>
           )}
         </div>
       </div>

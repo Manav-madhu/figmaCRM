@@ -1102,16 +1102,26 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide"
-                      style={{ backgroundColor: statusDisplay.bg, color: statusDisplay.text }}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <a
+                      href={`tel:${lead.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-9 h-9 rounded-full bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all border border-emerald-100 active:scale-90"
+                      title={`Call ${lead.name}`}
                     >
-                      {statusDisplay.label}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                      {lead.lastContact || "Today"}
-                    </span>
+                      <Phone size={14} />
+                    </a>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide"
+                        style={{ backgroundColor: statusDisplay.bg, color: statusDisplay.text }}
+                      >
+                        {statusDisplay.label}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                        {lead.lastContact || "Today"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

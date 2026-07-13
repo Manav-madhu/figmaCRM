@@ -603,6 +603,28 @@ function DashboardTab({
   back: () => void;
   setSelectedLeadId: (id: number) => void;
 }) {
+  const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
+  const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
+  const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
+
+  useEffect(() => {
+    localStorage.setItem("crm_income", income.toString());
+  }, [income]);
+
+  useEffect(() => {
+    localStorage.setItem("crm_pending", pending.toString());
+  }, [pending]);
+
+  useEffect(() => {
+    localStorage.setItem("crm_closed", closedCount.toString());
+  }, [closedCount]);
+
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [editingPending, setEditingPending] = useState(false);
+  const [editingClosed, setEditingClosed] = useState(false);
+
+  const profit = income + pending;
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
       {/* Top Header */}
@@ -718,47 +740,69 @@ function DashboardTab({
             className="flex items-center gap-2.5 overflow-x-auto pb-1"
             style={{ scrollbarWidth: "none" }}
           >
-            {/* Card 1: Total Earnings */}
+            {/* Card 1: Total Profit */}
             <div
-              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+              className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 border-slate-100"
             >
               <span className="text-[10px] text-slate-500 font-bold leading-tight block h-6">
-                Total Earnings
+                Total Profit
               </span>
               <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                ₹1,98,000
+                ₹{profit.toLocaleString("en-IN")}
               </span>
               <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight size={10} strokeWidth={3} /> 8%
               </span>
             </div>
 
-            {/* Card 2: Paid */}
+            {/* Card 2: Income */}
             <div
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+              onClick={() => !editingIncome && setEditingIncome(true)}
             >
-              {/* Paid Badge Graphic */}
+              {/* Income Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
                 <div className="bg-[#EEF1FF] border border-[#D5DCFF] px-2 py-0.5 rounded-full">
                   <span
                     className="text-[9px] font-black text-[#5B3FD9] uppercase tracking-wider"
                     style={{ fontFamily: "monospace" }}
                   >
-                    Paid
+                    Income
                   </span>
                 </div>
               </div>
-              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                ₹1,28,000
-              </span>
+              {editingIncome ? (
+                <input
+                  type="number"
+                  autoFocus
+                  defaultValue={income}
+                  onBlur={(e) => {
+                    setIncome(Number(e.target.value) || 0);
+                    setEditingIncome(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setIncome(Number((e.target as HTMLInputElement).value) || 0);
+                      setEditingIncome(false);
+                    }
+                  }}
+                  className="w-full text-center text-slate-800 text-[12px] font-black tracking-tight mt-1.5 border border-slate-200 rounded-md focus:outline-none focus:border-violet-500 py-0.5 bg-slate-50"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
+                  ₹{income.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">✏️</span>
+                </span>
+              )}
               <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight size={10} strokeWidth={3} /> 12%
               </span>
             </div>
 
-            {/* Card 3: Pending Amount */}
+            {/* Card 3: Pending */}
             <div
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+              onClick={() => !editingPending && setEditingPending(true)}
             >
               {/* Pending Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
@@ -771,9 +815,29 @@ function DashboardTab({
                   </span>
                 </div>
               </div>
-              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                ₹70,000
-              </span>
+              {editingPending ? (
+                <input
+                  type="number"
+                  autoFocus
+                  defaultValue={pending}
+                  onBlur={(e) => {
+                    setPending(Number(e.target.value) || 0);
+                    setEditingPending(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setPending(Number((e.target as HTMLInputElement).value) || 0);
+                      setEditingPending(false);
+                    }
+                  }}
+                  className="w-full text-center text-slate-800 text-[12px] font-black tracking-tight mt-1.5 border border-slate-200 rounded-md focus:outline-none focus:border-violet-500 py-0.5 bg-slate-50"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
+                  ₹{pending.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">✏️</span>
+                </span>
+              )}
               <span className="text-[#F59E0B] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowDownRight size={10} strokeWidth={3} /> 5%
               </span>
@@ -781,8 +845,8 @@ function DashboardTab({
 
             {/* Card 4: Closed */}
             <div
-              onClick={() => goTab("leads")}
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
+              onClick={() => !editingClosed && setEditingClosed(true)}
             >
               {/* Closed Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
@@ -795,11 +859,31 @@ function DashboardTab({
                   </span>
                 </div>
               </div>
-              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5">
-                12
-              </span>
-              <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
-                <ArrowUpRight size={10} strokeWidth={3} /> 2 Deals
+              {editingClosed ? (
+                <input
+                  type="number"
+                  autoFocus
+                  defaultValue={closedCount}
+                  onBlur={(e) => {
+                    setClosedCount(Number(e.target.value) || 0);
+                    setEditingClosed(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setClosedCount(Number((e.target as HTMLInputElement).value) || 0);
+                      setEditingClosed(false);
+                    }
+                  }}
+                  className="w-full text-center text-slate-800 text-[12px] font-black tracking-tight mt-1.5 border border-slate-200 rounded-md focus:outline-none focus:border-violet-500 py-0.5 bg-slate-50"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
+                  {closedCount} <span className="text-[10px] opacity-40">✏️</span>
+                </span>
+              )}
+              <span className="text-[#166534] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+                <ArrowUpRight size={10} strokeWidth={3} /> Deals
               </span>
             </div>
           </div>

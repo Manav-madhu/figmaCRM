@@ -957,10 +957,12 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
     return isContacted || isTaskToday;
   }).length;
 
-  const displayLeads = (activePill === "All" ? activeLeads : hotLeads).filter((l) => {
+  const displayLeads = (activePill === "All" ? leads : hotLeads).filter((l) => {
     const q = search.toLowerCase();
     const matchesSearch = l.name.toLowerCase().includes(q) || l.phone.includes(search);
-    const matchesStatus = !showFilters || activeStatus === "All" || l.status === activeStatus;
+    const matchesStatus = showFilters
+      ? (activeStatus === "All" ? l.status !== "Lost" : l.status === activeStatus)
+      : l.status !== "Lost";
     return matchesSearch && matchesStatus;
   });
 

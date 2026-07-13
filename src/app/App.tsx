@@ -644,10 +644,10 @@ function DashboardTab({
           {/* Card Info */}
           <div>
             <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">
-              Total Revenue
+              Total Profit
             </p>
             <h2 className="text-white text-3xl font-extrabold mt-1 tracking-tight">
-              ₹1,98,000
+              ₹{profit.toLocaleString("en-IN")}
             </h2>
             <div className="flex items-center gap-1 mt-1 text-white/90 text-xs">
               <span className="text-emerald-400 font-bold flex items-center">

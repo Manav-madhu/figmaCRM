@@ -645,6 +645,69 @@ app.get('/api/analytics', async (req, res) => {
 });
 
 
+// ─── INCOMES ROUTES ──────────────────────────────────────────────────────────
+
+app.get('/api/incomes', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM incomes ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch incomes' });
+  }
+});
+
+app.post('/api/incomes', async (req, res) => {
+  const {
+    customerName,
+    propertyName,
+    paymentDate,
+    amountReceived,
+    paymentMode,
+    commission,
+    receivedFrom,
+    transactionId,
+    notes,
+    receiptFile
+  } = req.body;
+
+  try {
+    const result = await run(`
+      INSERT INTO incomes (customerName, propertyName, paymentDate, amountReceived, paymentMode, commission, receivedFrom, transactionId, notes, receiptFile)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      customerName || '',
+      propertyName || '',
+      paymentDate || '',
+      parseInt(amountReceived) || 0,
+      paymentMode || 'UPI',
+      parseInt(commission) || 0,
+      receivedFrom || '',
+      transactionId || '',
+      notes || '',
+      receiptFile || ''
+    ]);
+
+    res.status(201).json({
+      id: result.lastID,
+      customerName,
+      propertyName,
+      paymentDate,
+      amountReceived,
+      paymentMode,
+      commission,
+      receivedFrom,
+      transactionId,
+      notes,
+      receiptFile
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create income entry' });
+  }
+});
+
+
 // ─── STATIC FILE SERVING FOR PRODUCTION ──────────────────────────────────────
 
 // Serve static assets from Vite build output

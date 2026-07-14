@@ -53,6 +53,11 @@ import {
   Share2,
   LogOut,
   ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Percent,
+  Hash,
+  Wallet,
 } from "lucide-react";
 import {
   AreaChart,
@@ -99,6 +104,7 @@ const AppContext = createContext<{
   broadcasts: any[];
   stats: any[];
   analytics: any;
+  incomes: any[];
   setLeads: React.Dispatch<React.SetStateAction<any[]>>;
   setProperties: React.Dispatch<React.SetStateAction<any[]>>;
   setTasks: React.Dispatch<React.SetStateAction<any[]>>;
@@ -106,6 +112,7 @@ const AppContext = createContext<{
   setFollowups: React.Dispatch<React.SetStateAction<any[]>>;
   setBroadcasts: React.Dispatch<React.SetStateAction<any[]>>;
   setStats: React.Dispatch<React.SetStateAction<any[]>>;
+  setIncomes: React.Dispatch<React.SetStateAction<any[]>>;
   refreshData: () => Promise<void>;
 } | null>(null);
 
@@ -135,7 +142,8 @@ type Screen =
   | "analytics"
   | "settings"
   | "import"
-  | "marketing-automation";
+  | "marketing-automation"
+  | "income";
 
 // ─── Mock data ────────────────────────────────────────────────────
 
@@ -740,7 +748,7 @@ function DashboardTab({
             {/* Card 2: Income */}
             <div
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
-              onClick={() => !editingIncome && setEditingIncome(true)}
+              onClick={() => go("income")}
             >
               {/* Income Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
@@ -753,29 +761,9 @@ function DashboardTab({
                   </span>
                 </div>
               </div>
-              {editingIncome ? (
-                <input
-                  type="number"
-                  autoFocus
-                  defaultValue={income}
-                  onBlur={(e) => {
-                    setIncome(Number(e.target.value) || 0);
-                    setEditingIncome(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setIncome(Number((e.target as HTMLInputElement).value) || 0);
-                      setEditingIncome(false);
-                    }
-                  }}
-                  className="w-full text-center text-slate-800 text-[12px] font-black tracking-tight mt-1.5 border border-slate-200 rounded-md focus:outline-none focus:border-violet-500 py-0.5 bg-slate-50"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
-                  ₹{income.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">✏️</span>
-                </span>
-              )}
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
+                ₹{income.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">➔</span>
+              </span>
               <span className="text-emerald-500 text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight size={10} strokeWidth={3} /> 12%
               </span>
@@ -4680,6 +4668,7 @@ export default function App() {
   const [broadcasts, setBroadcasts] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [incomes, setIncomes] = useState<any[]>([]);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
@@ -4756,6 +4745,15 @@ export default function App() {
       }
     } catch (e) {
       console.error("Error loading broadcasts:", e);
+    }
+
+    try {
+      const incomesData = await api.getIncomes();
+      if (Array.isArray(incomesData)) {
+        setIncomes(incomesData);
+      }
+    } catch (e) {
+      console.error("Error loading incomes:", e);
     }
   };
 
@@ -4859,6 +4857,8 @@ export default function App() {
         return <ImportScreen onBack={back} />;
       case "marketing-automation":
         return <MarketingAutomationScreen onBack={back} />;
+      case "income":
+        return <IncomeScreen onBack={back} />;
       default:
         return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
     }
@@ -4872,8 +4872,8 @@ export default function App() {
   if (viewParam === "public-property" && propertyIdParam && leadIdParam) {
     return (
       <AppContext.Provider value={{
-        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
-        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
+        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
         refreshData
       }}>
         <PublicPropertyView
@@ -4888,8 +4888,8 @@ export default function App() {
 
   return (
     <AppContext.Provider value={{
-      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics,
-      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats,
+      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
       refreshData
     }}>
       <div className="fixed inset-0 bg-white flex flex-col overflow-hidden">
@@ -4955,6 +4955,400 @@ export default function App() {
         </div>
       </div>
     </AppContext.Provider>
+  );
+}
+
+function IncomeScreen({ onBack }: { onBack: () => void }) {
+  const { incomes, refreshData, setIncomes } = useContext(AppContext)!;
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Form Fields
+  const [customerName, setCustomerName] = useState("");
+  const [propertyName, setPropertyName] = useState("");
+  const [paymentDate, setPaymentDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    return `${day} ${month} ${year}`;
+  });
+  const [amountReceived, setAmountReceived] = useState("");
+  const [paymentMode, setPaymentMode] = useState("UPI");
+  const [commission, setCommission] = useState("2");
+  const [receivedFrom, setReceivedFrom] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [notes, setNotes] = useState("");
+  const [receiptFile, setReceiptFile] = useState("receipt.jpg");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName || !propertyName || !amountReceived) {
+      alert("Please fill in Customer Name, Property Name, and Amount Received.");
+      return;
+    }
+
+    setSubmitting(true);
+    const amount = Number(amountReceived) || 0;
+    const commVal = Number(commission) || 0;
+
+    const payload = {
+      customerName,
+      propertyName,
+      paymentDate,
+      amountReceived: amount,
+      paymentMode,
+      commission: commVal,
+      receivedFrom: receivedFrom || customerName,
+      transactionId,
+      notes,
+      receiptFile
+    };
+
+    // Optimistic UI Update
+    const mockId = Date.now();
+    setIncomes(prev => [{ id: mockId, ...payload }, ...prev]);
+
+    // Update LocalStorage crm_income to sync with Dashboard Tab
+    const currentIncomeVal = Number(localStorage.getItem("crm_income") || 128000);
+    localStorage.setItem("crm_income", (currentIncomeVal + amount).toString());
+
+    try {
+      await api.createIncome(payload);
+      refreshData();
+      // Clear form
+      setCustomerName("");
+      setPropertyName("");
+      setAmountReceived("");
+      setReceivedFrom("");
+      setTransactionId("");
+      setNotes("");
+      alert("Income record saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save income. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  // Calculations for Hero Card
+  const totalIncome = incomes.reduce((acc, curr) => acc + (curr.amountReceived || 0), 0);
+  const todaysDateStr = (() => {
+    const today = new Date();
+    const day = today.getDate();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    return `${day} ${month} ${year}`;
+  })();
+  const todaysIncome = incomes
+    .filter(inc => (inc.paymentDate && inc.paymentDate.toLowerCase().includes("today")) || inc.paymentDate === todaysDateStr)
+    .reduce((acc, curr) => acc + (curr.amountReceived || 0), 0) || 25000;
+  
+  const totalEarnings = totalIncome + 677000;
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <span className="text-slate-800 text-[16px] font-black tracking-tight">Income</span>
+        <button className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors">
+          <SlidersHorizontal size={18} />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-5 pb-24 space-y-5" style={{ scrollbarWidth: "none" }}>
+        
+        {/* Total Income Purple Card */}
+        <div className="bg-gradient-to-br from-[#7C5CFC] via-[#6340FD] to-[#5131D7] rounded-3xl p-5 shadow-lg shadow-violet-500/10 text-white flex justify-between items-center relative overflow-hidden">
+          <div className="text-left space-y-1">
+            <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider block">Total Income</span>
+            <span className="text-3xl font-black tracking-tight block">₹{totalIncome.toLocaleString("en-IN")}</span>
+            <span className="text-white/60 text-[10px] font-semibold block">This Month</span>
+          </div>
+
+          <div className="w-[1px] h-12 bg-white/20 mx-4" />
+
+          <div className="flex-1 flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Wallet size={12} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[8px] text-white/60 font-bold uppercase tracking-wider">Today's Income</span>
+                  <span className="text-xs font-black">₹{todaysIncome.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                  <SlidersHorizontal size={12} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[8px] text-white/60 font-bold uppercase tracking-wider">Total Earnings</span>
+                  <span className="text-xs font-black">₹{totalEarnings.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsible Add Income Form Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+          <div 
+            onClick={() => setCollapsed(!collapsed)}
+            className="px-5 py-4 flex items-center justify-between border-b border-slate-50 cursor-pointer hover:bg-slate-50/40 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[#5B3FD9]">
+                <Wallet size={16} />
+              </span>
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Add Income</span>
+            </div>
+            <button className="flex items-center gap-1 text-[10px] font-bold text-violet-600">
+              {collapsed ? "Expand" : "Collapse"} {collapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+            </button>
+          </div>
+
+          {!collapsed && (
+            <form onSubmit={handleSubmit} className="p-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Customer Name */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <User size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Name</span>
+                    <input
+                      required
+                      type="text"
+                      placeholder="Rohit Sharma"
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Property Name */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <Building2 size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Property Name</span>
+                    <input
+                      required
+                      type="text"
+                      placeholder="3BHK Apartment"
+                      value={propertyName}
+                      onChange={e => setPropertyName(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Date */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <CalendarDays size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Date</span>
+                    <input
+                      required
+                      type="text"
+                      value={paymentDate}
+                      onChange={e => setPaymentDate(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Amount Received */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <IndianRupee size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount Received</span>
+                    <input
+                      required
+                      type="number"
+                      placeholder="25000"
+                      value={amountReceived}
+                      onChange={e => setAmountReceived(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Mode */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <Wallet size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Mode</span>
+                    <select
+                      value={paymentMode}
+                      onChange={e => setPaymentMode(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      <option value="UPI">UPI</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Commission (%) */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <Percent size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Commission (%)</span>
+                    <input
+                      type="text"
+                      placeholder="2%"
+                      value={commission}
+                      onChange={e => setCommission(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Received From */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 col-span-2 text-left">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <User size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Received From</span>
+                    <input
+                      type="text"
+                      placeholder="Rohit Sharma"
+                      value={receivedFrom}
+                      onChange={e => setReceivedFrom(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Transaction ID */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 text-left">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <Hash size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transaction ID</span>
+                    <input
+                      type="text"
+                      placeholder="UPI/1234567890"
+                      value={transactionId}
+                      onChange={e => setTransactionId(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes (Optional) */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 text-left">
+                  <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                    <FileText size={14} />
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes (Optional)</span>
+                    <input
+                      type="text"
+                      placeholder="Token Amount"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Upload Receipt */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center justify-between gap-3 col-span-2 text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-violet-50/50 flex items-center justify-center text-violet-600 flex-shrink-0">
+                      <FileText size={14} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Upload Receipt</span>
+                      <input
+                        type="text"
+                        value={receiptFile}
+                        onChange={e => setReceiptFile(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <button type="button" className="text-violet-600 hover:text-violet-800 p-1">
+                    <Upload size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-[#5B3FD9] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-wider hover:bg-violet-800 transition-colors shadow-sm mt-3"
+              >
+                {submitting ? "Saving..." : "+ Save Income"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Recent Transactions List */}
+        <div className="mt-4">
+          <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3 text-left px-1">Recent Transactions</h3>
+          {incomes.length === 0 ? (
+            <p className="text-xs text-slate-400 italic text-center py-6">No transactions recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {incomes.map((inc) => (
+                <div key={inc.id} className="bg-white p-4 rounded-3xl border border-slate-100/80 shadow-xs flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#10B981] font-bold">
+                      ₹
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">{inc.customerName}</h4>
+                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">{inc.propertyName} • {inc.paymentDate}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-[#10B981] bg-emerald-50/50 px-2.5 py-1 rounded-full border border-emerald-100/55">
+                      +₹{(inc.amountReceived || 0).toLocaleString("en-IN")}
+                    </span>
+                    <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{inc.paymentMode}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
   );
 }
 

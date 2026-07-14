@@ -281,6 +281,38 @@ export async function initDb() {
     );
   `;
 
+  const createIncomesTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS incomes (
+      id SERIAL PRIMARY KEY,
+      customerName VARCHAR(255),
+      propertyName VARCHAR(255),
+      paymentDate VARCHAR(100),
+      amountReceived INTEGER,
+      paymentMode VARCHAR(50),
+      commission INTEGER,
+      receivedFrom VARCHAR(255),
+      transactionId VARCHAR(100),
+      notes TEXT,
+      receiptFile TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS incomes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customerName TEXT,
+      propertyName TEXT,
+      paymentDate TEXT,
+      amountReceived INTEGER,
+      paymentMode TEXT,
+      commission INTEGER,
+      receivedFrom TEXT,
+      transactionId TEXT,
+      notes TEXT,
+      receiptFile TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   // Run table creations
   await run(createLeadsTable);
   await run(createPropertiesTable);
@@ -288,6 +320,7 @@ export async function initDb() {
   await run(createAppointmentsTable);
   await run(createFollowupsTable);
   await run(createBroadcastsTable);
+  await run(createIncomesTable);
 
   // Check if seeding is needed
   const leadsCount = await query('SELECT COUNT(*) as count FROM leads');
@@ -563,6 +596,29 @@ export async function initDb() {
         INSERT INTO broadcasts (name, preview, status, date, recipients, sent, failed)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [b.name, b.preview, b.status, b.date, b.recipients, b.sent, b.failed]);
+    }
+
+    // Seed Incomes
+    const initialIncomes = [
+      {
+        customerName: "Rohit Sharma",
+        propertyName: "3BHK Apartment",
+        paymentDate: "16 Jul 2025",
+        amountReceived: 25000,
+        paymentMode: "UPI",
+        commission: 2,
+        receivedFrom: "Rohit Sharma",
+        transactionId: "UPI/1234567890",
+        notes: "Token Amount",
+        receiptFile: "receipt.jpg"
+      }
+    ];
+
+    for (const inc of initialIncomes) {
+      await run(`
+        INSERT INTO incomes (customerName, propertyName, paymentDate, amountReceived, paymentMode, commission, receivedFrom, transactionId, notes, receiptFile)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [inc.customerName, inc.propertyName, inc.paymentDate, inc.amountReceived, inc.paymentMode, inc.commission, inc.receivedFrom, inc.transactionId, inc.notes, inc.receiptFile]);
     }
 
     console.log('Database seeded successfully.');

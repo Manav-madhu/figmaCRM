@@ -80,4 +80,10 @@ export const api = {
   }).then(handleResponse),
 
   getAnalytics: () => fetch('/api/analytics').then(handleResponse),
+  getIncomes: () => fetch('/api/incomes').then(handleResponse),
+  createIncome: (inc: any) => fetch('/api/incomes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(inc)
+  }).then(handleResponse),
 };

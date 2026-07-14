@@ -1124,10 +1124,10 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
           </div>
           <div className="flex justify-end">
             <button
-              onClick={() => go("import")}
+              onClick={onAddLead}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 transition-colors"
             >
-              <Upload size={12} /> Import from Excel
+              <Plus size={12} /> Add Individual Lead
             </button>
           </div>
         </div>
@@ -1286,14 +1286,15 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
 
       {/* Floating Action Button (FAB) */}
       <button
-        onClick={onAddLead}
+        onClick={() => go("import")}
         className="fixed right-6 bottom-6 w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:opacity-95 active:scale-95 transition-all z-40"
         style={{
           backgroundColor: VIOLET,
           boxShadow: "0 8px 30px rgba(124, 92, 252, 0.4)"
         }}
+        title="Import from Excel"
       >
-        <Plus size={28} strokeWidth={2.5} />
+        <Upload size={24} strokeWidth={2.5} />
       </button>
 
       {sharePropLead && (

@@ -313,6 +313,34 @@ export async function initDb() {
     );
   `;
 
+  const createExpensesTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS expenses (
+      id SERIAL PRIMARY KEY,
+      category VARCHAR(100),
+      vendorName VARCHAR(255),
+      expenseDate VARCHAR(100),
+      amount INTEGER,
+      paymentMode VARCHAR(50),
+      invoiceNo VARCHAR(100),
+      notes TEXT,
+      billFile TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT,
+      vendorName TEXT,
+      expenseDate TEXT,
+      amount INTEGER,
+      paymentMode TEXT,
+      invoiceNo TEXT,
+      notes TEXT,
+      billFile TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   // Run table creations
   await run(createLeadsTable);
   await run(createPropertiesTable);
@@ -321,6 +349,7 @@ export async function initDb() {
   await run(createFollowupsTable);
   await run(createBroadcastsTable);
   await run(createIncomesTable);
+  await run(createExpensesTable);
 
   // Check if seeding is needed
   const leadsCount = await query('SELECT COUNT(*) as count FROM leads');
@@ -619,6 +648,27 @@ export async function initDb() {
         INSERT INTO incomes (customerName, propertyName, paymentDate, amountReceived, paymentMode, commission, receivedFrom, transactionId, notes, receiptFile)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [inc.customerName, inc.propertyName, inc.paymentDate, inc.amountReceived, inc.paymentMode, inc.commission, inc.receivedFrom, inc.transactionId, inc.notes, inc.receiptFile]);
+    }
+
+    // Seed Expenses
+    const initialExpenses = [
+      {
+        category: "Fuel",
+        vendorName: "Indian Oil Petrol Pump",
+        expenseDate: "16 Jul 2025",
+        amount: 2500,
+        paymentMode: "Card",
+        invoiceNo: "INV-7856",
+        notes: "Fuel for site visit",
+        billFile: "bill.jpg"
+      }
+    ];
+
+    for (const exp of initialExpenses) {
+      await run(`
+        INSERT INTO expenses (category, vendorName, expenseDate, amount, paymentMode, invoiceNo, notes, billFile)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [exp.category, exp.vendorName, exp.expenseDate, exp.amount, exp.paymentMode, exp.invoiceNo, exp.notes, exp.billFile]);
     }
 
     console.log('Database seeded successfully.');

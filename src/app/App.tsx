@@ -105,6 +105,7 @@ const AppContext = createContext<{
   stats: any[];
   analytics: any;
   incomes: any[];
+  expensesList: any[];
   income: number;
   pending: number;
   closedCount: number;
@@ -116,6 +117,7 @@ const AppContext = createContext<{
   setBroadcasts: React.Dispatch<React.SetStateAction<any[]>>;
   setStats: React.Dispatch<React.SetStateAction<any[]>>;
   setIncomes: React.Dispatch<React.SetStateAction<any[]>>;
+  setExpensesList: React.Dispatch<React.SetStateAction<any[]>>;
   setIncome: React.Dispatch<React.SetStateAction<number>>;
   setPending: React.Dispatch<React.SetStateAction<number>>;
   setClosedCount: React.Dispatch<React.SetStateAction<number>>;
@@ -149,7 +151,8 @@ type Screen =
   | "settings"
   | "import"
   | "marketing-automation"
-  | "income";
+  | "income"
+  | "expenses";
 
 // ─── Mock data ────────────────────────────────────────────────────
 
@@ -764,7 +767,7 @@ function DashboardTab({
             {/* Card 3: Pending */}
             <div
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
-              onClick={() => !editingPending && setEditingPending(true)}
+              onClick={() => go("expenses")}
             >
               {/* Pending Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
@@ -777,29 +780,9 @@ function DashboardTab({
                   </span>
                 </div>
               </div>
-              {editingPending ? (
-                <input
-                  type="number"
-                  autoFocus
-                  defaultValue={pending}
-                  onBlur={(e) => {
-                    setPending(Number(e.target.value) || 0);
-                    setEditingPending(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setPending(Number((e.target as HTMLInputElement).value) || 0);
-                      setEditingPending(false);
-                    }
-                  }}
-                  className="w-full text-center text-slate-800 text-[12px] font-black tracking-tight mt-1.5 border border-slate-200 rounded-md focus:outline-none focus:border-violet-500 py-0.5 bg-slate-50"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
-                  ₹{pending.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">✏️</span>
-                </span>
-              )}
+              <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
+                ₹{pending.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">➔</span>
+              </span>
               <span className="text-[#F59E0B] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowDownRight size={10} strokeWidth={3} /> 5%
               </span>
@@ -4661,6 +4644,7 @@ export default function App() {
   const [stats, setStats] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [expensesList, setExpensesList] = useState<any[]>([]);
   const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
   const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
   const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
@@ -4761,6 +4745,15 @@ export default function App() {
       }
     } catch (e) {
       console.error("Error loading incomes:", e);
+    }
+
+    try {
+      const expensesData = await api.getExpenses();
+      if (Array.isArray(expensesData)) {
+        setExpensesList(expensesData);
+      }
+    } catch (e) {
+      console.error("Error loading expenses:", e);
     }
   };
 
@@ -4866,6 +4859,8 @@ export default function App() {
         return <MarketingAutomationScreen onBack={back} />;
       case "income":
         return <IncomeScreen onBack={back} />;
+      case "expenses":
+        return <ExpensesScreen onBack={back} />;
       default:
         return <DashboardTab go={go} openLead={openLead} onAddLead={() => { setAddLeadStage("New"); setShowAddLeadModal(true); }} />;
     }
@@ -4879,9 +4874,9 @@ export default function App() {
   if (viewParam === "public-property" && propertyIdParam && leadIdParam) {
     return (
       <AppContext.Provider value={{
-        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList,
         income, pending, closedCount,
-        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
+        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList,
         setIncome, setPending, setClosedCount,
         refreshData
       }}>
@@ -4897,9 +4892,9 @@ export default function App() {
 
   return (
     <AppContext.Provider value={{
-      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList,
       income, pending, closedCount,
-      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
+      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList,
       setIncome, setPending, setClosedCount,
       refreshData
     }}>
@@ -5350,6 +5345,393 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
                       +₹{(inc.amountReceived || 0).toLocaleString("en-IN")}
                     </span>
                     <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{inc.paymentMode}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function ExpensesScreen({ onBack }: { onBack: () => void }) {
+  const { expensesList, refreshData, setExpensesList, setPending } = useContext(AppContext)!;
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Form Fields
+  const [category, setCategory] = useState("Fuel");
+  const [vendorName, setVendorName] = useState("");
+  const [expenseDate, setExpenseDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    return `${day} ${month} ${year}`;
+  });
+  const [amount, setAmount] = useState("");
+  const [paymentMode, setPaymentMode] = useState("Card");
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [notes, setNotes] = useState("");
+  const [billFile, setBillFile] = useState("bill.jpg");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!category || !vendorName || !amount) {
+      alert("Please select a Category and fill in Vendor Name and Amount.");
+      return;
+    }
+
+    setSubmitting(true);
+    const amtVal = Number(amount) || 0;
+
+    const payload = {
+      category,
+      vendorName,
+      expenseDate,
+      amount: amtVal,
+      paymentMode,
+      invoiceNo,
+      notes,
+      billFile
+    };
+
+    // Optimistic UI Update
+    const mockId = Date.now();
+    setExpensesList(prev => [{ id: mockId, ...payload }, ...prev]);
+
+    // Update Global context state and LocalStorage crm_pending to sync with Dashboard Tab
+    setPending(prev => prev + amtVal);
+
+    try {
+      await api.createExpense(payload);
+      refreshData();
+      // Clear form
+      setVendorName("");
+      setAmount("");
+      setInvoiceNo("");
+      setNotes("");
+      alert("Expenditure record saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save expenditure. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  // Calculations for Hero Card
+  const totalExpenses = expensesList.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+  const todaysDateStr = (() => {
+    const today = new Date();
+    const day = today.getDate();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[today.getMonth()];
+    const year = today.getFullYear();
+    return `${day} ${month} ${year}`;
+  })();
+  const todaysExpense = expensesList
+    .filter(exp => (exp.expenseDate && exp.expenseDate.toLowerCase().includes("today")) || exp.expenseDate === todaysDateStr)
+    .reduce((acc, curr) => acc + (curr.amount || 0), 0) || 4500;
+  
+  const totalExpensesAllTime = totalExpenses + 243500;
+
+  const categories = ["Fuel", "Marketing", "Travel", "Office Rent", "Staff Salary", "Internet", "Miscellaneous"];
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
+        >
+          <ArrowLeft size={20} strokeWidth={2.5} />
+        </button>
+        <span className="text-slate-800 text-[16px] font-black tracking-tight">Expenditure</span>
+        <button className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors">
+          <SlidersHorizontal size={18} />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-5 pb-24 space-y-5" style={{ scrollbarWidth: "none" }}>
+        
+        {/* Total Expenses Purple Card */}
+        <div className="bg-gradient-to-br from-[#7C5CFC] via-[#6340FD] to-[#5131D7] rounded-3xl p-5 shadow-lg shadow-violet-500/10 text-white flex justify-between items-center relative overflow-hidden">
+          <div className="text-left space-y-1">
+            <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider block">Total Expenses</span>
+            <span className="text-3xl font-black tracking-tight block">₹{totalExpenses.toLocaleString("en-IN")}</span>
+            <span className="text-white/60 text-[10px] font-semibold block">This Month</span>
+          </div>
+
+          <div className="w-[1px] h-12 bg-white/20 mx-4" />
+
+          <div className="flex-1 flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Wallet size={12} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[8px] text-white/60 font-bold uppercase tracking-wider">Today's Expense</span>
+                  <span className="text-xs font-black">₹{todaysExpense.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                  <SlidersHorizontal size={12} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-[8px] text-white/60 font-bold uppercase tracking-wider">Total Expenses</span>
+                  <span className="text-xs font-black">₹{totalExpensesAllTime.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsible Add Expense Form Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+          <div 
+            onClick={() => setCollapsed(!collapsed)}
+            className="px-5 py-4 flex items-center justify-between border-b border-slate-50 cursor-pointer hover:bg-slate-50/40 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[#E11D48]">
+                <Wallet size={16} />
+              </span>
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Add Expense</span>
+            </div>
+            <button className="flex items-center gap-1 text-[10px] font-bold text-violet-600">
+              {collapsed ? "Expand" : "Collapse"} {collapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+            </button>
+          </div>
+
+          {!collapsed && (
+            <form onSubmit={handleSubmit} className="p-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-4">
+                
+                {/* Left Column: inputs */}
+                <div className="space-y-3.5 col-span-2 md:col-span-1">
+                  
+                  {/* Expense Category Select */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <Wallet size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expense Category</span>
+                      <select
+                        value={category}
+                        onChange={e => setCategory(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {categories.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Vendor / Person Name */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <User size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Vendor / Person Name</span>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Indian Oil Petrol Pump"
+                        value={vendorName}
+                        onChange={e => setVendorName(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Expense Date */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <CalendarDays size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expense Date</span>
+                      <input
+                        required
+                        type="text"
+                        value={expenseDate}
+                        onChange={e => setExpenseDate(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Amount */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <IndianRupee size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</span>
+                      <input
+                        required
+                        type="number"
+                        placeholder="2500"
+                        value={amount}
+                        onChange={e => setAmount(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Mode */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <Wallet size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Mode</span>
+                      <select
+                        value={paymentMode}
+                        onChange={e => setPaymentMode(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <option value="Card">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Invoice / Bill No. */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <Hash size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col text-left">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Invoice / Bill No.</span>
+                      <input
+                        type="text"
+                        placeholder="INV-7856"
+                        value={invoiceNo}
+                        onChange={e => setInvoiceNo(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes (Optional) */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center gap-3 col-span-2 text-left">
+                    <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                      <FileText size={14} />
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notes (Optional)</span>
+                      <input
+                        type="text"
+                        placeholder="Fuel for site visit"
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none w-full bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Upload Receipt */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-3.5 flex items-center justify-between gap-3 col-span-2 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-rose-50/50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                        <FileText size={14} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Upload Bill / Invoice</span>
+                        <input
+                          type="text"
+                          value={billFile}
+                          onChange={e => setBillFile(e.target.value)}
+                          className="text-slate-800 text-[13px] font-black mt-0.5 focus:outline-none bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <button type="button" className="text-violet-600 hover:text-violet-800 p-1">
+                      <Upload size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Column: Category quick select pills */}
+                <div className="col-span-2 md:col-span-1 space-y-2 text-left">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-1">Quick Select Category</span>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((c) => {
+                      const active = category === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setCategory(c)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                            active
+                              ? "bg-[#FFEFE6] text-[#FF7A00] border-[#FFEFE6]"
+                              : "bg-white text-slate-600 border-slate-150 hover:bg-slate-50"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-[#5B3FD9] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-wider hover:bg-violet-800 transition-colors shadow-sm mt-3"
+              >
+                {submitting ? "Saving..." : "+ Save Expense"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Recent Expenses List */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Recent Expenses</h3>
+            <button type="button" className="text-[11px] font-bold text-violet-600 hover:underline">View All</button>
+          </div>
+          {expensesList.length === 0 ? (
+            <p className="text-xs text-slate-400 italic text-center py-6">No expenses recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {expensesList.map((exp) => (
+                <div key={exp.id} className="bg-white p-4 rounded-3xl border border-slate-100/80 shadow-xs flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center text-[#E11D48] font-bold">
+                      ₹
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">{exp.vendorName}</h4>
+                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">{exp.category} • {exp.expenseDate}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-[#E11D48] bg-rose-50/50 px-2.5 py-1 rounded-full border border-rose-100/55">
+                      -₹{(exp.amount || 0).toLocaleString("en-IN")}
+                    </span>
+                    <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{exp.paymentMode}</p>
                   </div>
                 </div>
               ))}

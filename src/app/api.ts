@@ -86,4 +86,10 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(inc)
   }).then(handleResponse),
+  getExpenses: () => fetch('/api/expenses').then(handleResponse),
+  createExpense: (exp: any) => fetch('/api/expenses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(exp)
+  }).then(handleResponse),
 };

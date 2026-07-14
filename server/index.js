@@ -708,6 +708,63 @@ app.post('/api/incomes', async (req, res) => {
 });
 
 
+// ─── EXPENSES ROUTES ─────────────────────────────────────────────────────────
+
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM expenses ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch expenses' });
+  }
+});
+
+app.post('/api/expenses', async (req, res) => {
+  const {
+    category,
+    vendorName,
+    expenseDate,
+    amount,
+    paymentMode,
+    invoiceNo,
+    notes,
+    billFile
+  } = req.body;
+
+  try {
+    const result = await run(`
+      INSERT INTO expenses (category, vendorName, expenseDate, amount, paymentMode, invoiceNo, notes, billFile)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      category || 'Fuel',
+      vendorName || '',
+      expenseDate || '',
+      parseInt(amount) || 0,
+      paymentMode || 'Card',
+      invoiceNo || '',
+      notes || '',
+      billFile || ''
+    ]);
+
+    res.status(201).json({
+      id: result.lastID,
+      category,
+      vendorName,
+      expenseDate,
+      amount,
+      paymentMode,
+      invoiceNo,
+      notes,
+      billFile
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create expense entry' });
+  }
+});
+
+
 // ─── STATIC FILE SERVING FOR PRODUCTION ──────────────────────────────────────
 
 // Serve static assets from Vite build output

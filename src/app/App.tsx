@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext, useRef } from "react";
+import * as XLSX from "xlsx";
 import { api } from "./api";
 import {
   Home,
@@ -4302,50 +4303,44 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target?.result as string;
-      if (!text) return;
-      // Split lines
-      const lines = text.split(/\r?\n/).map(line => {
-        // Simple CSV cell splitter (handles quotes)
-        const cells: string[] = [];
-        let current = "";
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const char = line[i];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cells.push(current.trim());
-            current = "";
-          } else {
-            current += char;
-          }
-        }
-        cells.push(current.trim());
-        return cells;
-      }).filter(cells => cells.length > 0 && cells.some(c => c !== ""));
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, defval: "" });
+        
+        // Filter out empty rows
+        const filteredRows = rows.filter(row => row && row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== ""));
+        
+        if (filteredRows.length > 0) {
+          const stringRows = filteredRows.map(row => row.map(cell => String(cell).trim()));
+          const fileHeaders = stringRows[0];
+          setHeaders(fileHeaders);
+          const dataRows = stringRows.slice(1);
+          setParsedRows(dataRows);
 
-      if (lines.length > 0) {
-        const fileHeaders = lines[0];
-        setHeaders(fileHeaders);
-        const dataRows = lines.slice(1);
-        setParsedRows(dataRows);
-
-        // Auto-map headers
-        const initialMapping: Record<string, string> = {};
-        fileHeaders.forEach((h) => {
-          const cleanH = h.toLowerCase().replace(/[^a-z]/g, "");
-          const match = targetColumns.find(col => {
-            const cleanCol = col.toLowerCase().replace(/[^a-z]/g, "");
-            return cleanH.includes(cleanCol) || cleanCol.includes(cleanH);
+          // Auto-map headers
+          const initialMapping: Record<string, string> = {};
+          fileHeaders.forEach((h) => {
+            const cleanH = h.toLowerCase().replace(/[^a-z]/g, "");
+            const match = targetColumns.find(col => {
+              const cleanCol = col.toLowerCase().replace(/[^a-z]/g, "");
+              return cleanH.includes(cleanCol) || cleanCol.includes(cleanH);
+            });
+            initialMapping[h] = match || "Ignore";
           });
-          initialMapping[h] = match || "Ignore";
-        });
-        setColumnMapping(initialMapping);
-        setStep(2);
+          setColumnMapping(initialMapping);
+          setStep(2);
+        } else {
+          alert("The uploaded file appears to be empty.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to parse the file. Please ensure it is a valid CSV or Excel file.");
       }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const getMappedRows = () => {
@@ -4442,7 +4437,7 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
             <input
               type="file"
               id="excel-file-input"
-              accept=".csv"
+              accept=".csv,.xlsx,.xls"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -4468,10 +4463,10 @@ function ImportScreen({ onBack }: { onBack: () => void }) {
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: "#EDE9FF" }}>
                 <Upload size={28} style={{ color: VIOLET }} />
               </div>
-              <p className="text-base font-semibold text-foreground">Drop your CSV file here</p>
+              <p className="text-base font-semibold text-foreground">Drop your CSV or Excel file here</p>
               <p className="text-[13px] mt-1 text-muted-foreground">or tap to browse</p>
               <div className="flex gap-2 mt-4">
-                {[".csv"].map((ext) => (
+                {[".csv", ".xlsx", ".xls"].map((ext) => (
                   <span key={ext} className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: "#EDE9FF", color: VIOLET }}>{ext}</span>
                 ))}
               </div>

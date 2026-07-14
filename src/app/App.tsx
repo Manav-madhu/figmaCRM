@@ -5325,6 +5325,19 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
   const { incomes, refreshData, setIncomes, setIncome } = useContext(AppContext)!;
   const [collapsed, setCollapsed] = useState(false);
 
+  const handleDeleteIncome = async (id: number, amt: number) => {
+    if (!confirm("Are you sure you want to delete this income entry?")) return;
+    try {
+      setIncomes(prev => prev.filter(item => item.id !== id));
+      setIncome(prev => Math.max(0, prev - (amt || 0)));
+      await api.deleteIncome(id);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete income entry.");
+    }
+  };
+
   // Form Fields
   const [customerName, setCustomerName] = useState("");
   const [propertyName, setPropertyName] = useState("");
@@ -5697,11 +5710,20 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
                       <p className="text-[10px] text-slate-400 font-bold mt-0.5">{inc.propertyName} • {inc.paymentDate}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-[#10B981] bg-emerald-50/50 px-2.5 py-1 rounded-full border border-emerald-100/55">
-                      +₹{(inc.amountReceived || 0).toLocaleString("en-IN")}
-                    </span>
-                    <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{inc.paymentMode}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span className="text-xs font-black text-[#10B981] bg-emerald-50/50 px-2.5 py-1 rounded-full border border-emerald-100/55">
+                        +₹{(inc.amountReceived || 0).toLocaleString("en-IN")}
+                      </span>
+                      <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{inc.paymentMode}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteIncome(inc.id, inc.amountReceived)}
+                      className="p-1 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -5716,6 +5738,19 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
 
 function ExpensesScreen({ onBack }: { onBack: () => void }) {
   const { expensesList, refreshData, setExpensesList, setExpenditure } = useContext(AppContext)!;
+
+  const handleDeleteExpense = async (id: number, amt: number) => {
+    if (!confirm("Are you sure you want to delete this expenditure entry?")) return;
+    try {
+      setExpensesList(prev => prev.filter(item => item.id !== id));
+      setExpenditure(prev => Math.max(0, prev - (amt || 0)));
+      await api.deleteExpense(id);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete expenditure entry.");
+    }
+  };
   const [collapsed, setCollapsed] = useState(false);
 
   // Form Fields
@@ -6084,11 +6119,20 @@ function ExpensesScreen({ onBack }: { onBack: () => void }) {
                       <p className="text-[10px] text-slate-400 font-bold mt-0.5">{exp.category} • {exp.expenseDate}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-[#E11D48] bg-rose-50/50 px-2.5 py-1 rounded-full border border-rose-100/55">
-                      -₹{(exp.amount || 0).toLocaleString("en-IN")}
-                    </span>
-                    <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{exp.paymentMode}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span className="text-xs font-black text-[#E11D48] bg-rose-50/50 px-2.5 py-1 rounded-full border border-rose-100/55">
+                        -₹{(exp.amount || 0).toLocaleString("en-IN")}
+                      </span>
+                      <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-wider">{exp.paymentMode}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExpense(exp.id, exp.amount)}
+                      className="p-1 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               ))}

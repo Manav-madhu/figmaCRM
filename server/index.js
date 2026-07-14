@@ -707,6 +707,17 @@ app.post('/api/incomes', async (req, res) => {
   }
 });
 
+app.delete('/api/incomes/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await run('DELETE FROM incomes WHERE id = ?', [id]);
+    res.json({ message: 'Income entry deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete income entry' });
+  }
+});
+
 
 // ─── EXPENSES ROUTES ─────────────────────────────────────────────────────────
 
@@ -761,6 +772,17 @@ app.post('/api/expenses', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create expense entry' });
+  }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await run('DELETE FROM expenses WHERE id = ?', [id]);
+    res.json({ message: 'Expense entry deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete expense entry' });
   }
 });
 

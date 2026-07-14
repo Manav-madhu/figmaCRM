@@ -111,4 +111,10 @@ export const api = {
   deleteDpr: (id: number) => fetch(`/api/dprs/${id}`, {
     method: 'DELETE'
   }).then(handleResponse),
+  deleteIncome: (id: number) => fetch(`/api/incomes/${id}`, {
+    method: 'DELETE'
+  }).then(handleResponse),
+  deleteExpense: (id: number) => fetch(`/api/expenses/${id}`, {
+    method: 'DELETE'
+  }).then(handleResponse),
 };

@@ -3667,7 +3667,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   }) : [];
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 relative pb-24 animate-in fade-in duration-300">
+    <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden animate-in fade-in duration-300">
       <div className="bg-white border-b border-slate-100 px-4 pt-12 pb-0 shrink-0 sticky top-0 z-10">
         <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Progress Tracking</h2>
         <div className="flex gap-2">
@@ -3685,7 +3685,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+      <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
         <div className="max-w-2xl mx-auto px-4 py-5 space-y-6">
           {loading ? (
             <div className="text-center py-10 text-slate-400 italic">Loading progress data...</div>

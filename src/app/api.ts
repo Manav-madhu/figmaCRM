@@ -108,4 +108,7 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(d)
   }).then(handleResponse),
+  deleteDpr: (id: number) => fetch(`/api/dprs/${id}`, {
+    method: 'DELETE'
+  }).then(handleResponse),
 };

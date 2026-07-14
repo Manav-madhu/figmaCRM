@@ -871,6 +871,17 @@ app.post('/api/dprs', async (req, res) => {
   }
 });
 
+app.delete('/api/dprs/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await run('DELETE FROM dprs WHERE id = ?', [id]);
+    res.json({ message: 'DPR log deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete DPR log' });
+  }
+});
+
 
 // ─── STATIC FILE SERVING FOR PRODUCTION ──────────────────────────────────────
 

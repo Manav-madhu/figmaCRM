@@ -3565,6 +3565,17 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
     }
   };
 
+  const handleDeleteDpr = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this Daily Progress Report?")) return;
+    try {
+      await api.deleteDpr(id);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete DPR log.");
+    }
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setIsUploading(true);
@@ -3758,9 +3769,18 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                         <p className="text-xs font-black text-violet-600 uppercase tracking-wider">
                           {new Date(d.report_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
-                        {d.photos?.length > 0 && (
-                          <span className="text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-full">{d.photos.length} photos</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {d.photos?.length > 0 && (
+                            <span className="text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-full">{d.photos.length} photos</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDpr(d.id)}
+                            className="p-1 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs font-bold text-slate-800 leading-relaxed">{d.summary}</p>
                       {d.milestone_id && (
@@ -3895,7 +3915,16 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                           <div key={dpr.id} className="border border-slate-100 rounded-3xl p-4 bg-white shadow-xs text-left">
                             <div className="flex items-start justify-between mb-2">
                               <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 uppercase tracking-wider">DPR Log</span>
-                              <span className="text-[10px] font-bold text-slate-400">{sites.find(s => s.id === dpr.site_id)?.name || "Site Progress"}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400">{sites.find(s => s.id === dpr.site_id)?.name || "Site Progress"}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteDpr(dpr.id)}
+                                  className="p-1 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                             </div>
                             <p className="text-xs font-bold text-slate-800 leading-relaxed mb-3">{dpr.summary}</p>
 

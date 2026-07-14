@@ -105,6 +105,9 @@ const AppContext = createContext<{
   stats: any[];
   analytics: any;
   incomes: any[];
+  income: number;
+  pending: number;
+  closedCount: number;
   setLeads: React.Dispatch<React.SetStateAction<any[]>>;
   setProperties: React.Dispatch<React.SetStateAction<any[]>>;
   setTasks: React.Dispatch<React.SetStateAction<any[]>>;
@@ -113,6 +116,9 @@ const AppContext = createContext<{
   setBroadcasts: React.Dispatch<React.SetStateAction<any[]>>;
   setStats: React.Dispatch<React.SetStateAction<any[]>>;
   setIncomes: React.Dispatch<React.SetStateAction<any[]>>;
+  setIncome: React.Dispatch<React.SetStateAction<number>>;
+  setPending: React.Dispatch<React.SetStateAction<number>>;
+  setClosedCount: React.Dispatch<React.SetStateAction<number>>;
   refreshData: () => Promise<void>;
 } | null>(null);
 
@@ -593,21 +599,7 @@ function DashboardTab({
   back: () => void;
   setSelectedLeadId: (id: number) => void;
 }) {
-  const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
-  const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
-  const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
-
-  useEffect(() => {
-    localStorage.setItem("crm_income", income.toString());
-  }, [income]);
-
-  useEffect(() => {
-    localStorage.setItem("crm_pending", pending.toString());
-  }, [pending]);
-
-  useEffect(() => {
-    localStorage.setItem("crm_closed", closedCount.toString());
-  }, [closedCount]);
+  const { income, pending, closedCount, setIncome, setPending, setClosedCount } = useContext(AppContext)!;
 
   const [editingIncome, setEditingIncome] = useState(false);
   const [editingPending, setEditingPending] = useState(false);
@@ -4669,6 +4661,21 @@ export default function App() {
   const [stats, setStats] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
+  const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
+  const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
+
+  useEffect(() => {
+    localStorage.setItem("crm_income", income.toString());
+  }, [income]);
+
+  useEffect(() => {
+    localStorage.setItem("crm_pending", pending.toString());
+  }, [pending]);
+
+  useEffect(() => {
+    localStorage.setItem("crm_closed", closedCount.toString());
+  }, [closedCount]);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
@@ -4873,7 +4880,9 @@ export default function App() {
     return (
       <AppContext.Provider value={{
         leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+        income, pending, closedCount,
         setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
+        setIncome, setPending, setClosedCount,
         refreshData
       }}>
         <PublicPropertyView
@@ -4889,7 +4898,9 @@ export default function App() {
   return (
     <AppContext.Provider value={{
       leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes,
+      income, pending, closedCount,
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes,
+      setIncome, setPending, setClosedCount,
       refreshData
     }}>
       <div className="fixed inset-0 bg-white flex flex-col overflow-hidden">
@@ -4959,7 +4970,7 @@ export default function App() {
 }
 
 function IncomeScreen({ onBack }: { onBack: () => void }) {
-  const { incomes, refreshData, setIncomes } = useContext(AppContext)!;
+  const { incomes, refreshData, setIncomes, setIncome } = useContext(AppContext)!;
   const [collapsed, setCollapsed] = useState(false);
 
   // Form Fields
@@ -5010,9 +5021,8 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
     const mockId = Date.now();
     setIncomes(prev => [{ id: mockId, ...payload }, ...prev]);
 
-    // Update LocalStorage crm_income to sync with Dashboard Tab
-    const currentIncomeVal = Number(localStorage.getItem("crm_income") || 128000);
-    localStorage.setItem("crm_income", (currentIncomeVal + amount).toString());
+    // Update Global context state and LocalStorage crm_income to sync with Dashboard Tab
+    setIncome(prev => prev + amount);
 
     try {
       await api.createIncome(payload);

@@ -35,6 +35,9 @@ import {
   Target,
   IndianRupee,
   ArrowLeft,
+  ArrowRight,
+  Loader2,
+  UploadCloud,
   Upload,
   Download,
   Edit,
@@ -106,6 +109,9 @@ const AppContext = createContext<{
   analytics: any;
   incomes: any[];
   expensesList: any[];
+  sites: any[];
+  milestones: any[];
+  dprs: any[];
   income: number;
   pending: number;
   closedCount: number;
@@ -118,6 +124,9 @@ const AppContext = createContext<{
   setStats: React.Dispatch<React.SetStateAction<any[]>>;
   setIncomes: React.Dispatch<React.SetStateAction<any[]>>;
   setExpensesList: React.Dispatch<React.SetStateAction<any[]>>;
+  setSites: React.Dispatch<React.SetStateAction<any[]>>;
+  setMilestones: React.Dispatch<React.SetStateAction<any[]>>;
+  setDprs: React.Dispatch<React.SetStateAction<any[]>>;
   setIncome: React.Dispatch<React.SetStateAction<number>>;
   setPending: React.Dispatch<React.SetStateAction<number>>;
   setClosedCount: React.Dispatch<React.SetStateAction<number>>;
@@ -3506,221 +3515,510 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
   );
 }
 
-// ─── Tab: Calendar (unchanged) ──────────────────────────────────────────
+// ─── Tab: Calendar (Progress Tracking & Daily logs) ─────────────────────
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3">
+      {children}
+    </h3>
+  );
+}
 function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddAppointment: () => void }) {
-  const { appointments } = useContext(AppContext)!;
-  const [completedIds, setCompletedIds] = useState<number[]>([]);
-  const [sortBy, setSortBy] = useState<"time" | "priority">("time");
+  const { sites, milestones, dprs, setMilestones, setDprs, refreshData } = useContext(AppContext)!;
+  const [view, setView] = useState<"timeline" | "calendar">("timeline");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedMilestone, setSelectedMilestone] = useState<any | null>(null);
+  const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [showDprModal, setShowDprModal] = useState(false);
 
-  const totalTasks = appointments.length;
-  const highPriorityCount = appointments.filter(a => a.priority === "High").length;
-  
-  // Tasks due today: all of them in this daily task view minus completed
-  const dueTodayCount = appointments.length - completedIds.length;
-  const completedCount = completedIds.length;
+  // Form states
+  const [mName, setMName] = useState("");
+  const [mTargetDate, setMTargetDate] = useState("");
+  const [dprSiteId, setDprSiteId] = useState(() => (sites[0]?.id ? String(sites[0].id) : "1"));
+  const [dprSummary, setDprSummary] = useState("");
+  const [dprPercentage, setDprPercentage] = useState(50);
+  const [dprPhotoUrl, setDprPhotoUrl] = useState("");
+  const [isCreatingMilestone, setIsCreatingMilestone] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const toggleCompleted = (id: number) => {
-    setCompletedIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+  // Sync default site selection once sites are loaded
+  useEffect(() => {
+    if (sites.length > 0 && !dprSiteId) {
+      setDprSiteId(String(sites[0].id));
+    }
+  }, [sites]);
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
   };
 
-  const getPriorityWeight = (priority: string) => {
-    switch (priority) {
-      case "High": return 3;
-      case "Medium": return 2;
-      case "Low": return 1;
-      default: return 0;
+  const handleDeleteMilestone = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this milestone?")) return;
+    try {
+      await api.deleteMilestone(id);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete milestone.");
     }
   };
 
-  const sortedTasks = [...appointments].sort((a, b) => {
-    if (sortBy === "priority") {
-      return getPriorityWeight(b.priority) - getPriorityWeight(a.priority);
-    } else {
-      // Sort by time string (e.g. 10:00 AM)
-      return a.time.localeCompare(b.time);
-    }
-  });
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsUploading(true);
+    // Simulate upload delay
+    setTimeout(() => {
+      setDprPhotoUrl("https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80");
+      setIsUploading(false);
+    }, 1000);
+  };
 
-  const getTaskIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "call":
-        return {
-          icon: <Phone size={18} className="text-emerald-600" />,
-          bg: "#E6F9F0"
-        };
-      case "viewing":
-      case "site visit":
-        return {
-          icon: <MapPin size={18} className="text-blue-600" />,
-          bg: "#EEF6FF"
-        };
-      case "document":
-        return {
-          icon: <FileText size={18} className="text-violet-600" />,
-          bg: "#F5F3FF"
-        };
-      case "payment":
-        return {
-          icon: <IndianRupee size={18} className="text-emerald-600" />,
-          bg: "#E6F9F0"
-        };
-      default:
-        return {
-          icon: <CalendarDays size={18} className="text-slate-600" />,
-          bg: "#F1F5F9"
-        };
+  const handleSubmitDpr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dprSummary) {
+      alert("Please enter a summary.");
+      return;
+    }
+    try {
+      const payload = {
+        report_date: selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        summary: dprSummary,
+        photos: dprPhotoUrl ? [dprPhotoUrl] : [],
+        milestone_id: selectedMilestone?.id || null,
+        completion_percentage: selectedMilestone ? dprPercentage : 0,
+        site_id: Number(dprSiteId) || 1
+      };
+      await api.createDpr(payload);
+      refreshData();
+      setShowDprModal(false);
+      setDprSummary("");
+      setDprPhotoUrl("");
+      alert("DPR submitted successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit DPR.");
     }
   };
 
-  const getPriorityStyle = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return { bg: "#FEE2E2", text: "#EF4444" };
-      case "Medium":
-        return { bg: "#FFF3EB", text: "#D97706" };
-      case "Low":
-        return { bg: "#EEF6FF", text: "#3B82F6" };
-      default:
-        return { bg: "#F1F5F9", text: "#64748B" };
+  const handleAddMilestone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mName || !mTargetDate) {
+      alert("Please fill in Milestone Name and Target Date.");
+      return;
     }
+    setIsCreatingMilestone(true);
+    try {
+      const payload = {
+        name: mName,
+        target_date: mTargetDate,
+        status: "PENDING",
+        progress_percentage: 0
+      };
+      await api.createMilestone(payload);
+      refreshData();
+      setShowAddMilestone(false);
+      setMName("");
+      setMTargetDate("");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create milestone.");
+    }
+    setIsCreatingMilestone(false);
   };
+
+  // Calendar logic
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+
+  const calendarDays = [];
+  for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
+  for (let i = 1; i <= daysInMonth; i++) calendarDays.push(new Date(currentYear, currentMonth, i));
+
+  // DPRs for selected date
+  const dprsForSelectedDate = selectedDate ? dprs.filter(d => {
+    const dDate = new Date(d.report_date);
+    return dDate.getFullYear() === selectedDate.getFullYear() &&
+           dDate.getMonth() === selectedDate.getMonth() &&
+           dDate.getDate() === selectedDate.getDate();
+  }) : [];
+
+  // Milestones for selected date
+  const milestonesForSelectedDate = selectedDate ? milestones.filter(m => {
+    const md = new Date(m.target_date);
+    return md.getFullYear() === selectedDate.getFullYear() &&
+           md.getMonth() === selectedDate.getMonth() &&
+           md.getDate() === selectedDate.getDate();
+  }) : [];
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
-      {/* Top Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
-        <button
-          onClick={() => go("dashboard")}
-          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
-        >
-          <ArrowLeft size={20} strokeWidth={2.5} />
-        </button>
-        <h1
-          className="text-slate-900 text-lg font-bold"
-          style={{ fontFamily: "Plus Jakarta Sans" }}
-        >
-          Tasks Due
-        </h1>
-        <button
-          className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-800 transition-colors"
-        >
-          <MoreHorizontal size={20} strokeWidth={2} />
-        </button>
-      </div>
-
-      {/* Horizontal Stats Cards */}
-      <div className="px-5 py-4 bg-white flex gap-3 flex-shrink-0 border-b border-slate-100/50 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        {/* Total Tasks Card (Purple Theme) */}
-        <div className="flex-1 min-w-[76px] bg-[#F3F0FF] rounded-2xl py-3 px-1 text-center border border-[#E9E3FF]">
-          <div className="text-2xl font-extrabold text-[#7C5CFC] tracking-tight">{totalTasks}</div>
-          <div className="text-[10px] font-bold text-[#6D4AE7] mt-1 whitespace-nowrap leading-tight">Total Tasks</div>
-        </div>
-        {/* High Priority Card (Red Theme) */}
-        <div className="flex-1 min-w-[76px] bg-[#FFF2F2] rounded-2xl py-3 px-1 text-center border border-[#FFE2E2]">
-          <div className="text-2xl font-extrabold text-[#EF4444] tracking-tight">{highPriorityCount}</div>
-          <div className="text-[10px] font-bold text-[#D32F2F] mt-1 whitespace-nowrap leading-tight">High Priority</div>
-        </div>
-        {/* Due Today Card (Orange Theme) */}
-        <div className="flex-1 min-w-[76px] bg-[#FFF8F2] rounded-2xl py-3 px-1 text-center border border-[#FFEFE0]">
-          <div className="text-2xl font-extrabold text-[#F59E0B] tracking-tight">{dueTodayCount}</div>
-          <div className="text-[10px] font-bold text-[#D97706] mt-1 whitespace-nowrap leading-tight">Due Today</div>
-        </div>
-        {/* Completed Card (Green Theme) */}
-        <div className="flex-1 min-w-[76px] bg-[#F0FDF4] rounded-2xl py-3 px-1 text-center border border-[#DCFCE7]">
-          <div className="text-2xl font-extrabold text-[#10B981] tracking-tight">{completedCount}</div>
-          <div className="text-[10px] font-bold text-[#15803D] mt-1 whitespace-nowrap leading-tight">Completed</div>
+    <div className="flex flex-col h-full bg-slate-50 relative pb-24 animate-in fade-in duration-300">
+      <div className="bg-white border-b border-slate-100 px-4 pt-12 pb-0 shrink-0 sticky top-0 z-10">
+        <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Progress Tracking</h2>
+        <div className="flex gap-2">
+          {[{ id: "timeline", label: "Timeline & Milestones" }, { id: "calendar", label: "Calendar" }].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setView(id as any)}
+              className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                view === id ? "border-[#5B3FD9] text-[#5B3FD9]" : "border-transparent text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* List Title & Sort */}
-      <div className="px-5 pt-5 pb-2 bg-[#F8F9FE] flex items-center justify-between flex-shrink-0">
-        <h2 className="text-[15px] font-extrabold text-slate-800" style={{ fontFamily: "Plus Jakarta Sans" }}>
-          Today's Tasks
-        </h2>
-        <button
-          onClick={() => setSortBy(sortBy === "time" ? "priority" : "time")}
-          className="flex items-center gap-1.5 text-xs font-bold text-violet-600 hover:text-violet-800 transition-colors bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/50 shadow-xs"
-        >
-          Sort {sortBy === "priority" ? "Priority" : "Time"} ⇅
-        </button>
-      </div>
-
-      {/* Tasks List Container */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 bg-[#F8F9FE]" style={{ scrollbarWidth: "none" }}>
-        {sortedTasks.length === 0 ? (
-          <div className="flex flex-col items-center py-16 text-center bg-white rounded-3xl p-5 shadow-xs border border-slate-100 mt-2">
-            <div className="text-5xl mb-4">📭</div>
-            <p className="text-base font-semibold text-slate-800">No tasks due today</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-4 shadow-xs border border-slate-100/85 mt-2 flex flex-col divide-y divide-slate-100/70">
-            {sortedTasks.map((apt) => {
-              const isCompleted = completedIds.includes(apt.id);
-              const taskStyle = getTaskIcon(apt.type);
-              const priorityStyle = getPriorityStyle(apt.priority);
-
-              return (
-                <div
-                  key={apt.id}
-                  className="flex items-center justify-between py-3.5 first:pt-1 last:pb-1 group transition-all"
-                  style={{ opacity: isCompleted ? 0.6 : 1 }}
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="max-w-2xl mx-auto px-4 py-5 space-y-6">
+          {loading ? (
+            <div className="text-center py-10 text-slate-400 italic">Loading progress data...</div>
+          ) : view === "timeline" ? (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <SectionLabel>Milestones</SectionLabel>
+                <button
+                  onClick={() => { setMTargetDate(''); setShowAddMilestone(true); }}
+                  className="text-xs font-bold bg-violet-50 text-violet-600 border border-violet-100 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-violet-100/50"
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Left Circular Action Icon */}
-                    <button
-                      onClick={() => toggleCompleted(apt.id)}
-                      className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90 flex-shrink-0"
-                      style={{ backgroundColor: isCompleted ? "#DCFCE7" : taskStyle.bg }}
-                    >
-                      {isCompleted ? (
-                        <Check size={18} className="text-emerald-600" />
-                      ) : (
-                        taskStyle.icon
+                  <Plus size={14} /> Add Milestone
+                </button>
+              </div>
+
+              <div className="space-y-0">
+                {milestones.length === 0 ? (
+                  <div className="text-center p-6 bg-white rounded-xl border border-slate-100 text-sm text-slate-400 italic">
+                    No milestones defined yet.
+                  </div>
+                ) : milestones.map((m, i) => (
+                  <div key={m.id} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`size-5 rounded-full border-2 mt-1 shrink-0 ${
+                        m.status === 'COMPLETED' ? "bg-emerald-500 border-emerald-500" :
+                        m.status === 'IN_PROGRESS' ? "bg-white border-violet-600" :
+                        "bg-white border-slate-200"
+                      }`} />
+                      {i < milestones.length - 1 && (
+                        <div className={`w-0.5 flex-1 my-1 ${m.status === 'COMPLETED' ? "bg-emerald-500" : "bg-slate-100"}`} style={{ minHeight: 40 }} />
                       )}
-                    </button>
-                    <div className="flex flex-col">
-                      <span className={`font-bold text-slate-800 text-[14px] leading-tight transition-all ${
-                        isCompleted ? "line-through text-slate-400 font-medium" : ""
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className={`rounded-3xl px-4 py-3 border ${
+                        m.status === 'IN_PROGRESS' ? "bg-violet-50/20 border-violet-100" :
+                        m.status === 'COMPLETED' ? "bg-white border-slate-100 opacity-60" :
+                        "bg-white border-slate-100"
                       }`}>
-                        {apt.title}
-                      </span>
-                      <span className="text-[11px] text-slate-400 mt-0.5 font-medium">
-                        {apt.sub}
-                      </span>
+                        <div className="flex items-center justify-between">
+                          <p className={`font-black text-sm ${m.status === 'IN_PROGRESS' ? "text-violet-600" : "text-slate-800"}`}>{m.name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                              {new Date(m.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </span>
+                            {m.status === 'COMPLETED' && <CheckCircle2 size={16} className="text-emerald-500" />}
+                            <button onClick={() => handleDeleteMilestone(m.id)} className="p-1 hover:bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-3">
+                          <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className={`h-full ${m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-violet-600'}`} style={{ width: `${m.progress_percentage || 0}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-slate-500">{m.progress_percentage || 0}%</span>
+                        </div>
+
+                        {m.status !== 'COMPLETED' && (
+                          <div className="mt-3 pt-3 border-t border-slate-100 border-dashed flex justify-end">
+                            <button
+                              onClick={() => { setSelectedMilestone(m); setShowDprModal(true); }}
+                              className="text-xs font-bold text-white bg-[#5B3FD9] px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-violet-700"
+                            >
+                              <Plus size={14} /> Submit DPR
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Right Details */}
-                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                    <span className="text-[11px] font-bold text-slate-700">
-                      {apt.time}
-                    </span>
-                    <span
-                      className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider"
-                      style={{ backgroundColor: priorityStyle.bg, color: priorityStyle.text }}
+                ))}
+              </div>
+
+              <div className="mt-8">
+                <SectionLabel>Recent Daily Logs</SectionLabel>
+                <div className="space-y-3">
+                  {dprs.slice(0, 5).map((d) => (
+                    <Card key={d.id} className="p-4 text-left">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-black text-violet-600 uppercase tracking-wider">
+                          {new Date(d.report_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                        {d.photos?.length > 0 && (
+                          <span className="text-[9px] font-bold text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-full">{d.photos.length} photos</span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 leading-relaxed">{d.summary}</p>
+                      {d.milestone_id && (
+                        <p className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
+                          <ArrowRight size={12} /> Contributed to milestone
+                        </p>
+                      )}
+                    </Card>
+                  ))}
+                  {dprs.length === 0 && <p className="text-xs text-slate-400 italic text-center py-4">No recent logs.</p>}
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    onClick={() => { setSelectedMilestone(null); setShowDprModal(true); }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider text-white bg-slate-800 hover:bg-slate-900 transition-colors"
+                  >
+                    <Plus size={16} /> Submit General DPR
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div>
+              <SectionLabel>{today.toLocaleString('default', { month: 'long', year: 'numeric' })}</SectionLabel>
+              <Card className="p-5">
+                <div className="grid grid-cols-7 gap-1 mb-3">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                    <p key={d} className="text-[11px] font-bold text-slate-400 text-center">{d}</p>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((date, idx) => {
+                    if (!date) return <div key={`empty-${idx}`} className="aspect-square" />;
+
+                    const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth();
+
+                    // Check if milestone target is this date
+                    const hasMilestone = milestones.some(m => {
+                      const md = new Date(m.target_date);
+                      return md.getDate() === date.getDate() && md.getMonth() === date.getMonth();
+                    });
+
+                    // Check if DPR exists
+                    const hasLog = dprs.some(d => {
+                      const dd = new Date(d.report_date);
+                      return dd.getDate() === date.getDate() && dd.getMonth() === date.getMonth();
+                    });
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleDateClick(date)}
+                        className={`aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-bold relative gap-0.5 transition-all ${
+                          selectedDate?.getDate() === date.getDate() && selectedDate?.getMonth() === date.getMonth() ? "ring-2 ring-violet-600 ring-offset-2" : ""
+                        } ${
+                          isToday ? "bg-violet-600 text-white shadow-md shadow-violet-600/20" :
+                          hasMilestone ? "bg-amber-50 text-amber-800 border border-amber-100" :
+                          hasLog ? "bg-indigo-50 text-indigo-800 border border-indigo-100" :
+                          "text-slate-800 hover:bg-slate-50"
+                        }`}
+                      >
+                        {date.getDate()}
+                        <div className="flex gap-0.5">
+                          {hasLog && !isToday && <span className="size-1 rounded-full bg-indigo-500" />}
+                          {hasMilestone && !isToday && <span className="size-1 rounded-full bg-amber-500" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-5 mt-5 pt-4 border-t border-slate-100 justify-center">
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-indigo-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DPR Logged</p></div>
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Milestone</p></div>
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-violet-600" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Today</p></div>
+                </div>
+              </Card>
+
+              {selectedDate && (
+                <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <SectionLabel>
+                    Activity on {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </SectionLabel>
+
+                  <div className="space-y-4">
+                    {/* Milestones Section */}
+                    {milestonesForSelectedDate.length > 0 && (
+                      <div className="space-y-3">
+                        {milestonesForSelectedDate.map(m => (
+                          <div key={m.id} className={`rounded-3xl px-4 py-3 border text-left ${m.status === 'COMPLETED' ? "bg-emerald-50/50 border-emerald-100" : "bg-amber-50/50 border-amber-100"}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={`size-2 rounded-full ${m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                <p className="font-black text-sm text-slate-800">{m.name}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold tracking-wider uppercase text-slate-400 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-xs">Milestone</span>
+                                <button onClick={() => handleDeleteMilestone(m.id)} className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex items-center gap-3 pl-4">
+                              <div className="flex-1 bg-black/5 rounded-full h-1.5 overflow-hidden">
+                                <div className={`h-full ${m.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${m.progress_percentage || 0}%` }} />
+                              </div>
+                              <span className="text-xs font-bold text-slate-400">{m.progress_percentage || 0}%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        const offsetDate = new Date(selectedDate.getTime() - (selectedDate.getTimezoneOffset() * 60000));
+                        setMTargetDate(offsetDate.toISOString().split('T')[0]);
+                        setShowAddMilestone(true);
+                      }}
+                      className="w-full border border-dashed border-slate-200 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors group"
                     >
-                      {apt.priority || "Medium"}
-                    </span>
+                      <div className="bg-white p-2 rounded-full border border-slate-100 shadow-xs group-hover:scale-110 transition-transform">
+                        <Plus size={16} className="text-violet-600" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-wider">Add Milestone for this Date</span>
+                    </button>
+
+                    {/* DPRs Section */}
+                    {dprsForSelectedDate.length > 0 && (
+                      <div className="space-y-3 mt-6">
+                        {dprsForSelectedDate.map(dpr => (
+                          <div key={dpr.id} className="border border-slate-100 rounded-3xl p-4 bg-white shadow-xs text-left">
+                            <div className="flex items-start justify-between mb-2">
+                              <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 uppercase tracking-wider">DPR Log</span>
+                              <span className="text-[10px] font-bold text-slate-400">{sites.find(s => s.id === dpr.site_id)?.name || "Site Progress"}</span>
+                            </div>
+                            <p className="text-xs font-bold text-slate-800 leading-relaxed mb-3">{dpr.summary}</p>
+
+                            {dpr.milestone_id && (
+                              <div className="bg-slate-50 p-2 rounded-xl mb-3 border border-slate-100">
+                                <p className="text-[11px] font-bold text-slate-600">Updated milestone by <span className="font-extrabold text-emerald-600">+{dpr.completion_percentage}%</span></p>
+                              </div>
+                            )}
+
+                            {dpr.photos?.length > 0 && (
+                              <div className="mt-3">
+                                <img src={dpr.photos[0]} alt="Progress" className="w-full h-40 object-cover rounded-2xl border border-slate-100" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Button Bar */}
-      <div className="p-4 bg-white border-t border-slate-100/80 flex-shrink-0">
-        <button
-          onClick={onAddAppointment}
-          className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm shadow-violet-500/10 text-sm"
-        >
-          <Plus size={18} strokeWidth={3} /> Add New Task
-        </button>
-      </div>
+      {/* Add Milestone Modal */}
+      {showAddMilestone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Add Milestone</h3>
+              <button onClick={() => setShowAddMilestone(false)} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleAddMilestone} className="p-4 space-y-4 text-left">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Milestone Name</label>
+                <input required value={mName} onChange={e => setMName(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="e.g. Ground Floor Slab" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target Date</label>
+                <input required type="date" value={mTargetDate} onChange={e => setMTargetDate(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" />
+              </div>
+              <div className="pt-2 flex justify-end">
+                <button disabled={isCreatingMilestone} type="submit" className="bg-[#5B3FD9] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-violet-800 disabled:opacity-50 flex items-center gap-2">
+                  {isCreatingMilestone ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : "Create Milestone"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Submit DPR Modal */}
+      {showDprModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
+              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Submit DPR</h3>
+              <button onClick={() => setShowDprModal(false)} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSubmitDpr} className="p-4 space-y-4 overflow-y-auto flex-1 text-left" style={{ scrollbarWidth: "none" }}>
+              {selectedMilestone && (
+                <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3.5 mb-4">
+                  <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider mb-1">Applying to Milestone</p>
+                  <p className="font-black text-xs text-indigo-900">{selectedMilestone.name}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Select Site</label>
+                <select required value={dprSiteId} onChange={e => setDprSiteId(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800 cursor-pointer">
+                  {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Summary of Work</label>
+                <textarea required rows={3} value={dprSummary} onChange={e => setDprSummary(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="Describe the work done today..." />
+              </div>
+
+              {selectedMilestone && (
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between">
+                    <span>% Completed Today</span>
+                    <span className="text-violet-600">{dprPercentage}%</span>
+                  </label>
+                  <input type="range" min="0" max="100" value={dprPercentage} onChange={e => setDprPercentage(Number(e.target.value))} className="w-full accent-violet-600 cursor-pointer" />
+                  <p className="text-[10px] text-slate-400 font-bold mt-1">How much of the milestone was finished today?</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Photo Evidence</label>
+                {dprPhotoUrl ? (
+                  <div className="relative rounded-2xl overflow-hidden aspect-video border border-slate-100">
+                    <img src={dprPhotoUrl} alt="DPR" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setDprPhotoUrl('')} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className="flex flex-col items-center justify-center gap-2 border border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50 text-slate-400">
+                      {isUploading ? (
+                        <div className="animate-pulse flex flex-col items-center gap-2"><UploadCloud size={24} /><span>Uploading...</span></div>
+                      ) : (
+                        <><UploadCloud size={24} className="text-violet-600" /><span className="text-xs font-bold uppercase tracking-wider">Tap to upload photo</span></>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </form>
+            <div className="p-4 border-t border-slate-100 shrink-0 flex justify-end">
+              <button onClick={handleSubmitDpr} className="bg-[#5B3FD9] text-white px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-violet-800 w-full flex justify-center items-center gap-2">
+                <CheckCircle2 size={16} /> Submit Progress Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4645,6 +4943,9 @@ export default function App() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [expensesList, setExpensesList] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [dprs, setDprs] = useState<any[]>([]);
   const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
   const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
   const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
@@ -4754,6 +5055,33 @@ export default function App() {
       }
     } catch (e) {
       console.error("Error loading expenses:", e);
+    }
+
+    try {
+      const sitesData = await api.getSites();
+      if (Array.isArray(sitesData)) {
+        setSites(sitesData);
+      }
+    } catch (e) {
+      console.error("Error loading sites:", e);
+    }
+
+    try {
+      const milData = await api.getMilestones();
+      if (Array.isArray(milData)) {
+        setMilestones(milData);
+      }
+    } catch (e) {
+      console.error("Error loading milestones:", e);
+    }
+
+    try {
+      const dprsData = await api.getDprs();
+      if (Array.isArray(dprsData)) {
+        setDprs(dprsData);
+      }
+    } catch (e) {
+      console.error("Error loading dprs:", e);
     }
   };
 
@@ -4874,9 +5202,9 @@ export default function App() {
   if (viewParam === "public-property" && propertyIdParam && leadIdParam) {
     return (
       <AppContext.Provider value={{
-        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList,
+        leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList, sites, milestones, dprs,
         income, pending, closedCount,
-        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList,
+        setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList, setSites, setMilestones, setDprs,
         setIncome, setPending, setClosedCount,
         refreshData
       }}>
@@ -4892,9 +5220,9 @@ export default function App() {
 
   return (
     <AppContext.Provider value={{
-      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList,
+      leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList, sites, milestones, dprs,
       income, pending, closedCount,
-      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList,
+      setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList, setSites, setMilestones, setDprs,
       setIncome, setPending, setClosedCount,
       refreshData
     }}>

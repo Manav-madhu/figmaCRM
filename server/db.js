@@ -341,6 +341,58 @@ export async function initDb() {
     );
   `;
 
+  const createSitesTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS sites (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255)
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS sites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT
+    );
+  `;
+
+  const createMilestonesTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS milestones (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255),
+      target_date VARCHAR(100),
+      status VARCHAR(50),
+      progress_percentage INTEGER
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS milestones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      target_date TEXT,
+      status TEXT,
+      progress_percentage INTEGER
+    );
+  `;
+
+  const createDprsTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS dprs (
+      id SERIAL PRIMARY KEY,
+      report_date VARCHAR(100),
+      summary TEXT,
+      photos TEXT,
+      milestone_id INTEGER,
+      completion_percentage INTEGER,
+      site_id INTEGER
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS dprs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_date TEXT,
+      summary TEXT,
+      photos TEXT,
+      milestone_id INTEGER,
+      completion_percentage INTEGER,
+      site_id INTEGER
+    );
+  `;
+
   // Run table creations
   await run(createLeadsTable);
   await run(createPropertiesTable);
@@ -350,6 +402,9 @@ export async function initDb() {
   await run(createBroadcastsTable);
   await run(createIncomesTable);
   await run(createExpensesTable);
+  await run(createSitesTable);
+  await run(createMilestonesTable);
+  await run(createDprsTable);
 
   // Check if seeding is needed
   const leadsCount = await query('SELECT COUNT(*) as count FROM leads');
@@ -669,6 +724,46 @@ export async function initDb() {
         INSERT INTO expenses (category, vendorName, expenseDate, amount, paymentMode, invoiceNo, notes, billFile)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [exp.category, exp.vendorName, exp.expenseDate, exp.amount, exp.paymentMode, exp.invoiceNo, exp.notes, exp.billFile]);
+    }
+
+    // Seed Sites
+    const initialSites = [
+      { name: "Skyline Residency" },
+      { name: "Harbour View Tower" }
+    ];
+    for (const s of initialSites) {
+      await run(`INSERT INTO sites (name) VALUES (?)`, [s.name]);
+    }
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+
+    // Seed Milestones
+    const initialMilestones = [
+      { name: "Excavation & Shoring", target_date: `${yyyy}-${mm}-05`, status: "COMPLETED", progress_percentage: 100 },
+      { name: "Foundation Pouring", target_date: `${yyyy}-${mm}-10`, status: "COMPLETED", progress_percentage: 100 },
+      { name: "Ground Floor Column Reinforcement", target_date: `${yyyy}-${mm}-14`, status: "IN_PROGRESS", progress_percentage: 60 },
+      { name: "First Floor Slab Casting", target_date: `${yyyy}-${mm}-22`, status: "PENDING", progress_percentage: 0 }
+    ];
+    for (const m of initialMilestones) {
+      await run(`
+        INSERT INTO milestones (name, target_date, status, progress_percentage)
+        VALUES (?, ?, ?, ?)
+      `, [m.name, m.target_date, m.status, m.progress_percentage]);
+    }
+
+    // Seed DPRs
+    const initialDprs = [
+      { report_date: `${yyyy}-${mm}-05`, summary: "Excavation finished ahead of schedule. Shoring completed for Sector A.", photos: JSON.stringify(["https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=600&q=80"]), milestone_id: 1, completion_percentage: 100, site_id: 1 },
+      { report_date: `${yyyy}-${mm}-10`, summary: "Foundation pour complete. Quality testing report attached. Curing started.", photos: JSON.stringify(["https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=600&q=80"]), milestone_id: 2, completion_percentage: 100, site_id: 1 },
+      { report_date: `${yyyy}-${mm}-14`, summary: "Ground floor column reinforcement underway. 60% rebars tied. Inspections scheduled for tomorrow.", photos: JSON.stringify([]), milestone_id: 3, completion_percentage: 60, site_id: 1 }
+    ];
+    for (const d of initialDprs) {
+      await run(`
+        INSERT INTO dprs (report_date, summary, photos, milestone_id, completion_percentage, site_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [d.report_date, d.summary, d.photos, d.milestone_id, d.completion_percentage, d.site_id]);
     }
 
     console.log('Database seeded successfully.');

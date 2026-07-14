@@ -92,4 +92,20 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(exp)
   }).then(handleResponse),
+  getSites: () => fetch('/api/sites').then(handleResponse),
+  getMilestones: () => fetch('/api/milestones').then(handleResponse),
+  createMilestone: (m: any) => fetch('/api/milestones', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(m)
+  }).then(handleResponse),
+  deleteMilestone: (id: number) => fetch(`/api/milestones/${id}`, {
+    method: 'DELETE'
+  }).then(handleResponse),
+  getDprs: () => fetch('/api/dprs').then(handleResponse),
+  createDpr: (d: any) => fetch('/api/dprs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(d)
+  }).then(handleResponse),
 };

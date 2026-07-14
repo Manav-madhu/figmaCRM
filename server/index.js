@@ -765,6 +765,113 @@ app.post('/api/expenses', async (req, res) => {
 });
 
 
+// ─── PROGRESS TRACKING ENDPOINTS ─────────────────────────────────────────────
+
+app.get('/api/sites', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM sites');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch sites' });
+  }
+});
+
+app.get('/api/milestones', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM milestones ORDER BY target_date ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch milestones' });
+  }
+});
+
+app.post('/api/milestones', async (req, res) => {
+  const { name, target_date, status, progress_percentage } = req.body;
+  try {
+    const result = await run(`
+      INSERT INTO milestones (name, target_date, status, progress_percentage)
+      VALUES (?, ?, ?, ?)
+    `, [name, target_date, status || 'PENDING', progress_percentage || 0]);
+    res.status(201).json({
+      id: result.lastID,
+      name,
+      target_date,
+      status: status || 'PENDING',
+      progress_percentage: progress_percentage || 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create milestone' });
+  }
+});
+
+app.delete('/api/milestones/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await run('DELETE FROM milestones WHERE id = ?', [id]);
+    res.json({ message: 'Milestone deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete milestone' });
+  }
+});
+
+app.get('/api/dprs', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM dprs ORDER BY report_date DESC');
+    const rows = result.rows.map(row => {
+      let photos = [];
+      try {
+        photos = row.photos ? JSON.parse(row.photos) : [];
+      } catch (e) {
+        photos = row.photos ? row.photos.split(',') : [];
+      }
+      return { ...row, photos };
+    });
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch DPRs' });
+  }
+});
+
+app.post('/api/dprs', async (req, res) => {
+  const { report_date, summary, photos, milestone_id, completion_percentage, site_id } = req.body;
+  try {
+    const photosStr = Array.isArray(photos) ? JSON.stringify(photos) : JSON.stringify([]);
+    const result = await run(`
+      INSERT INTO dprs (report_date, summary, photos, milestone_id, completion_percentage, site_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [report_date, summary, photosStr, milestone_id || null, completion_percentage || 0, site_id]);
+
+    if (milestone_id) {
+      const milResult = await query('SELECT * FROM milestones WHERE id = ?', [milestone_id]);
+      if (milResult.rows.length > 0) {
+        const mil = milResult.rows[0];
+        const newProgress = Math.min(100, (mil.progress_percentage || 0) + (completion_percentage || 0));
+        const newStatus = newProgress === 100 ? 'COMPLETED' : 'IN_PROGRESS';
+        await run('UPDATE milestones SET progress_percentage = ?, status = ? WHERE id = ?', [newProgress, newStatus, milestone_id]);
+      }
+    }
+
+    res.status(201).json({
+      id: result.lastID,
+      report_date,
+      summary,
+      photos: Array.isArray(photos) ? photos : [],
+      milestone_id,
+      completion_percentage,
+      site_id
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create DPR log' });
+  }
+});
+
+
 // ─── STATIC FILE SERVING FOR PRODUCTION ──────────────────────────────────────
 
 // Serve static assets from Vite build output

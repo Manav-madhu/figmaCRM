@@ -3466,6 +3466,18 @@ function PropertiesTab({ onAddProperty, onEditProperty, onDeleteProperty }: { on
                   />
                 </button>
 
+                {/* Delete Icon */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteProperty(prop.id);
+                  }}
+                  className="absolute top-14 right-4 w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-xs z-10"
+                >
+                  <Trash2 size={15} />
+                </button>
+
                 {/* Left Thumbnail Image */}
                 <div className="w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0">
                   <img

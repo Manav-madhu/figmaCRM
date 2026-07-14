@@ -113,7 +113,7 @@ const AppContext = createContext<{
   milestones: any[];
   dprs: any[];
   income: number;
-  pending: number;
+  expenditure: number;
   closedCount: number;
   setLeads: React.Dispatch<React.SetStateAction<any[]>>;
   setProperties: React.Dispatch<React.SetStateAction<any[]>>;
@@ -128,7 +128,7 @@ const AppContext = createContext<{
   setMilestones: React.Dispatch<React.SetStateAction<any[]>>;
   setDprs: React.Dispatch<React.SetStateAction<any[]>>;
   setIncome: React.Dispatch<React.SetStateAction<number>>;
-  setPending: React.Dispatch<React.SetStateAction<number>>;
+  setExpenditure: React.Dispatch<React.SetStateAction<number>>;
   setClosedCount: React.Dispatch<React.SetStateAction<number>>;
   refreshData: () => Promise<void>;
 } | null>(null);
@@ -611,13 +611,13 @@ function DashboardTab({
   back: () => void;
   setSelectedLeadId: (id: number) => void;
 }) {
-  const { income, pending, closedCount, setIncome, setPending, setClosedCount } = useContext(AppContext)!;
+  const { income, expenditure, closedCount, setIncome, setExpenditure, setClosedCount } = useContext(AppContext)!;
 
   const [editingIncome, setEditingIncome] = useState(false);
-  const [editingPending, setEditingPending] = useState(false);
+  const [editingExpenditure, setEditingExpenditure] = useState(false);
   const [editingClosed, setEditingClosed] = useState(false);
 
-  const profit = income + pending;
+  const profit = income - expenditure;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
@@ -773,26 +773,26 @@ function DashboardTab({
               </span>
             </div>
 
-            {/* Card 3: Pending */}
+            {/* Card 3: Expenditure */}
             <div
               className="flex-1 min-w-[85px] bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs flex flex-col items-center justify-between text-center h-28 cursor-pointer hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.97]"
               onClick={() => go("expenses")}
             >
-              {/* Pending Badge Graphic */}
+              {/* Expenditure Badge Graphic */}
               <div className="h-6 flex items-center justify-center">
-                <div className="bg-[#FFF8F2] border border-[#FFE7D4] px-1.5 py-0.5 rounded-full">
+                <div className="bg-[#FFF1F2] border border-[#FFE4E6] px-1.5 py-0.5 rounded-full">
                   <span
-                    className="text-[9px] font-black text-[#F59E0B] uppercase tracking-wider"
+                    className="text-[9px] font-black text-[#E11D48] uppercase tracking-wider"
                     style={{ fontFamily: "monospace" }}
                   >
-                    Pending
+                    Expenditure
                   </span>
                 </div>
               </div>
               <span className="text-slate-800 text-[13px] font-black tracking-tight mt-1.5 flex items-center gap-0.5">
-                ₹{pending.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">➔</span>
+                ₹{expenditure.toLocaleString("en-IN")} <span className="text-[10px] opacity-40">➔</span>
               </span>
-              <span className="text-[#F59E0B] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
+              <span className="text-[#E11D48] text-[9px] font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowDownRight size={10} strokeWidth={3} /> 5%
               </span>
             </div>
@@ -4976,7 +4976,7 @@ export default function App() {
   const [milestones, setMilestones] = useState<any[]>([]);
   const [dprs, setDprs] = useState<any[]>([]);
   const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
-  const [pending, setPending] = useState(() => Number(localStorage.getItem("crm_pending") || 70000));
+  const [expenditure, setExpenditure] = useState(() => Number(localStorage.getItem("crm_expenditure") || 70000));
   const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
 
   useEffect(() => {
@@ -4984,8 +4984,8 @@ export default function App() {
   }, [income]);
 
   useEffect(() => {
-    localStorage.setItem("crm_pending", pending.toString());
-  }, [pending]);
+    localStorage.setItem("crm_expenditure", expenditure.toString());
+  }, [expenditure]);
 
   useEffect(() => {
     localStorage.setItem("crm_closed", closedCount.toString());
@@ -5232,9 +5232,9 @@ export default function App() {
     return (
       <AppContext.Provider value={{
         leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList, sites, milestones, dprs,
-        income, pending, closedCount,
+        income, expenditure, closedCount,
         setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList, setSites, setMilestones, setDprs,
-        setIncome, setPending, setClosedCount,
+        setIncome, setExpenditure, setClosedCount,
         refreshData
       }}>
         <PublicPropertyView
@@ -5250,9 +5250,9 @@ export default function App() {
   return (
     <AppContext.Provider value={{
       leads, properties, tasks, appointments, followups, broadcasts, stats, analytics, incomes, expensesList, sites, milestones, dprs,
-      income, pending, closedCount,
+      income, expenditure, closedCount,
       setLeads, setProperties, setTasks, setAppointments, setFollowups, setBroadcasts, setStats, setIncomes, setExpensesList, setSites, setMilestones, setDprs,
-      setIncome, setPending, setClosedCount,
+      setIncome, setExpenditure, setClosedCount,
       refreshData
     }}>
       <div className="fixed inset-0 bg-white flex flex-col overflow-hidden">
@@ -5715,7 +5715,7 @@ function IncomeScreen({ onBack }: { onBack: () => void }) {
 }
 
 function ExpensesScreen({ onBack }: { onBack: () => void }) {
-  const { expensesList, refreshData, setExpensesList, setPending } = useContext(AppContext)!;
+  const { expensesList, refreshData, setExpensesList, setExpenditure } = useContext(AppContext)!;
   const [collapsed, setCollapsed] = useState(false);
 
   // Form Fields
@@ -5761,8 +5761,8 @@ function ExpensesScreen({ onBack }: { onBack: () => void }) {
     const mockId = Date.now();
     setExpensesList(prev => [{ id: mockId, ...payload }, ...prev]);
 
-    // Update Global context state and LocalStorage crm_pending to sync with Dashboard Tab
-    setPending(prev => prev + amtVal);
+    // Update Global context state and LocalStorage crm_expenditure to sync with Dashboard Tab
+    setExpenditure(prev => prev + amtVal);
 
     try {
       await api.createExpense(payload);

@@ -193,8 +193,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Card 1 */}
           <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
-            <div className="h-16 flex items-center justify-center">
-              <img src={tripuraLogo} className="h-14 w-auto object-contain" alt="Startup Tripura" />
+            <div className="h-24 flex items-center justify-center">
+              <img src={tripuraLogo} className="h-20 w-auto object-contain" alt="Startup Tripura" />
             </div>
             <div className="space-y-2">
               <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
@@ -206,8 +206,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
 
           {/* Card 2 */}
           <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
-            <div className="h-16 flex items-center justify-center">
-              <img src={startupIndiaLogo} className="h-10 w-auto object-contain" alt="Startup India" />
+            <div className="h-24 flex items-center justify-center">
+              <img src={startupIndiaLogo} className="h-14 w-auto object-contain" alt="Startup India" />
             </div>
             <div className="space-y-2">
               <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
@@ -219,8 +219,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
 
           {/* Card 3 */}
           <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
-            <div className="h-16 flex items-center justify-center">
-              <img src={ditLogo} className="h-14 w-auto object-contain" alt="DIT Tripura" />
+            <div className="h-24 flex items-center justify-center">
+              <img src={ditLogo} className="h-20 w-auto object-contain" alt="DIT Tripura" />
             </div>
             <div className="space-y-2">
               <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
@@ -232,8 +232,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
 
           {/* Card 4 */}
           <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
-            <div className="h-16 flex items-center justify-center">
-              <img src={dpiitLogo} className="h-12 w-auto object-contain" alt="DPIIT" />
+            <div className="h-24 flex items-center justify-center">
+              <img src={dpiitLogo} className="h-18 w-auto object-contain" alt="DPIIT" />
             </div>
             <div className="space-y-2">
               <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>DPIIT</h3>

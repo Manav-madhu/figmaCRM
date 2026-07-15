@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { api } from "./api";
 import { LandingPage } from "./components/LandingPage";
 import { LoginPage } from "./components/LoginPage";
+import logoImg from "../../logo.jpeg";
 import {
   Home,
   Users,
@@ -626,18 +627,15 @@ function DashboardTab({
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
       {/* Top Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 bg-[#F8F9FE] flex-shrink-0 z-10">
-        <button
-          onClick={back}
-          className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-800 transition-colors"
-        >
-          <ArrowLeft size={20} strokeWidth={2.5} />
-        </button>
-        <h1
-          className="text-slate-900 text-lg font-bold"
-          style={{ fontFamily: "Plus Jakarta Sans" }}
-        >
-          Revenue
-        </h1>
+        <div className="flex items-center gap-2">
+          <img src={logoImg} className="w-8 h-8 rounded-lg object-cover" alt="Logo" />
+          <h1
+            className="text-slate-900 text-[17px] font-black"
+            style={{ fontFamily: "Plus Jakarta Sans" }}
+          >
+            Dashboard
+          </h1>
+        </div>
         <div className="relative">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-xs cursor-pointer select-none">
             <span className="text-[11px] font-bold text-slate-700">This Month</span>
@@ -4097,9 +4095,7 @@ function ProfileTab({ go, onLogout }: { go: (s: Screen) => void; onLogout: () =>
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-12 pb-8" style={{ background: `linear-gradient(135deg, #5B3FD9 0%, ${VIOLET} 100%)` }}>
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-white text-xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            SM
-          </div>
+          <img src={logoImg} className="w-16 h-16 rounded-2xl object-cover bg-white p-0.5 shadow-sm" alt="Sarah Mitchell Avatar" />
           <div>
             <h2 className="text-white text-lg font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Sarah Mitchell</h2>
             <p className="text-white/70 text-sm">Senior Real Estate Agent</p>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import logoImg from "../../../logo.jpeg";
 import { ArrowLeft, Lock, Mail, Eye, EyeOff } from "lucide-react";
 
 export function LoginPage({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
@@ -28,9 +29,7 @@ export function LoginPage({ onLogin, onBack }: { onLogin: () => void; onBack: ()
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-4">
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-violet-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-violet-600/20">
-          A
-        </div>
+        <img src={logoImg} className="mx-auto w-16 h-16 rounded-2xl object-cover shadow-md animate-in zoom-in duration-300" alt="ApniEstate Logo" />
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>
             Welcome Back

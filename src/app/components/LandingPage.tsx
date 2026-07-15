@@ -1,4 +1,5 @@
 import React from "react";
+import logoImg from "../../../logo.jpeg";
 import {
   TrendingUp,
   Target,
@@ -62,9 +63,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-white font-extrabold text-lg">
-            A
-          </div>
+          <img src={logoImg} className="w-9 h-9 rounded-xl object-cover animate-in fade-in duration-300" alt="ApniEstate Logo" />
           <span className="text-slate-900 font-extrabold text-base tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>
             ApniEstate <span className="text-violet-600">CRM</span>
           </span>

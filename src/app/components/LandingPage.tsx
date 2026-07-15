@@ -197,7 +197,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             Official Recognition
           </span>
           <h2 className="text-2xl md:text-3xl font-black text-[#0B1E43]" style={{ fontFamily: "Plus Jakarta Sans" }}>
-            Backed by Government Initiatives
+            Recognised by
           </h2>
           <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
             Apni Estate is officially registered and recognized for its commitment to digitizing Indian real estate CRM workflows and driving technological advancement.
@@ -205,7 +205,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
         </div>
 
         {/* Government Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Card 1 */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
             <div className="h-16 flex items-center justify-center">
@@ -250,6 +250,22 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
                 Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in builder CRM platforms.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 4 */}
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+            <div className="h-16 flex items-center justify-center">
+              <div className="px-4 py-2 border border-sky-200 rounded-xl bg-sky-50/50 flex items-center gap-1.5">
+                <span className="text-xs font-black text-sky-700 font-mono uppercase tracking-wider">DPIIT</span>
+                <span className="text-[9px] font-bold text-slate-700 uppercase">Recognised</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DPIIT</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
+                Registered with the Department for Promotion of Industry and Internal Trade (Govt. of India) as an innovative prop-tech developer.
               </p>
             </div>
           </div>

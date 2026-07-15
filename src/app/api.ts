@@ -12,6 +12,14 @@ const handleResponse = async (r: Response) => {
 };
 
 const getUserId = () => {
+  const params = new URLSearchParams(window.location.search);
+  const viewParam = params.get("view");
+  const urlUserId = params.get("userId");
+
+  if (viewParam === "public-property" && urlUserId) {
+    return urlUserId;
+  }
+
   try {
     const userJson = localStorage.getItem("crm_user");
     if (userJson) {

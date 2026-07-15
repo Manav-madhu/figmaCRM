@@ -997,7 +997,7 @@ function LeadsTab({ go, openLead, onAddLead, onScheduleVisit }: { go: (s: Screen
 
   const handleSharePropertySelect = async (prop: any) => {
     if (!sharePropLead) return;
-    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${sharePropLead.id}`;
+    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${sharePropLead.id}&userId=${currentUser?.id || '1'}`;
     const nameFirst = sharePropLead.name.split(" ")[0];
     const text = `Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`;
     setSharePropLead(null);
@@ -1376,7 +1376,7 @@ function LeadDetailScreen({ leadId, onBack }: { leadId: number; onBack: () => vo
   const tabs = ["WhatsApp", "Timeline", "Notes", "Follow-ups", "Files"];
 
   const handleSharePropertySelect = async (prop: any) => {
-    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${lead.id}`;
+    const link = `${window.location.origin}/?view=public-property&propertyId=${prop.id}&leadId=${lead.id}&userId=${currentUser?.id || '1'}`;
     const nameFirst = lead.name.split(" ")[0];
     const text = `Hi ${nameFirst}, check out this property listing: "${prop.name}". Let me know your thoughts: ${link}`;
     setShowSharePropModal(false);
@@ -5151,6 +5151,25 @@ export default function App() {
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
 
+  const clearSessionData = () => {
+    setLeads([]);
+    setProperties([]);
+    setTasks([]);
+    setAppointments([]);
+    setFollowups([]);
+    setBroadcasts([]);
+    setStats([]);
+    setAnalytics(null);
+    setIncomes([]);
+    setExpensesList([]);
+    setSites([]);
+    setMilestones([]);
+    setDprs([]);
+    setIncome(0);
+    setExpenditure(0);
+    setClosedCount(0);
+  };
+
   const refreshData = async () => {
     try {
       const data = await api.getAnalytics();
@@ -5263,7 +5282,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get("view");
+    if (isLoggedIn || viewParam === "public-property") {
       refreshData();
     }
   }, [isLoggedIn]);
@@ -5353,6 +5374,7 @@ export default function App() {
               localStorage.removeItem("crm_logged_in");
               localStorage.removeItem("crm_user");
               setCurrentUser(null);
+              clearSessionData();
               setAuthScreen("LANDING");
             }}
           />
@@ -5456,6 +5478,7 @@ export default function App() {
           localStorage.removeItem("crm_logged_in");
           localStorage.removeItem("crm_user");
           setCurrentUser(null);
+          clearSessionData();
           setIsLoggedIn(false);
           setAuthScreen("LANDING");
         }}

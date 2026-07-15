@@ -5470,10 +5470,9 @@ export default function App() {
     }
   }
 
-  if (currentUser?.role === "admin" && showAdminConsole) {
+  if (currentUser?.role === "admin") {
     return (
       <AdminPanel
-        onBack={() => setShowAdminConsole(false)}
         onLogout={() => {
           localStorage.removeItem("crm_logged_in");
           localStorage.removeItem("crm_user");

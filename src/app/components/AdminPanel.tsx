@@ -19,7 +19,7 @@ export function AdminPanel({
   onBack,
   onLogout
 }: {
-  onBack: () => void;
+  onBack?: () => void;
   onLogout: () => void;
 }) {
   const [trials, setTrials] = useState<any[]>([]);
@@ -77,12 +77,14 @@ export function AdminPanel({
       {/* Header Banner */}
       <header className="bg-white border-b border-slate-200/80 px-6 py-4 flex items-center justify-between sticky top-0 z-15 shrink-0 shadow-xs">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-800 transition-colors"
-          >
-            <ArrowLeft size={18} strokeWidth={2.5} />
-          </button>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-800 transition-colors"
+            >
+              <ArrowLeft size={18} strokeWidth={2.5} />
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <img src={logoImg} className="w-8 h-8 rounded-lg object-cover" alt="ApniEstate Logo" />
             <h1 className="text-base font-black text-slate-900 tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>

@@ -5048,6 +5048,24 @@ function AddAppointmentModal({ onClose, onSave }: { onClose: () => void; onSave:
 // ─── App ──────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("crm_logged_in") === "true";
+  });
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      return u ? JSON.parse(u) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [authScreen, setAuthScreen] = useState<"LANDING" | "LOGIN" | "SIGNUP">(() => {
+    const loggedIn = localStorage.getItem("crm_logged_in") === "true";
+    return loggedIn ? "LOGIN" : "LANDING";
+  });
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
+
   const [leads, setLeads] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -5119,23 +5137,7 @@ export default function App() {
     }
   }, [currentUser, incomes, expensesList, leads]);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem("crm_logged_in") === "true";
-  });
-  const [currentUser, setCurrentUser] = useState<any>(() => {
-    try {
-      const u = localStorage.getItem("crm_user");
-      return u ? JSON.parse(u) : null;
-    } catch (e) {
-      return null;
-    }
-  });
 
-  const [authScreen, setAuthScreen] = useState<"LANDING" | "LOGIN" | "SIGNUP">(() => {
-    const loggedIn = localStorage.getItem("crm_logged_in") === "true";
-    return loggedIn ? "LOGIN" : "LANDING";
-  });
-  const [showAdminConsole, setShowAdminConsole] = useState(false);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);

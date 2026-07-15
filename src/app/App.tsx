@@ -617,13 +617,63 @@ function DashboardTab({
   back: () => void;
   setSelectedLeadId: (id: number) => void;
 }) {
-  const { income, expenditure, closedCount, setIncome, setExpenditure, setClosedCount } = useContext(AppContext)!;
+  const { income, expenditure, closedCount, setIncome, setExpenditure, setClosedCount, incomes } = useContext(AppContext)!;
 
   const [editingIncome, setEditingIncome] = useState(false);
   const [editingExpenditure, setEditingExpenditure] = useState(false);
   const [editingClosed, setEditingClosed] = useState(false);
 
   const profit = income - expenditure;
+
+  const currentUser = React.useMemo(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      return u ? JSON.parse(u) : null;
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
+  const isNewUser = currentUser && String(currentUser.id) !== '1';
+
+  const chartData = React.useMemo(() => {
+    if (!isNewUser) return revenueChartData;
+    const daysMap: Record<number, number> = {};
+    incomes.forEach((inc: any) => {
+      try {
+        if (inc.dealDate) {
+          const date = new Date(inc.dealDate);
+          const day = date.getDate();
+          daysMap[day] = (daysMap[day] || 0) + (inc.amountReceived || 0);
+        }
+      } catch (e) {}
+    });
+    const sortedDays = Object.keys(daysMap).map(Number).sort((a, b) => a - b);
+    if (sortedDays.length > 0) {
+      return sortedDays.map(day => ({
+        day,
+        revenue: daysMap[day]
+      }));
+    }
+    return [
+      { day: 1, revenue: 0 },
+      { day: 30, revenue: 0 }
+    ];
+  }, [isNewUser, incomes]);
+
+  const displayEarnings = React.useMemo(() => {
+    if (!isNewUser) return recentEarnings;
+    return incomes.slice(0, 5).map((inc: any) => ({
+      name: inc.clientName || "Client Payment",
+      initials: inc.clientName ? inc.clientName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : "CL",
+      config: inc.paymentMode || "Direct Transfer",
+      amount: `+₹${(inc.amountReceived || 0).toLocaleString("en-IN")}`,
+      time: inc.dealDate ? new Date(inc.dealDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : "Recently",
+      leadId: inc.leadId,
+      bg: "#EFF0FE",
+      fg: "#7C5CFC",
+    }));
+  }, [isNewUser, incomes]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F8F9FE]">
@@ -676,7 +726,7 @@ function DashboardTab({
           <div className="h-32 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={revenueChartData}
+                data={chartData}
                 margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
               >
                 <defs>
@@ -864,12 +914,16 @@ function DashboardTab({
           </div>
 
           <div className="space-y-3">
-            {recentEarnings.map((earning, idx) => (
+            {displayEarnings.length === 0 ? (
+              <p className="text-xs text-slate-400 italic text-center py-6 bg-white rounded-2xl border border-slate-100/80">No recent earnings logged yet.</p>
+            ) : displayEarnings.map((earning, idx) => (
               <div
                 key={idx}
                 onClick={() => {
-                  setSelectedLeadId(earning.leadId);
-                  go("lead-detail");
+                  if (earning.leadId) {
+                    setSelectedLeadId(earning.leadId);
+                    go("lead-detail");
+                  }
                 }}
                 className="bg-white rounded-2xl p-3 border border-slate-100/80 shadow-xs hover:shadow-md hover:border-slate-200/50 transition-all active:scale-[0.98] flex items-center justify-between cursor-pointer"
               >
@@ -5007,9 +5061,30 @@ export default function App() {
   const [sites, setSites] = useState<any[]>([]);
   const [milestones, setMilestones] = useState<any[]>([]);
   const [dprs, setDprs] = useState<any[]>([]);
-  const [income, setIncome] = useState(() => Number(localStorage.getItem("crm_income") || 128000));
-  const [expenditure, setExpenditure] = useState(() => Number(localStorage.getItem("crm_expenditure") || 70000));
-  const [closedCount, setClosedCount] = useState(() => Number(localStorage.getItem("crm_closed") || 12));
+  const [income, setIncome] = useState(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      const parsed = u ? JSON.parse(u) : null;
+      if (parsed && String(parsed.id) !== '1') return 0;
+    } catch (e) {}
+    return Number(localStorage.getItem("crm_income") || 128000);
+  });
+  const [expenditure, setExpenditure] = useState(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      const parsed = u ? JSON.parse(u) : null;
+      if (parsed && String(parsed.id) !== '1') return 0;
+    } catch (e) {}
+    return Number(localStorage.getItem("crm_expenditure") || 70000);
+  });
+  const [closedCount, setClosedCount] = useState(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      const parsed = u ? JSON.parse(u) : null;
+      if (parsed && String(parsed.id) !== '1') return 0;
+    } catch (e) {}
+    return Number(localStorage.getItem("crm_closed") || 12);
+  });
 
   useEffect(() => {
     localStorage.setItem("crm_income", income.toString());
@@ -5022,6 +5097,27 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("crm_closed", closedCount.toString());
   }, [closedCount]);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (String(currentUser.id) !== '1') {
+        const totalInc = incomes.reduce((acc: number, curr: any) => acc + (curr.amountReceived || 0), 0);
+        const totalExp = expensesList.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
+        const bookedLeads = leads.filter((l: any) => l.status === "Booked").length;
+        setIncome(totalInc);
+        setExpenditure(totalExp);
+        setClosedCount(bookedLeads);
+      } else {
+        setIncome(Number(localStorage.getItem("crm_income") || 128000));
+        setExpenditure(Number(localStorage.getItem("crm_expenditure") || 70000));
+        setClosedCount(Number(localStorage.getItem("crm_closed") || 12));
+      }
+    } else {
+      setIncome(0);
+      setExpenditure(0);
+      setClosedCount(0);
+    }
+  }, [currentUser, incomes, expensesList, leads]);
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("crm_logged_in") === "true";

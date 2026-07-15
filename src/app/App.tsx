@@ -3580,13 +3580,13 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   };
 
   const handleDeleteDpr = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this Daily Progress Report?")) return;
+    if (!confirm("Are you sure you want to delete this task update?")) return;
     try {
       await api.deleteDpr(id);
       refreshData();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete DPR log.");
+      alert("Failed to delete task update.");
     }
   };
 
@@ -3620,10 +3620,10 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
       setShowDprModal(false);
       setDprSummary("");
       setDprPhotoUrl("");
-      alert("DPR submitted successfully!");
+      alert("Task activity logged successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to submit DPR.");
+      alert("Failed to log task activity.");
     }
   };
 
@@ -3683,9 +3683,9 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   return (
     <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden animate-in fade-in duration-300">
       <div className="bg-white border-b border-slate-100 px-4 pt-12 pb-0 shrink-0 sticky top-0 z-10">
-        <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Progress Tracking</h2>
+        <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Tasks & Milestones</h2>
         <div className="flex gap-2">
-          {[{ id: "timeline", label: "Timeline & Milestones" }, { id: "calendar", label: "Calendar" }].map(({ id, label }) => (
+          {[{ id: "timeline", label: "Milestone Timeline" }, { id: "calendar", label: "Task Calendar" }].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setView(id as any)}
@@ -3764,7 +3764,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                               onClick={() => { setSelectedMilestone(m); setShowDprModal(true); }}
                               className="text-xs font-bold text-white bg-[#5B3FD9] px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-violet-700"
                             >
-                              <Plus size={14} /> Submit DPR
+                              <Plus size={14} /> Log Task Activity
                             </button>
                           </div>
                         )}
@@ -3775,7 +3775,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
               </div>
 
               <div className="mt-8">
-                <SectionLabel>Recent Daily Logs</SectionLabel>
+                <SectionLabel>Recent Task Activity</SectionLabel>
                 <div className="space-y-3">
                   {dprs.slice(0, 5).map((d) => (
                     <Card key={d.id} className="p-4 text-left">
@@ -3812,7 +3812,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                     onClick={() => { setSelectedMilestone(null); setShowDprModal(true); }}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider text-white bg-slate-800 hover:bg-slate-900 transition-colors"
                   >
-                    <Plus size={16} /> Submit General DPR
+                    <Plus size={16} /> Log General Task Activity
                   </button>
                 </div>
               </div>
@@ -3867,7 +3867,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                   })}
                 </div>
                 <div className="flex items-center gap-5 mt-5 pt-4 border-t border-slate-100 justify-center">
-                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-indigo-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">DPR Logged</p></div>
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-indigo-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Task Logged</p></div>
                   <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Milestone</p></div>
                   <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-violet-600" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Today</p></div>
                 </div>
@@ -3928,9 +3928,9 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                         {dprsForSelectedDate.map(dpr => (
                           <div key={dpr.id} className="border border-slate-100 rounded-3xl p-4 bg-white shadow-xs text-left">
                             <div className="flex items-start justify-between mb-2">
-                              <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 uppercase tracking-wider">DPR Log</span>
+                              <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 uppercase tracking-wider">Task Log</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-slate-400">{sites.find(s => s.id === dpr.site_id)?.name || "Site Progress"}</span>
+                                <span className="text-[10px] font-bold text-slate-400">{sites.find(s => s.id === dpr.site_id)?.name || "Project Progress"}</span>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteDpr(dpr.id)}
@@ -3992,12 +3992,12 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
         </div>
       )}
 
-      {/* Submit DPR Modal */}
+      {/* Log Task Activity Modal */}
       {showDprModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col shadow-xl border border-slate-100">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
-              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Submit DPR</h3>
+              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Log Task Activity</h3>
               <button onClick={() => setShowDprModal(false)} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmitDpr} className="p-4 space-y-4 overflow-y-auto flex-1 text-left" style={{ scrollbarWidth: "none" }}>
@@ -4009,33 +4009,33 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
               )}
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Select Site</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Associated Project</label>
                 <select required value={dprSiteId} onChange={e => setDprSiteId(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800 cursor-pointer">
                   {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Summary of Work</label>
-                <textarea required rows={3} value={dprSummary} onChange={e => setDprSummary(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="Describe the work done today..." />
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Activity Notes</label>
+                <textarea required rows={3} value={dprSummary} onChange={e => setDprSummary(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="Describe the task details / notes..." />
               </div>
 
               {selectedMilestone && (
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between">
-                    <span>% Completed Today</span>
+                    <span>% Milestone Progress</span>
                     <span className="text-violet-600">{dprPercentage}%</span>
                   </label>
                   <input type="range" min="0" max="100" value={dprPercentage} onChange={e => setDprPercentage(Number(e.target.value))} className="w-full accent-violet-600 cursor-pointer" />
-                  <p className="text-[10px] text-slate-400 font-bold mt-1">How much of the milestone was finished today?</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1">How much of the milestone was accomplished?</p>
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Photo Evidence</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Attachments / Photos</label>
                 {dprPhotoUrl ? (
                   <div className="relative rounded-2xl overflow-hidden aspect-video border border-slate-100">
-                    <img src={dprPhotoUrl} alt="DPR" className="w-full h-full object-cover" />
+                    <img src={dprPhotoUrl} alt="Attachment" className="w-full h-full object-cover" />
                     <button type="button" onClick={() => setDprPhotoUrl('')} className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70">
                       <X size={14} />
                     </button>
@@ -4047,7 +4047,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                       {isUploading ? (
                         <div className="animate-pulse flex flex-col items-center gap-2"><UploadCloud size={24} /><span>Uploading...</span></div>
                       ) : (
-                        <><UploadCloud size={24} className="text-violet-600" /><span className="text-xs font-bold uppercase tracking-wider">Tap to upload photo</span></>
+                        <><UploadCloud size={24} className="text-violet-600" /><span className="text-xs font-bold uppercase tracking-wider">Tap to upload attachment</span></>
                       )}
                     </div>
                   </div>
@@ -4056,7 +4056,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
             </form>
             <div className="p-4 border-t border-slate-100 shrink-0 flex justify-end">
               <button onClick={handleSubmitDpr} className="bg-[#5B3FD9] text-white px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-violet-800 w-full flex justify-center items-center gap-2">
-                <CheckCircle2 size={16} /> Submit Progress Report
+                <CheckCircle2 size={16} /> Log Task Update
               </button>
             </div>
           </div>

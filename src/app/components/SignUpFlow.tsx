@@ -123,28 +123,57 @@ export function SignUpFlow({
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_live_S5I6BaqdNg0Tjk";
+
+    if (!(window as any).Razorpay) {
+      setError("Razorpay SDK failed to load. Please check your internet connection.");
+      return;
+    }
+
     try {
-      // Simulate payment delay
-      setTimeout(async () => {
-        try {
-          const response = await api.subscribe({
-            userId: createdUser.id,
-            plan: "premium"
-          });
-          const updatedUser = { ...createdUser, status: response.status };
-          setCreatedUser(updatedUser);
-          localStorage.setItem("crm_user", JSON.stringify(updatedUser));
-          setLoading(false);
-          onComplete(updatedUser);
-        } catch (err: any) {
-          setError(err.message || "Subscription activation failed");
-          setLoading(false);
+      const options = {
+        key: razorpayKey,
+        amount: 499900, // Rs 4,999 in paise
+        currency: "INR",
+        name: "Apni Estate",
+        description: "CRM Premium Monthly Subscription",
+        image: logoImg,
+        handler: async function (response: any) {
+          setLoading(true);
+          try {
+            const res = await api.subscribe({
+              userId: createdUser.id,
+              plan: "premium",
+              paymentId: response.razorpay_payment_id
+            });
+            const updatedUser = { ...createdUser, status: res.status };
+            setCreatedUser(updatedUser);
+            localStorage.setItem("crm_user", JSON.stringify(updatedUser));
+            onComplete(updatedUser);
+          } catch (err: any) {
+            setError(err.message || "Failed to confirm payment on server");
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: name,
+          email: email,
+          contact: phone
+        },
+        theme: {
+          color: "#0B1E43" // Navy Blue
         }
-      }, 1500);
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (resp: any) {
+        setError(resp.error.description || "Payment failed");
+      });
+      rzp.open();
     } catch (err: any) {
-      setError(err.message || "Payment process failed");
-      setLoading(false);
+      setError(err.message || "Razorpay integration failed");
     }
   };
 
@@ -415,69 +444,43 @@ export function SignUpFlow({
 
           {/* STEP 4: PAYMENT SCREEN */}
           {step === "PAYMENT" && (
-            <form onSubmit={handlePaymentSubmit} className="space-y-4">
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>
                   Complete Payment
                 </h2>
                 <p className="text-slate-400 text-xs font-medium mt-1">
-                  Activate premium instantly
+                  Activate premium instantly via Razorpay Secure
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <div className="bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-between h-40 shadow-lg relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-white/5" />
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-black uppercase tracking-wider opacity-60">ApniEstate Pay</span>
-                    <CreditCard size={24} className="opacity-80" />
+              <div className="space-y-4">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4 text-left">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Premium Plan</h4>
+                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">Unlimited CRM Workspace</p>
+                    </div>
+                    <span className="text-sm font-black text-[#0B1E43]">₹4,999/mo</span>
                   </div>
-                  <div>
-                    <span className="font-mono text-sm tracking-widest">{cardNumber}</span>
-                    <div className="flex justify-between mt-4">
-                      <div>
-                        <p className="text-[7px] font-bold uppercase opacity-40">Card Holder</p>
-                        <p className="text-[9px] font-bold">{name}</p>
-                      </div>
-                      <div>
-                        <p className="text-[7px] font-bold uppercase opacity-40">Expiry</p>
-                        <p className="text-[9px] font-bold">{expiry}</p>
-                      </div>
+
+                  <div className="space-y-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <div className="flex justify-between">
+                      <span>GST (18%)</span>
+                      <span className="text-slate-700">Included</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-black text-[#0B1E43] pt-1">
+                      <span>Total Amount</span>
+                      <span>₹4,999.00</span>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Card Number</label>
-                  <input
-                    required
-                    type="text"
-                    value={cardNumber}
-                    onChange={e => setCardNumber(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200/80 focus:border-violet-500 focus:bg-white rounded-2xl px-4 py-3 text-xs font-bold outline-none text-slate-800 transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex gap-3 text-emerald-800 text-xs text-left font-semibold">
+                  <ShieldCheck className="text-emerald-600 shrink-0 mt-0.5" size={16} />
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Expiry Date</label>
-                    <input
-                      required
-                      type="text"
-                      value={expiry}
-                      onChange={e => setExpiry(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200/80 focus:border-violet-500 focus:bg-white rounded-2xl px-4 py-3 text-xs font-bold outline-none text-slate-800 transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">CVV</label>
-                    <input
-                      required
-                      type="password"
-                      value={cvv}
-                      onChange={e => setCvv(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200/80 focus:border-violet-500 focus:bg-white rounded-2xl px-4 py-3 text-xs font-bold outline-none text-slate-800 transition-all"
-                    />
+                    <p className="font-bold">Secured by Razorpay</p>
+                    <p className="text-[10px] opacity-75 mt-0.5">Your payment is encrypted and verified instantly by Razorpay servers.</p>
                   </div>
                 </div>
               </div>
@@ -493,9 +496,9 @@ export function SignUpFlow({
                 <button
                   disabled={loading}
                   type="submit"
-                  className="flex-[2] py-3.5 bg-[#5B3FD9] hover:bg-violet-850 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-1.5 shadow-md shadow-violet-500/10 transition-colors"
+                  className="flex-[2] py-3.5 bg-[#0B1E43] hover:bg-[#061229] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center justify-center gap-1.5 shadow-md shadow-slate-900/10 transition-colors"
                 >
-                  {loading ? "Processing..." : <>Pay & Activate</>}
+                  {loading ? "Processing..." : <>Pay ₹4,999 Securely</>}
                 </button>
               </div>
             </form>

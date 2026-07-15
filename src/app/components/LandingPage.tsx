@@ -100,25 +100,6 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               </button>
             </div>
 
-            {/* Hero Metrics */}
-            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-slate-100 mt-6">
-              <div>
-                <p className="text-xl md:text-2xl font-black text-slate-800">62%</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Leads Converted</p>
-              </div>
-              <div>
-                <p className="text-xl md:text-2xl font-black text-slate-800">10 Cr+</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Sales Revenue</p>
-              </div>
-              <div>
-                <p className="text-xl md:text-2xl font-black text-slate-800">1,240</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Properties Listed</p>
-              </div>
-              <div>
-                <p className="text-xl md:text-2xl font-black text-slate-800">30+</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Cities Covered</p>
-              </div>
-            </div>
           </div>
 
           {/* Right Dashboard Mockup Column */}

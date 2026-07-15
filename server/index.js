@@ -975,7 +975,7 @@ app.post('/api/auth/subscribe', async (req, res) => {
 
   try {
     await userContext.run('1', async () => {
-      await run('UPDATE users SET status = ? WHERE id = ?', [nextStatus, userId]);
+      await run('UPDATE users SET status = ?, plan = ? WHERE id = ?', [nextStatus, plan, userId]);
       res.json({ status: nextStatus });
     });
   } catch (err) {

@@ -170,6 +170,18 @@ export function getDbForUser(userId) {
         )
       `);
     });
+
+    // Check if user is a trial user to seed dummy data
+    sqliteDb.get("SELECT plan FROM users WHERE id = ?", [idStr], (err, row) => {
+      if (row && row.plan === 'trial') {
+        newDb.get("SELECT COUNT(*) as count FROM leads", (err, leadRow) => {
+          if (leadRow && leadRow.count === 0) {
+            console.log(`Seeding 15-day trial user ${idStr} with dummy data...`);
+            seedUserDummyData(newDb);
+          }
+        });
+      }
+    });
   }
 
   return userDbs[idStr];
@@ -571,6 +583,7 @@ export async function initDb() {
       job_title VARCHAR(255),
       city VARCHAR(255),
       status VARCHAR(50),
+      plan VARCHAR(50) DEFAULT 'premium',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   ` : `
@@ -584,6 +597,7 @@ export async function initDb() {
       job_title TEXT,
       city TEXT,
       status TEXT,
+      plan TEXT DEFAULT 'premium',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -966,4 +980,59 @@ export async function initDb() {
   } else {
     console.log('Database already has data. Skipping seed.');
   }
+}
+
+export function seedUserDummyData(db) {
+  db.serialize(() => {
+    // 1. Seed Leads (one Booked, one Site Visit, one New)
+    db.run(`
+      INSERT INTO leads (name, initials, avatarBg, type, status, priority, project, city, tags, budget, lastContact, assigned, phone, email, task, taskDue)
+      VALUES 
+        ('Rohit Sharma', 'RS', '#7C5CFC', 'Buyer', 'Booked', 'High', 'Skyline Residences', 'Mumbai', '["Hot","Buyer"]', '₹80L', 'Today', 'You', '+91 98765 43210', 'rohit.sharma@gmail.com', 'Call back to discuss layout', 'Today'),
+        ('Pooja Patel', 'PP', '#D97706', 'Buyer', 'Site Visit', 'High', 'Green Valley Villa', 'Pune', '["Hot","Buyer"]', '₹60L', 'Today', 'You', '+91 98765 43211', 'pooja.patel@outlook.com', 'Accompany for site tour', 'Today'),
+        ('Amit Kumar', 'AK', '#EF4444', 'Buyer', 'New', 'Medium', 'Oak Park Flats', 'Delhi NCR', '["Investor"]', '₹1.2Cr', 'Yesterday', 'You', '+91 98765 43212', 'amit.kumar@ventures.co', 'Review discount offer', 'Tomorrow')
+    `);
+
+    // 2. Seed Properties
+    db.run(`
+      INSERT INTO properties (name, address, price, salePrice, type, beds, baths, sqft, status, statusColor, image, featured, inquiries, siteVisits, favorite)
+      VALUES 
+        ('Skyline Residences', '850 Marina Blvd, Mumbai', '₹80,000/mo', '₹85,00,000', 'Sale', 3, 3, '1,800 sqft', 'Available', '#10B981', 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=260&fit=crop&auto=format', 1, 14, 8, 1),
+        ('Green Valley Villa', 'Sector 15, Pune', '₹60,000/mo', '₹65,00,000', 'Both', 4, 4, '3,200 sqft', 'Available', '#10B981', 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=260&fit=crop&auto=format', 0, 8, 3, 0),
+        ('Oak Park Flats', 'Connaught Place, Delhi', '₹45,000/mo', '₹50,00,000', 'Rent', 2, 2, '1,100 sqft', 'Pending', '#F59E0B', 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&auto=format', 0, 5, 2, 0)
+    `);
+
+    // 3. Seed Tasks
+    db.run(`
+      INSERT INTO tasks (title, dueDate, completed, priority, overdue)
+      VALUES 
+        ('Follow-up on Pooja Patel site visit', 'Today', 0, 'High', 0),
+        ('Prepare agreement for Amit Kumar', 'Tomorrow', 0, 'Medium', 0),
+        ('Submit monthly tax file', 'Yesterday', 1, 'Low', 0)
+    `);
+
+    // 4. Seed Appointments
+    db.run(`
+      INSERT INTO appointments (clientName, initials, color, type, time, date)
+      VALUES 
+        ('Pooja Patel', 'PP', '#D97706', 'viewing', '10:30 AM', 'Today'),
+        ('Amit Kumar', 'AK', '#EF4444', 'meeting', '02:00 PM', 'Tomorrow')
+    `);
+
+    // 5. Seed Incomes (Booked lead Rohit Sharma paid booking amount)
+    db.run(`
+      INSERT INTO incomes (clientName, amountReceived, paymentMode, dealDate, leadId)
+      VALUES 
+        ('Rohit Sharma', 500000, 'Direct Transfer', '2026-07-14', 1),
+        ('Rohit Sharma', 100000, 'UPI', '2026-07-15', 1)
+    `);
+
+    // 6. Seed Expenses
+    db.run(`
+      INSERT INTO expenses (vendorName, amount, paymentMode, expenseDate, category, invoiceNo)
+      VALUES 
+        ('Marketing Agency', 15000, 'Net Banking', '2026-07-12', 'Marketing', 'INV-2026-001'),
+        ('Workspace Co-working', 45000, 'Direct Transfer', '2026-07-15', 'Rent', 'INV-2026-045')
+    `);
+  });
 }

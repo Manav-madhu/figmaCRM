@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import React, { useState, useEffect, createContext, useContext, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { api } from "./api";
 import { LandingPage } from "./components/LandingPage";
@@ -625,7 +625,7 @@ function DashboardTab({
 
   const profit = income - expenditure;
 
-  const currentUser = React.useMemo(() => {
+  const currentUser = useMemo(() => {
     try {
       const u = localStorage.getItem("crm_user");
       return u ? JSON.parse(u) : null;
@@ -636,7 +636,7 @@ function DashboardTab({
 
   const isNewUser = currentUser && String(currentUser.id) !== '1';
 
-  const chartData = React.useMemo(() => {
+  const chartData = useMemo(() => {
     if (!isNewUser) return revenueChartData;
     const daysMap: Record<number, number> = {};
     incomes.forEach((inc: any) => {
@@ -661,7 +661,7 @@ function DashboardTab({
     ];
   }, [isNewUser, incomes]);
 
-  const displayEarnings = React.useMemo(() => {
+  const displayEarnings = useMemo(() => {
     if (!isNewUser) return recentEarnings;
     return incomes.slice(0, 5).map((inc: any) => ({
       name: inc.clientName || "Client Payment",

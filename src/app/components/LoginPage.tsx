@@ -1,20 +1,44 @@
 import React, { useState } from "react";
 import logoImg from "../../../logo.jpeg";
 import { ArrowLeft, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { api } from "../api";
 
-export function LoginPage({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
+export function LoginPage({
+  onLogin,
+  onBack,
+  onSignUpClick
+}: {
+  onLogin: (user: any) => void;
+  onBack: () => void;
+  onSignUpClick: () => void;
+}) {
   const [email, setEmail] = useState("admin@apniestate.com");
   const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const user = await api.login({ email, password });
+      if (user.status === "PENDING_TRIAL_APPROVAL") {
+        setError("Your 15-day free trial request is pending admin approval.");
+      } else if (user.status === "REJECTED") {
+        setError("Your trial request was rejected by an administrator.");
+      } else if (user.status === "PENDING_PROFILE_SETUP" || user.status === "PENDING_SUBSCRIPTION") {
+        // User signup incomplete - redirect them by logging in or showing message
+        setError(`Please finish setting up your account. Current status: ${user.status.replace(/_/g, ' ')}`);
+      } else {
+        onLogin(user);
+      }
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password");
+    } finally {
       setLoading(false);
-      onLogin();
-    }, 800);
+    }
   };
 
   return (
@@ -42,6 +66,12 @@ export function LoginPage({ onLogin, onBack }: { onLogin: () => void; onBack: ()
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-sm border border-slate-100/80 rounded-[32px] space-y-6">
+          {error && (
+            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-semibold text-rose-600 animate-shake">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
@@ -112,16 +142,17 @@ export function LoginPage({ onLogin, onBack }: { onLogin: () => void; onBack: ()
 
           <div className="relative flex py-1 items-center">
             <div className="flex-grow border-t border-slate-100"></div>
-            <span className="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Demo Credentials</span>
+            <span className="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">New to ApniEstate?</span>
             <div className="flex-grow border-t border-slate-100"></div>
           </div>
 
-          <div className="bg-violet-50/50 border border-violet-100 p-4 rounded-2xl text-center space-y-1">
-            <p className="text-[11px] font-semibold text-violet-800">No account required</p>
-            <p className="text-[10px] text-violet-600 font-semibold leading-relaxed">
-              Tap "Sign In" directly to access the high-fidelity demo environment.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onSignUpClick}
+            className="w-full py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] text-xs uppercase tracking-wider"
+          >
+            Create New Workspace
+          </button>
         </div>
       </div>
     </div>

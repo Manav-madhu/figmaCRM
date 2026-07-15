@@ -3,6 +3,7 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { AsyncLocalStorage } from 'async_hooks';
 
 dotenv.config();
 
@@ -13,6 +14,161 @@ const isProd = !!process.env.DATABASE_URL;
 let pgPool = null;
 let sqliteDb = null;
 export let useSQLite = !isProd;
+export const userContext = new AsyncLocalStorage();
+
+const userDbs = {};
+
+export function getDbForUser(userId) {
+  if (!useSQLite) return sqliteDb;
+
+  const idStr = String(userId);
+  if (idStr === '1') {
+    return sqliteDb;
+  }
+
+  if (!userDbs[idStr]) {
+    const dbPath = path.join(__dirname, `database_user_${idStr}.db`);
+    const newDb = new sqlite3.Database(dbPath);
+    userDbs[idStr] = newDb;
+
+    newDb.serialize(() => {
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS leads (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          initials TEXT,
+          avatarBg TEXT,
+          type TEXT,
+          status TEXT,
+          priority TEXT,
+          project TEXT,
+          city TEXT,
+          tags TEXT,
+          budget TEXT,
+          lastContact TEXT,
+          assigned TEXT,
+          phone TEXT,
+          email TEXT,
+          task TEXT,
+          taskDue TEXT,
+          linkResponse TEXT
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS properties (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          beds INTEGER,
+          baths INTEGER,
+          sqft INTEGER,
+          price TEXT,
+          address TEXT,
+          image TEXT,
+          type TEXT,
+          inquiries INTEGER,
+          siteVisits INTEGER,
+          favorite INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS tasks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT,
+          dueDate TEXT,
+          completed INTEGER,
+          priority TEXT,
+          overdue INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS appointments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          clientName TEXT,
+          initials TEXT,
+          color TEXT,
+          type TEXT,
+          time TEXT,
+          date TEXT
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS followups (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          leadId INTEGER,
+          name TEXT,
+          initials TEXT,
+          color TEXT,
+          note TEXT,
+          time TEXT,
+          overdue INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS broadcasts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          preview TEXT,
+          status TEXT,
+          date TEXT,
+          recipients INTEGER,
+          sent INTEGER,
+          failed INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS incomes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          clientName TEXT,
+          amountReceived INTEGER,
+          paymentMode TEXT,
+          dealDate TEXT,
+          leadId INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          vendorName TEXT,
+          amount INTEGER,
+          paymentMode TEXT,
+          expenseDate TEXT,
+          category TEXT,
+          invoiceNo TEXT,
+          billPhotoUrl TEXT
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS sites (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT
+        )
+      `);
+      newDb.run(`INSERT OR IGNORE INTO sites (id, name) VALUES (1, 'Green Valley Farms'), (2, 'Oak Park Flats'), (3, 'Pinecrest Residency'), (4, 'Harbour View')`);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS milestones (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          target_date TEXT,
+          status TEXT,
+          progress_percentage INTEGER
+        )
+      `);
+      newDb.run(`
+        CREATE TABLE IF NOT EXISTS dprs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          report_date TEXT,
+          summary TEXT,
+          photos TEXT,
+          milestone_id INTEGER,
+          completion_percentage INTEGER,
+          site_id INTEGER
+        )
+      `);
+    });
+  }
+
+  return userDbs[idStr];
+}
 
 function initSQLite() {
   const dbPath = path.join(__dirname, 'database.db');
@@ -28,7 +184,7 @@ if (isProd) {
       ssl: {
         rejectUnauthorized: false
       },
-      connectionTimeoutMillis: 4000 // 4 seconds timeout
+      connectionTimeoutMillis: 4000
     });
   } catch (e) {
     console.error('Failed to create pg Pool, falling back to SQLite:', e);
@@ -41,6 +197,9 @@ if (isProd) {
 // Promise-based query function (primarily for SELECT or queries returning rows)
 export function query(text, params = []) {
   return new Promise((resolve, reject) => {
+    const userId = userContext.getStore() || '1';
+    const activeDb = getDbForUser(userId);
+
     if (!useSQLite) {
       let index = 1;
       const pgText = text.replace(/\?/g, () => `$${index++}`);
@@ -49,7 +208,7 @@ export function query(text, params = []) {
         resolve({ rows: res.rows, rowCount: res.rowCount });
       });
     } else {
-      sqliteDb.all(text, params, function(err, rows) {
+      activeDb.all(text, params, function(err, rows) {
         if (err) return reject(err);
         resolve({
           rows: rows || [],
@@ -63,6 +222,9 @@ export function query(text, params = []) {
 // Promise-based run function (for INSERT, UPDATE, DELETE where we want lastID/changes)
 export function run(text, params = []) {
   return new Promise((resolve, reject) => {
+    const userId = userContext.getStore() || '1';
+    const activeDb = getDbForUser(userId);
+
     if (!useSQLite) {
       // In PG, we use query. If there's a RETURNING clause, the rows will be in res.rows.
       let index = 1;
@@ -74,7 +236,7 @@ export function run(text, params = []) {
         resolve({ lastID, changes: res.rowCount });
       });
     } else {
-      sqliteDb.run(text, params, function(err) {
+      activeDb.run(text, params, function(err) {
         if (err) return reject(err);
         resolve({ lastID: this.lastID, changes: this.changes });
       });
@@ -393,6 +555,34 @@ export async function initDb() {
     );
   `;
 
+  const createUsersTable = !useSQLite ? `
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      company VARCHAR(255),
+      phone VARCHAR(255),
+      job_title VARCHAR(255),
+      city VARCHAR(255),
+      status VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  ` : `
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      company TEXT,
+      phone TEXT,
+      job_title TEXT,
+      city TEXT,
+      status TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   // Run table creations
   await run(createLeadsTable);
   await run(createPropertiesTable);
@@ -405,6 +595,7 @@ export async function initDb() {
   await run(createSitesTable);
   await run(createMilestonesTable);
   await run(createDprsTable);
+  await run(createUsersTable);
 
   // Check if seeding is needed
   const leadsCount = await query('SELECT COUNT(*) as count FROM leads');

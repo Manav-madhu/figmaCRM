@@ -3,6 +3,8 @@ import * as XLSX from "xlsx";
 import { api } from "./api";
 import { LandingPage } from "./components/LandingPage";
 import { LoginPage } from "./components/LoginPage";
+import { SignUpFlow } from "./components/SignUpFlow";
+import { AdminPanel } from "./components/AdminPanel";
 import logoImg from "../../logo.jpeg";
 import {
   Home,
@@ -4068,7 +4070,17 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
 
 // ─── Tab: Profile (extended with links to all new features) ────────────
 
-function ProfileTab({ go, onLogout }: { go: (s: Screen) => void; onLogout: () => void }) {
+function ProfileTab({
+  go,
+  onLogout,
+  currentUser,
+  onAdminClick
+}: {
+  go: (s: Screen) => void;
+  onLogout: () => void;
+  currentUser?: any;
+  onAdminClick?: () => void;
+}) {
   const { leads, tasks } = useContext(AppContext)!;
   const activeLeadsCount = leads.filter((l) => l.status !== "Lost").length;
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
@@ -4095,11 +4107,13 @@ function ProfileTab({ go, onLogout }: { go: (s: Screen) => void; onLogout: () =>
     <div className="flex-1 overflow-y-auto pb-24" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-12 pb-8" style={{ background: `linear-gradient(135deg, #5B3FD9 0%, ${VIOLET} 100%)` }}>
         <div className="flex items-center gap-4 mb-6">
-          <img src={logoImg} className="w-16 h-16 rounded-2xl object-cover bg-white p-0.5 shadow-sm" alt="Sarah Mitchell Avatar" />
-          <div>
-            <h2 className="text-white text-lg font-bold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Sarah Mitchell</h2>
-            <p className="text-white/70 text-sm">Senior Real Estate Agent</p>
-            <p className="text-white/50 text-xs">Heitkamp Realty · Chicago, IL</p>
+          <img src={logoImg} className="w-16 h-16 rounded-2xl object-cover bg-white p-0.5 shadow-sm animate-in fade-in duration-300" alt="Avatar" />
+          <div className="text-left">
+            <h2 className="text-white text-lg font-bold truncate max-w-[200px]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {currentUser?.name || "Sarah Mitchell"}
+            </h2>
+            <p className="text-white/70 text-sm truncate max-w-[200px]">{currentUser?.job_title || "Senior Real Estate Agent"}</p>
+            <p className="text-white/50 text-xs truncate max-w-[200px]">{currentUser?.company || "Heitkamp Realty"} · {currentUser?.city || "Chicago, IL"}</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -4130,6 +4144,15 @@ function ProfileTab({ go, onLogout }: { go: (s: Screen) => void; onLogout: () =>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
         ))}
+
+        {currentUser?.role === "admin" && onAdminClick && (
+          <button
+            onClick={onAdminClick}
+            className="w-full py-4 rounded-2xl text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors flex items-center justify-center gap-2"
+          >
+            Open Admin Approval Panel
+          </button>
+        )}
 
         <button
           onClick={onLogout}
@@ -5003,7 +5026,20 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem("crm_logged_in") === "true";
   });
-  const [showLogin, setShowLogin] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const u = localStorage.getItem("crm_user");
+      return u ? JSON.parse(u) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [authScreen, setAuthScreen] = useState<"LANDING" | "LOGIN" | "SIGNUP">(() => {
+    const loggedIn = localStorage.getItem("crm_logged_in") === "true";
+    return loggedIn ? "LOGIN" : "LANDING";
+  });
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
 
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
@@ -5129,8 +5165,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (isLoggedIn) {
+      refreshData();
+    }
+  }, [isLoggedIn]);
 
   const rootTabs: Screen[] = ["dashboard", "leads", "properties", "calendar", "profile"];
   const isRootTab = (s: Screen): s is Tab => rootTabs.includes(s);
@@ -5210,10 +5248,14 @@ export default function App() {
         return (
           <ProfileTab
             go={go}
+            currentUser={currentUser}
+            onAdminClick={() => setShowAdminConsole(true)}
             onLogout={() => {
               setIsLoggedIn(false);
-              localStorage.setItem("crm_logged_in", "false");
-              setShowLogin(false);
+              localStorage.removeItem("crm_logged_in");
+              localStorage.removeItem("crm_user");
+              setCurrentUser(null);
+              setAuthScreen("LANDING");
             }}
           />
         );
@@ -5271,23 +5313,56 @@ export default function App() {
 
 
   if (!isLoggedIn) {
-    if (showLogin) {
+    if (authScreen === "LOGIN") {
       return (
         <LoginPage
-          onLogin={() => {
+          onSignUpClick={() => setAuthScreen("SIGNUP")}
+          onLogin={(user) => {
+            setCurrentUser(user);
+            localStorage.setItem("crm_user", JSON.stringify(user));
+            setIsLoggedIn(true);
+            localStorage.setItem("crm_logged_in", "true");
+            if (user.role === "admin") {
+              setShowAdminConsole(true);
+            }
+          }}
+          onBack={() => setAuthScreen("LANDING")}
+        />
+      );
+    } else if (authScreen === "SIGNUP") {
+      return (
+        <SignUpFlow
+          onBack={() => setAuthScreen("LOGIN")}
+          onComplete={(user) => {
+            setCurrentUser(user);
+            localStorage.setItem("crm_user", JSON.stringify(user));
             setIsLoggedIn(true);
             localStorage.setItem("crm_logged_in", "true");
           }}
-          onBack={() => setShowLogin(false)}
         />
       );
     } else {
       return (
         <LandingPage
-          onStartDemo={() => setShowLogin(true)}
+          onStartDemo={() => setAuthScreen("LOGIN")}
         />
       );
     }
+  }
+
+  if (currentUser?.role === "admin" && showAdminConsole) {
+    return (
+      <AdminPanel
+        onBack={() => setShowAdminConsole(false)}
+        onLogout={() => {
+          localStorage.removeItem("crm_logged_in");
+          localStorage.removeItem("crm_user");
+          setCurrentUser(null);
+          setIsLoggedIn(false);
+          setAuthScreen("LANDING");
+        }}
+      />
+    );
   }
 
   return (

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { query, run, initDb, useSQLite } from './db.js';
+import { query, run, initDb, useSQLite, userContext } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +12,13 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const userId = req.headers['x-user-id'] || '1';
+  userContext.run(String(userId), () => {
+    next();
+  });
+});
 
 // Initialize database
 initDb()
@@ -901,6 +908,156 @@ app.delete('/api/dprs/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to delete DPR log' });
+  }
+});
+
+
+// ─── AUTH & SUBSCRIPTION ROUTES ──────────────────────────────────────────
+
+// SIGNUP
+app.post('/api/auth/signup', async (req, res) => {
+  const { name, email, password, company } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Name, email and password are required' });
+  }
+
+  try {
+    await userContext.run('1', async () => {
+      // Check if user already exists
+      const existing = await query('SELECT * FROM users WHERE email = ?', [email]);
+      if (existing.rowCount > 0) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const result = await run(
+        'INSERT INTO users (name, email, password, company, status) VALUES (?, ?, ?, ?, ?)',
+        [name, email, password, company || null, 'PENDING_PROFILE_SETUP']
+      );
+
+      const newUser = { id: result.lastID, name, email, company, status: 'PENDING_PROFILE_SETUP' };
+      res.json(newUser);
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Signup failed' });
+  }
+});
+
+// PROFILE SETUP
+app.post('/api/auth/profile-setup', async (req, res) => {
+  const { userId, phone, job_title, city } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  try {
+    await userContext.run('1', async () => {
+      await run(
+        'UPDATE users SET phone = ?, job_title = ?, city = ?, status = ? WHERE id = ?',
+        [phone || null, job_title || null, city || null, 'PENDING_SUBSCRIPTION', userId]
+      );
+      res.json({ message: 'Profile setup completed successfully' });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Profile setup failed' });
+  }
+});
+
+// SUBSCRIBE / TRIAL SELECTOR
+app.post('/api/auth/subscribe', async (req, res) => {
+  const { userId, plan } = req.body; // plan: 'trial' or 'premium'
+  if (!userId || !plan) {
+    return res.status(400).json({ error: 'User ID and plan selection are required' });
+  }
+
+  const nextStatus = plan === 'premium' ? 'SUBSCRIBED' : 'PENDING_TRIAL_APPROVAL';
+
+  try {
+    await userContext.run('1', async () => {
+      await run('UPDATE users SET status = ? WHERE id = ?', [nextStatus, userId]);
+      res.json({ status: nextStatus });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Subscription selection failed' });
+  }
+});
+
+// LOGIN
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  // Check admin
+  if (email === 'admin@apniestate.com' && password === 'password123') {
+    return res.json({ id: 1, name: 'Admin User', email, role: 'admin', status: 'SUBSCRIBED' });
+  }
+
+  try {
+    await userContext.run('1', async () => {
+      const result = await query('SELECT * FROM users WHERE email = ? AND password = ?', [email, password]);
+      if (result.rowCount === 0) {
+        return res.status(400).json({ error: 'Invalid email or password' });
+      }
+      const user = result.rows[0];
+      res.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        company: user.company,
+        phone: user.phone,
+        job_title: user.job_title,
+        city: user.city,
+        status: user.status
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// GET PENDING TRIALS FOR ADMIN
+app.get('/api/admin/trials', async (req, res) => {
+  try {
+    await userContext.run('1', async () => {
+      const result = await query("SELECT * FROM users WHERE status = 'PENDING_TRIAL_APPROVAL' ORDER BY id DESC");
+      res.json(result.rows);
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch pending trials' });
+  }
+});
+
+// APPROVE TRIAL
+app.post('/api/admin/trials/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await userContext.run('1', async () => {
+      await run("UPDATE users SET status = 'SUBSCRIBED' WHERE id = ?", [id]);
+      res.json({ message: 'Trial request approved successfully' });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to approve trial' });
+  }
+});
+
+// REJECT TRIAL
+app.post('/api/admin/trials/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await userContext.run('1', async () => {
+      await run("UPDATE users SET status = 'REJECTED' WHERE id = ?", [id]);
+      res.json({ message: 'Trial request rejected' });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to reject trial' });
   }
 });
 

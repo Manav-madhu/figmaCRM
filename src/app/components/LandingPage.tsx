@@ -2,159 +2,613 @@ import React from "react";
 import logoImg from "../../../logo.jpeg";
 import {
   TrendingUp,
-  Target,
   Building2,
   CalendarDays,
   IndianRupee,
   MessageCircle,
   Zap,
   ArrowRight,
-  Sparkles
+  ChevronRight,
+  ShieldCheck,
+  Check,
+  User,
+  Settings,
+  Rocket,
+  Plus,
+  Play,
+  Briefcase,
+  Layers,
+  ArrowUpRight
 } from "lucide-react";
 
 export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
-  const features = [
-    {
-      title: "Interactive CRM Dashboard",
-      description: "Get real-time insights with metrics for active leads, properties, and direct calculations of total income, expenditures, and net profits.",
-      icon: TrendingUp,
-      color: "#7C5CFC",
-      bg: "rgba(124, 92, 252, 0.08)"
-    },
-    {
-      title: "Active Leads & Deal Pipeline",
-      description: "Filter and prioritize leads. Transition them seamlessly across stages like New, Site Visit, Call Later, Send Details, and Booked Deals.",
-      icon: Target,
-      color: "#10B981",
-      bg: "rgba(16, 185, 129, 0.08)"
-    },
-    {
-      title: "Property & Inquiry Management",
-      description: "Log property listings, manage inquiries, record site visits, and toggle favorite listings with dedicated visual cards.",
-      icon: Building2,
-      color: "#3B82F6",
-      bg: "rgba(59, 130, 246, 0.08)"
-    },
-    {
-      title: "Progress & Milestone Calendar",
-      description: "Log daily progress reports (DPRs), track completion percentages, schedule client appointments, and attach progress milestones.",
-      icon: CalendarDays,
-      color: "#F59E0B",
-      bg: "rgba(245, 158, 11, 0.08)"
-    },
-    {
-      title: "Financial Ledger Ledger",
-      description: "Log every transaction under Income or Expenditure to auto-calculate your total revenue, expenses, and net profit margins in real-time.",
-      icon: IndianRupee,
-      color: "#EC4899",
-      bg: "rgba(236, 72, 153, 0.08)"
-    },
-    {
-      title: "WhatsApp & Broadcast Hub",
-      description: "Launch direct WhatsApp redirects, create message templates, and schedule broadcast templates to interact with leads instantly.",
-      icon: MessageCircle,
-      color: "#0891B2",
-      bg: "rgba(8, 145, 178, 0.08)"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-white flex flex-col font-sans overflow-x-hidden text-slate-800">
+      {/* 1. Header */}
+      <header className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between max-w-7xl w-full mx-auto">
         <div className="flex items-center gap-2">
-          <img src={logoImg} className="w-9 h-9 rounded-xl object-cover animate-in fade-in duration-300" alt="ApniEstate Logo" />
-          <span className="text-slate-900 font-extrabold text-base tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>
-            ApniEstate <span className="text-violet-600">CRM</span>
+          <img src={logoImg} className="w-8 h-8 rounded-lg object-cover" alt="Apni Estate Logo" />
+          <span className="text-slate-900 font-black text-lg tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>
+            Apni <span className="text-[#0B1E43]">Estate</span>
           </span>
         </div>
-        <button
-          onClick={onStartDemo}
-          className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 active:scale-95 transition-all shadow-md shadow-violet-600/20"
-        >
-          Sign In
-        </button>
+        
+        {/* Navigation Middle Links */}
+        <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <a href="#platform" onClick={onStartDemo} className="hover:text-slate-800 transition-colors">Platform</a>
+          <a href="#solutions" onClick={onStartDemo} className="hover:text-slate-800 transition-colors">Solutions</a>
+          <a href="#pricing" onClick={onStartDemo} className="hover:text-slate-800 transition-colors">Pricing</a>
+          <a href="#about" onClick={onStartDemo} className="hover:text-slate-800 transition-colors">About</a>
+        </nav>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onStartDemo}
+            className="text-xs font-black text-slate-700 hover:text-slate-900 transition-colors"
+          >
+            Sign in
+          </button>
+          <button
+            onClick={onStartDemo}
+            className="px-4 py-2.5 rounded-xl text-xs font-black text-white bg-[#0B1E43] hover:bg-[#061229] transition-all flex items-center gap-1 shadow-sm active:scale-[0.98]"
+          >
+            Start Free Trial <ChevronRight size={14} strokeWidth={2.5} />
+          </button>
+        </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative px-6 pt-16 pb-20 text-center bg-gradient-to-b from-white to-slate-50 border-b border-slate-100 flex-shrink-0">
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 opacity-25 pointer-events-none">
-          <div className="w-72 h-72 rounded-full bg-violet-400 blur-3xl" />
+      {/* 2. Hero Section */}
+      <section className="bg-gradient-to-b from-slate-50/50 to-white px-6 pt-16 pb-20 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          {/* Left Text Column */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black text-amber-800 bg-amber-50 border border-amber-100 uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
+              THE LEADING PLATFORM FOR INDIAN CONSTRUCTION
+            </div>
+            
+            <h1
+              className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-[#0B1E43]"
+              style={{ fontFamily: "Plus Jakarta Sans" }}
+            >
+              Build Smarter. <br />
+              <span className="text-amber-500">Manage Everything.</span>
+            </h1>
+            
+            <p className="text-slate-500 text-sm md:text-base max-w-xl font-medium leading-relaxed">
+              Apni Estate is the premium ERP built specifically for Indian construction and real estate departments to eliminate wastage, track projects, and centralize operations.
+            </p>
+            
+            <div className="pt-4 flex flex-wrap gap-3">
+              <button
+                onClick={onStartDemo}
+                className="px-6 py-4 rounded-2xl text-xs font-black text-white bg-[#0B1E43] hover:bg-[#061229] transition-all shadow-md shadow-slate-900/10 flex items-center gap-1.5 active:scale-[0.98]"
+              >
+                Start Building Now <ArrowRight size={14} strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={onStartDemo}
+                className="px-6 py-4 rounded-2xl text-xs font-black text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-all active:scale-[0.98]"
+              >
+                Book a Demo
+              </button>
+            </div>
+
+            {/* Hero Metrics */}
+            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-slate-100 mt-6">
+              <div>
+                <p className="text-xl md:text-2xl font-black text-slate-800">62%</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Revenue Analyzed</p>
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-black text-slate-800">10 Cr+</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Projects Managed</p>
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-black text-slate-800">1,240</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Active Members</p>
+              </div>
+              <div>
+                <p className="text-xl md:text-2xl font-black text-slate-800">30+</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Cities Covered</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Dashboard Mockup Column */}
+          <div className="lg:col-span-5 relative">
+            <div className="absolute inset-0 bg-gradient-to-tr from-violet-200/20 to-amber-200/20 blur-3xl rounded-full" />
+            <div className="bg-white rounded-3xl border border-slate-250/60 p-6 shadow-2xl relative overflow-hidden text-left space-y-5 animate-in slide-in-from-right-4 duration-500">
+              
+              {/* Mockup Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Apni Estate · Executive Command Center</p>
+                  <h3 className="text-xs font-black text-slate-800 mt-0.5">Skyline Residences – Phase 2</h3>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-0.5 border border-emerald-100">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500" /> On Track
+                </span>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Budgeted</span>
+                  <span className="text-sm font-black text-slate-850 block mt-0.5">62%</span>
+                </div>
+                <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Tasks Done</span>
+                  <span className="text-sm font-black text-slate-850 block mt-0.5">148/210</span>
+                </div>
+                <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Days Left</span>
+                  <span className="text-sm font-black text-slate-850 block mt-0.5">34</span>
+                </div>
+              </div>
+
+              {/* Progress bars */}
+              <div className="space-y-3 pt-1">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-500">Material Tracking</span>
+                    <span className="text-slate-700">78%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-600 rounded-full" style={{ width: "78%" }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-500">Labour Attendance</span>
+                    <span className="text-slate-700">91%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-600 rounded-full" style={{ width: "91%" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Overviews */}
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                <div className="flex -space-x-2">
+                  <div className="w-6 h-6 rounded-full bg-violet-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-violet-700">RS</div>
+                  <div className="w-6 h-6 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-emerald-700">PP</div>
+                  <div className="w-6 h-6 rounded-full bg-amber-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-amber-700">AK</div>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Team Online</span>
+                  <span className="text-[10px] font-black text-slate-750 block mt-0.5">1,240 Members</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 3. Official Recognition Section */}
+      <section className="px-6 py-16 bg-white max-w-7xl w-full mx-auto text-center space-y-10">
+        <div className="space-y-2">
+          <span className="text-[9px] font-black text-[#5B3FD9] bg-[#EDE9FF] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            Official Recognition
+          </span>
+          <h2 className="text-2xl md:text-3xl font-black text-[#0B1E43]" style={{ fontFamily: "Plus Jakarta Sans" }}>
+            Backed by Government Initiatives
+          </h2>
+          <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
+            Apni Estate is officially registered and recognized for its commitment to digitizing Indian construction and driving technological advancement.
+          </p>
         </div>
 
-        <div className="max-w-2xl mx-auto space-y-6 relative">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold text-violet-700 bg-violet-50 uppercase tracking-wider">
-            <Sparkles size={12} /> Next-Gen Real Estate CRM
+        {/* Government Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1 */}
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+            <div className="h-16 flex items-center justify-center">
+              <div className="px-4 py-2 border border-orange-200 rounded-xl bg-orange-50/50 flex items-center gap-1.5">
+                <span className="text-xs font-black text-orange-600 font-mono uppercase tracking-wider">Startup</span>
+                <span className="text-xs font-bold text-slate-700 uppercase font-sans">Tripura</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
+                Recognized by the Government of Tripura's Startup policy, reflecting our commitment to enterprise-grade innovation in the region.
+              </p>
+            </div>
           </div>
-          <h1
-            className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight"
-            style={{ fontFamily: "Plus Jakarta Sans" }}
-          >
-            The Command Cockpit for <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
-              Real Estate Pros
-            </span>
-          </h1>
-          <p className="text-slate-500 text-sm md:text-base max-w-lg mx-auto font-medium">
-            Manage your leads, track properties, log finances, record site visit progress, and direct-integrate broadcasts — all in one modern, reactive application.
+
+          {/* Card 2 */}
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+            <div className="h-16 flex items-center justify-center">
+              <div className="px-4 py-2 border border-slate-200 rounded-xl bg-slate-50/50 flex items-center gap-1.5">
+                <span className="text-xs font-black text-orange-500">#startup</span>
+                <span className="text-xs font-bold text-slate-700">india</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
+                Officially recognized by the Government of India's Startup India initiative — validating our legitimate, high-growth trajectory.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+            <div className="h-16 flex items-center justify-center">
+              <div className="px-4 py-2 border border-indigo-200 rounded-xl bg-indigo-50/50 flex items-center gap-1.5">
+                <div className="w-4.5 h-4.5 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[8px] font-bold">T</div>
+                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tight">DIT Tripura</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
+                Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in construction.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Onboarding Flow Section */}
+      <section className="px-6 py-16 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-7xl w-full mx-auto text-center space-y-10">
+          <div className="space-y-2">
+            <h2 className="text-2xl md:text-3xl font-black text-[#0B1E43]" style={{ fontFamily: "Plus Jakarta Sans" }}>
+              Start Managing in <span className="text-amber-500">Minutes</span>
+            </h2>
+            <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
+              Our onboarding flow is designed for speed. Get your entire team set up and running in minutes, not days.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            {/* Step 1 */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs relative overflow-hidden flex flex-col justify-between h-44">
+              <div>
+                <span className="text-3xl font-black text-violet-100 block">01</span>
+                <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Create Account</h3>
+                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
+                  Sign up to get started in seconds. No credit card required.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
+                <User size={14} /> Get Started
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs relative overflow-hidden flex flex-col justify-between h-44">
+              <div>
+                <span className="text-3xl font-black text-violet-100 block">02</span>
+                <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Setup Workspace</h3>
+                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
+                  Configure your projects, teams and data to match your workflow.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
+                <Settings size={14} /> Adjust Options
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs relative overflow-hidden flex flex-col justify-between h-44">
+              <div>
+                <span className="text-3xl font-black text-violet-100 block">03</span>
+                <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Go Live</h3>
+                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
+                  Start managing everything in real time across every site and team.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
+                <Rocket size={14} /> Launch Live
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Dashboard Roles Section */}
+      <section className="px-6 py-16 bg-white max-w-7xl w-full mx-auto text-center space-y-10">
+        <div className="space-y-2">
+          <h2 className="text-2xl md:text-3xl font-black text-[#0B1E43]" style={{ fontFamily: "Plus Jakarta Sans" }}>
+            A Dashboard for <span className="text-amber-500">Every Role</span>
+          </h2>
+          <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
+            Apni Estate gives each role purpose-built intelligence. No clutter – just what you need to make decisions faster.
           </p>
-          <div className="pt-4 flex justify-center gap-3">
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          {/* Role 1 */}
+          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 flex flex-col gap-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700">
+              <Layers size={18} />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Executive Command Center</h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
+                Full portfolio visibility – budgets, timelines, approvals, and cashflow in one dashboard.
+              </p>
+            </div>
+          </div>
+
+          {/* Role 2 */}
+          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 flex flex-col gap-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-750">
+              <Briefcase size={18} />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Site Manager Console</h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
+                Real-time labour attendance, material issuance, daily logs, and task assignment.
+              </p>
+            </div>
+          </div>
+
+          {/* Role 3 */}
+          <div className="bg-slate-50/50 rounded-3xl border border-slate-100 p-6 flex flex-col gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700">
+              <IndianRupee size={18} />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Finance & Accounts</h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
+                Invoice tracking, vendor payments, cost analysis, and cashflow forecasting.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Deep Blue Comparison Rows Section */}
+      <section className="bg-[#0B1E43] text-white px-6 py-20 border-b border-slate-900">
+        <div className="max-w-7xl w-full mx-auto text-center space-y-12">
+          
+          <div className="space-y-2">
+            <span className="text-[9px] font-black text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              The Real Cost of Doing Nothing
+            </span>
+            <h2 className="text-3xl md:text-4xl font-black" style={{ fontFamily: "Plus Jakarta Sans" }}>
+              Construction Projects Lose <span className="text-amber-400">Money Every Day</span>
+            </h2>
+            <p className="text-slate-350 text-xs md:text-sm max-w-xl mx-auto font-semibold">
+              Every week without a proper system is revenue walking out the door. Here's what unmanaged construction looks like – and what Apni Estate does about it.
+            </p>
+          </div>
+
+          {/* Rows comparisons */}
+          <div className="space-y-4 text-left">
+            {/* Row 1 */}
+            <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-5 space-y-2">
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Inventory Control</span>
+                <h3 className="text-sm font-black tracking-tight text-white">Material Wastage & Theft</h3>
+                <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                  Legacy software and WhatsApp groups fail to monitor inventory, materials, and budget overruns. Theft goes undetected for weeks.
+                </p>
+              </div>
+              
+              <div className="hidden md:flex md:col-span-2 justify-center">
+                <div className="w-8 h-8 rounded-full bg-[#0B1E43] border border-slate-700/50 flex items-center justify-center text-slate-500">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <p className="text-xs font-bold text-white leading-relaxed">
+                  Apni Estate centralizes your entire inventory in real time – every item issued, returned, or flagged is tracked automatically.
+                </p>
+              </div>
+            </div>
+
+            {/* Row 2 */}
+            <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-5 space-y-2">
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Timeline Management</span>
+                <h3 className="text-sm font-black tracking-tight text-white">Project Delays</h3>
+                <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                  Outdated timelines destroy client relationships. Poor coordination and approval bottlenecks bleed your margins on every project.
+                </p>
+              </div>
+              
+              <div className="hidden md:flex md:col-span-2 justify-center">
+                <div className="w-8 h-8 rounded-full bg-[#0B1E43] border border-slate-700/50 flex items-center justify-center text-slate-500">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <p className="text-xs font-bold text-white leading-relaxed">
+                  Smart task sequencing, role-based notifications, and one-tap approvals keep every team on the same page and on schedule.
+                </p>
+              </div>
+            </div>
+
+            {/* Row 3 */}
+            <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-5 space-y-2">
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Financial Clarity</span>
+                <h3 className="text-sm font-black tracking-tight text-white">Blind Cashflow</h3>
+                <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
+                  Hidden costs eat into your profits. Scattered invoices, manual follow-ups, and delayed payments make cashflow unpredictable.
+                </p>
+              </div>
+              
+              <div className="hidden md:flex md:col-span-2 justify-center">
+                <div className="w-8 h-8 rounded-full bg-[#0B1E43] border border-slate-700/50 flex items-center justify-center text-slate-500">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <p className="text-xs font-bold text-white leading-relaxed">
+                  Automated invoice tracking, vendor payment scheduling, and real-time cost dashboards give you full financial visibility.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. "We didn't build yet another..." section */}
+      <section className="bg-[#0B1E43] text-white px-6 py-16 border-t border-slate-800/80">
+        <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <div className="lg:col-span-5 space-y-4 text-left">
+            <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Why Construction Enterprises Choose Us
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-white" style={{ fontFamily: "Plus Jakarta Sans" }}>
+              We didn't build yet another project management tool.
+            </h2>
+            <p className="text-slate-350 text-xs font-semibold leading-relaxed">
+              We built the first purpose-built ERP for Indian construction — designed specifically for Indian builders and contractors, not adapted from Western enterprise tools.
+            </p>
+          </div>
+
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+            <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
+              <span className="text-3xl font-black text-amber-400">3%</span>
+              <h4 className="text-xs font-black text-white">Savings on Every Site</h4>
+              <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
+                Cut material and labour costs on every project through real-time tracking and alerts.
+              </p>
+            </div>
+            <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
+              <span className="text-3xl font-black text-amber-400">12%</span>
+              <h4 className="text-xs font-black text-white">Average Cost Reduction</h4>
+              <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
+                Apni Estate customers report 12% lower overall project costs within the first quarter.
+              </p>
+            </div>
+            <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
+              <span className="text-3xl font-black text-amber-400">3x</span>
+              <h4 className="text-xs font-black text-white">Faster Approval Cycles</h4>
+              <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
+                Mobile-first approvals mean decisions in minutes, not days — keeping work moving.
+              </p>
+            </div>
+            <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
+              <span className="text-3xl font-black text-amber-400">0</span>
+              <h4 className="text-xs font-black text-white">Data Loss Incidents</h4>
+              <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
+                Cloud-first architecture with automatic backups means your data is always safe.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Call to Action Banner */}
+      <section className="px-6 py-16 bg-white max-w-7xl w-full mx-auto">
+        <div className="bg-[#0B1E43] rounded-[40px] p-8 md:p-12 text-center text-white relative overflow-hidden space-y-6 shadow-xl">
+          <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 rounded-full bg-white/5" />
+          <div className="absolute left-0 top-0 -translate-x-12 -translate-y-12 w-64 h-64 rounded-full bg-white/5" />
+          
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+            <ShieldCheck size={24} />
+          </div>
+
+          <h2 className="text-3xl md:text-4xl font-black" style={{ fontFamily: "Plus Jakarta Sans" }}>
+            Ready to Build <span className="text-amber-400">Smarter?</span>
+          </h2>
+          
+          <p className="text-slate-300 text-xs md:text-sm max-w-lg mx-auto font-semibold">
+            Join the leading construction companies that are using Apni Estate to deliver projects on time and on budget.
+          </p>
+
+          <div className="pt-2 flex flex-wrap justify-center gap-3 relative z-10">
             <button
               onClick={onStartDemo}
-              className="px-6 py-3.5 rounded-2xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/30 flex items-center gap-2 active:scale-[0.98]"
+              className="px-6 py-3.5 rounded-xl text-xs font-black text-[#0B1E43] bg-amber-500 hover:bg-amber-600 transition-all flex items-center gap-1 shadow-sm active:scale-[0.98]"
             >
-              Access Demo Cockpit <ArrowRight size={14} strokeWidth={2.5} />
+              Start Free Trial <ArrowRight size={14} strokeWidth={2.5} />
+            </button>
+            <button
+              onClick={onStartDemo}
+              className="px-6 py-3.5 rounded-xl text-xs font-black text-white bg-transparent border border-slate-500 hover:bg-white/5 transition-all flex items-center gap-1.5 active:scale-[0.98]"
+            >
+              <Play size={12} fill="white" /> Watch Product Tour
             </button>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="max-w-4xl mx-auto px-6 py-16 space-y-12">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-extrabold text-slate-900" style={{ fontFamily: "Plus Jakarta Sans" }}>
-            Unified Real Estate Workspace
-          </h2>
-          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">
-            Everything you need to close deals faster
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((f, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs flex flex-col gap-4 hover:shadow-md transition-shadow"
-            >
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: f.bg }}
-              >
-                <f.icon size={22} style={{ color: f.color }} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-extrabold text-slate-800 text-[15px]" style={{ fontFamily: "Plus Jakarta Sans" }}>
-                  {f.title}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  {f.description}
-                </p>
-              </div>
+      {/* 9. Footer Section */}
+      <footer className="bg-slate-50 border-t border-slate-200/80 px-6 py-12 text-slate-500 text-xs">
+        <div className="max-w-7xl w-full mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          
+          {/* Logo and About column */}
+          <div className="md:col-span-4 space-y-4 text-left">
+            <div className="flex items-center gap-2">
+              <img src={logoImg} className="w-8 h-8 rounded-lg object-cover" alt="Logo" />
+              <span className="text-slate-900 font-black text-lg tracking-tight">Apni Estate</span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="mt-auto bg-slate-900 text-slate-400 py-10 px-6 border-t border-slate-800 text-center text-xs">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="flex items-center justify-center gap-2 text-white">
-            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center font-extrabold">
-              A
+            <p className="text-[11px] leading-relaxed text-slate-400 font-semibold max-w-sm">
+              The premium ERP built for Indian construction and real estate — eliminating wastage, tracking projects, and centralizing operations.
+            </p>
+            <div className="flex gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <a href="#" className="hover:text-slate-600">t</a>
+              <a href="#" className="hover:text-slate-600">in</a>
+              <a href="#" className="hover:text-slate-600">yt</a>
             </div>
-            <span className="font-extrabold tracking-tight">ApniEstate CRM</span>
           </div>
-          <p>© 2026 ApniEstate Technologies Private Limited. All rights reserved.</p>
+
+          {/* Product Links */}
+          <div className="md:col-span-2 space-y-3 text-left">
+            <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Product</h4>
+            <ul className="space-y-2 text-[11px] font-semibold text-slate-450">
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Executive Dashboard</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Site Manager Console</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Finance & Accounts</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Material Tracking</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Labour Management</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Reports & Analytics</a></li>
+            </ul>
+          </div>
+
+          {/* Company Links */}
+          <div className="md:col-span-2 space-y-3 text-left">
+            <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Company</h4>
+            <ul className="space-y-2 text-[11px] font-semibold text-slate-450">
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">About Apni Estate</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Blog</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Careers</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Press</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Partners</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Contact Us</a></li>
+            </ul>
+          </div>
+
+          {/* Legal Links */}
+          <div className="md:col-span-4 space-y-3 text-left">
+            <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Legal</h4>
+            <ul className="space-y-2 text-[11px] font-semibold text-slate-450">
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Privacy Policy</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Terms of Service</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Data Security</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Cookie Policy</a></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Footer bottom */}
+        <div className="max-w-7xl w-full mx-auto mt-10 pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4 font-semibold text-[10px] text-slate-400">
+          <p>© 2026 Apni Estate. All rights reserved. | Registered under Startup India & Startup Tripura | Recognized by DST</p>
+          <div className="flex items-center gap-1.5 text-emerald-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            All systems operational
+          </div>
         </div>
       </footer>
     </div>

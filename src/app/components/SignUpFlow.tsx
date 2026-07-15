@@ -392,7 +392,7 @@ export function SignUpFlow({
                       </div>
                     </div>
                     <div className="text-right flex items-center gap-3">
-                      <span className="font-black text-sm text-slate-800">₹2,999/mo</span>
+                      <span className="font-black text-sm text-slate-800">₹4,999/mo</span>
                       {selectedPlan === "premium" && (
                         <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center text-white">
                           <Check size={12} strokeWidth={3} />

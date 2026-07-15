@@ -3,6 +3,7 @@ import logoImg from "../../../logo.jpeg";
 import tripuraLogo from "../../../tripura.png";
 import startupIndiaLogo from "../../../startupindia.png";
 import ditLogo from "../../../DIT.png";
+import dpiitLogo from "../../../DPIIt.png";
 import {
   TrendingUp,
   Building2,
@@ -210,56 +211,53 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
         {/* Government Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Card 1 */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
             <div className="h-16 flex items-center justify-center">
-              <img src={tripuraLogo} className="h-12 w-auto object-contain" alt="Startup Tripura Logo" />
+              <img src={tripuraLogo} className="h-14 w-auto object-contain" alt="Startup Tripura" />
             </div>
-            <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Recognized by the Government of Tripura's Startup policy, reflecting our commitment to enterprise-grade sales cockpit innovation.
+            <div className="space-y-2">
+              <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-[240px] mx-auto">
+                Recognized by the Government of Tripura's Startup policy, reflecting our commitment to enterprise-grade innovation in the region.
               </p>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
             <div className="h-16 flex items-center justify-center">
-              <img src={startupIndiaLogo} className="h-10 w-auto object-contain" alt="Startup India Logo" />
+              <img src={startupIndiaLogo} className="h-10 w-auto object-contain" alt="Startup India" />
             </div>
-            <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Officially recognized by the Government of India's Startup India initiative — validating our legitimate, high-growth real estate SaaS trajectory.
+            <div className="space-y-2">
+              <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-[240px] mx-auto">
+                Officially recognized by the Government of India's Startup India initiative — validating our legitimate, high-growth trajectory.
               </p>
             </div>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
             <div className="h-16 flex items-center justify-center">
-              <img src={ditLogo} className="h-12 w-auto object-contain" alt="DIT Tripura Logo" />
+              <img src={ditLogo} className="h-14 w-auto object-contain" alt="DIT Tripura" />
             </div>
-            <div>
-              <h3 className="font-black text-slate-855 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Directorate of Information Technology</h3>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in builder CRM platforms.
+            <div className="space-y-2">
+              <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-[240px] mx-auto">
+                Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in construction.
               </p>
             </div>
           </div>
 
           {/* Card 4 */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 flex flex-col items-center text-center space-y-6">
             <div className="h-16 flex items-center justify-center">
-              <div className="px-4 py-2 border border-sky-200 rounded-xl bg-sky-50/50 flex items-center gap-1.5">
-                <span className="text-xs font-black text-sky-700 font-mono uppercase tracking-wider">DPIIT</span>
-                <span className="text-[9px] font-bold text-slate-700 uppercase">Recognised</span>
-              </div>
+              <img src={dpiitLogo} className="h-12 w-auto object-contain" alt="DPIIT" />
             </div>
-            <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DPIIT</h3>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Registered with the Department for Promotion of Industry and Internal Trade (Govt. of India) as an innovative prop-tech developer.
+            <div className="space-y-2">
+              <h3 className="text-slate-800 font-extrabold text-[15px] tracking-tight" style={{ fontFamily: "Plus Jakarta Sans" }}>DPIIT</h3>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-[240px] mx-auto">
+                Registered with the Department for Promotion of Industry and Internal Trade (Govt. of India) as an innovative prop-tech software.
               </p>
             </div>
           </div>

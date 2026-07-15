@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext, useRef } from "react";
 import * as XLSX from "xlsx";
 import { api } from "./api";
+import { LandingPage } from "./components/LandingPage";
+import { LoginPage } from "./components/LoginPage";
 import {
   Home,
   Users,
@@ -4068,7 +4070,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
 
 // ─── Tab: Profile (extended with links to all new features) ────────────
 
-function ProfileTab({ go }: { go: (s: Screen) => void }) {
+function ProfileTab({ go, onLogout }: { go: (s: Screen) => void; onLogout: () => void }) {
   const { leads, tasks } = useContext(AppContext)!;
   const activeLeadsCount = leads.filter((l) => l.status !== "Lost").length;
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
@@ -4133,7 +4135,10 @@ function ProfileTab({ go }: { go: (s: Screen) => void }) {
           </button>
         ))}
 
-        <button className="mt-2 w-full py-4 rounded-2xl text-sm font-semibold text-red-500 bg-red-50">
+        <button
+          onClick={onLogout}
+          className="mt-2 w-full py-4 rounded-2xl text-sm font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+        >
           Sign Out
         </button>
       </div>
@@ -4999,6 +5004,11 @@ export default function App() {
     localStorage.setItem("crm_closed", closedCount.toString());
   }, [closedCount]);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("crm_logged_in") === "true";
+  });
+  const [showLogin, setShowLogin] = useState(false);
+
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [history, setHistory] = useState<Screen[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<number>(1);
@@ -5201,7 +5211,16 @@ export default function App() {
       case "calendar":
         return <CalendarTab go={go} onAddAppointment={() => setShowAddAppointmentModal(true)} />;
       case "profile":
-        return <ProfileTab go={go} />;
+        return (
+          <ProfileTab
+            go={go}
+            onLogout={() => {
+              setIsLoggedIn(false);
+              localStorage.setItem("crm_logged_in", "false");
+              setShowLogin(false);
+            }}
+          />
+        );
       case "lead-detail":
         return <LeadDetailScreen leadId={selectedLeadId} onBack={back} />;
       case "pipeline":
@@ -5254,6 +5273,26 @@ export default function App() {
   }
 
 
+
+  if (!isLoggedIn) {
+    if (showLogin) {
+      return (
+        <LoginPage
+          onLogin={() => {
+            setIsLoggedIn(true);
+            localStorage.setItem("crm_logged_in", "true");
+          }}
+          onBack={() => setShowLogin(false)}
+        />
+      );
+    } else {
+      return (
+        <LandingPage
+          onStartDemo={() => setShowLogin(true)}
+        />
+      );
+    }
+  }
 
   return (
     <AppContext.Provider value={{

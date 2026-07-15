@@ -1,5 +1,8 @@
 import React from "react";
 import logoImg from "../../../logo.jpeg";
+import tripuraLogo from "../../../tripura.png";
+import startupIndiaLogo from "../../../startupindia.png";
+import ditLogo from "../../../DIT.png";
 import {
   TrendingUp,
   Building2,
@@ -209,10 +212,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           {/* Card 1 */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
             <div className="h-16 flex items-center justify-center">
-              <div className="px-4 py-2 border border-orange-200 rounded-xl bg-orange-50/50 flex items-center gap-1.5">
-                <span className="text-xs font-black text-orange-600 font-mono uppercase tracking-wider">Startup</span>
-                <span className="text-xs font-bold text-slate-700 uppercase font-sans">Tripura</span>
-              </div>
+              <img src={tripuraLogo} className="h-12 w-auto object-contain" alt="Startup Tripura Logo" />
             </div>
             <div>
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
@@ -225,10 +225,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           {/* Card 2 */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
             <div className="h-16 flex items-center justify-center">
-              <div className="px-4 py-2 border border-slate-200 rounded-xl bg-slate-50/50 flex items-center gap-1.5">
-                <span className="text-xs font-black text-orange-500">#startup</span>
-                <span className="text-xs font-bold text-slate-700">india</span>
-              </div>
+              <img src={startupIndiaLogo} className="h-10 w-auto object-contain" alt="Startup India Logo" />
             </div>
             <div>
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
@@ -241,13 +238,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           {/* Card 3 */}
           <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col items-center text-center space-y-4 hover:shadow-md transition-shadow">
             <div className="h-16 flex items-center justify-center">
-              <div className="px-4 py-2 border border-indigo-200 rounded-xl bg-indigo-50/50 flex items-center gap-1.5">
-                <div className="w-4.5 h-4.5 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[8px] font-bold">T</div>
-                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tight">DIT Tripura</span>
-              </div>
+              <img src={ditLogo} className="h-12 w-auto object-contain" alt="DIT Tripura Logo" />
             </div>
             <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
+              <h3 className="font-black text-slate-855 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Directorate of Information Technology</h3>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
                 Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in builder CRM platforms.
               </p>

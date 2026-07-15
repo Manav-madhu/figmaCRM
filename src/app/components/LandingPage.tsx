@@ -66,19 +66,19 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           <div className="lg:col-span-7 space-y-6 text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black text-amber-800 bg-amber-50 border border-amber-100 uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
-              THE LEADING PLATFORM FOR INDIAN CONSTRUCTION
+              THE LEADING CRM PLATFORM FOR INDIAN REAL ESTATE BUILDERS
             </div>
             
             <h1
               className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-[#0B1E43]"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
-              Build Smarter. <br />
+              Sell Smarter. <br />
               <span className="text-amber-500">Manage Everything.</span>
             </h1>
             
             <p className="text-slate-500 text-sm md:text-base max-w-xl font-medium leading-relaxed">
-              Apni Estate is the premium ERP built specifically for Indian construction and real estate departments to eliminate wastage, track projects, and centralize operations.
+              Apni Estate is the premium CRM built specifically for real estate developers and property builders to manage leads, track site visit bookings, monitor construction milestones, and optimize financial ledger receipts.
             </p>
             
             <div className="pt-4 flex flex-wrap gap-3">
@@ -86,7 +86,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
                 onClick={onStartDemo}
                 className="px-6 py-4 rounded-2xl text-xs font-black text-white bg-[#0B1E43] hover:bg-[#061229] transition-all shadow-md shadow-slate-900/10 flex items-center gap-1.5 active:scale-[0.98]"
               >
-                Start Building Now <ArrowRight size={14} strokeWidth={2.5} />
+                Start Selling Now <ArrowRight size={14} strokeWidth={2.5} />
               </button>
               <button
                 onClick={onStartDemo}
@@ -100,15 +100,15 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-slate-100 mt-6">
               <div>
                 <p className="text-xl md:text-2xl font-black text-slate-800">62%</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Revenue Analyzed</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Leads Converted</p>
               </div>
               <div>
                 <p className="text-xl md:text-2xl font-black text-slate-800">10 Cr+</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Projects Managed</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Sales Revenue</p>
               </div>
               <div>
                 <p className="text-xl md:text-2xl font-black text-slate-800">1,240</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Active Members</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Properties Listed</p>
               </div>
               <div>
                 <p className="text-xl md:text-2xl font-black text-slate-800">30+</p>
@@ -125,7 +125,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               {/* Mockup Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Apni Estate · Executive Command Center</p>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Apni Estate · Sales Command Center</p>
                   <h3 className="text-xs font-black text-slate-800 mt-0.5">Skyline Residences – Phase 2</h3>
                 </div>
                 <span className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-0.5 border border-emerald-100">
@@ -136,15 +136,15 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
-                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Budgeted</span>
-                  <span className="text-sm font-black text-slate-850 block mt-0.5">62%</span>
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Booking Rev</span>
+                  <span className="text-sm font-black text-slate-850 block mt-0.5">₹1.2 Cr</span>
                 </div>
                 <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
-                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Tasks Done</span>
-                  <span className="text-sm font-black text-slate-850 block mt-0.5">148/210</span>
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Deals Closed</span>
+                  <span className="text-sm font-black text-slate-850 block mt-0.5">14/20</span>
                 </div>
                 <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100">
-                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Days Left</span>
+                  <span className="text-[8px] font-bold text-slate-450 uppercase block">Inquiries</span>
                   <span className="text-sm font-black text-slate-850 block mt-0.5">34</span>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <div className="space-y-3 pt-1">
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-slate-500">Material Tracking</span>
+                    <span className="text-slate-500">Active Leads Reached</span>
                     <span className="text-slate-700">78%</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -163,7 +163,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
 
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-bold">
-                    <span className="text-slate-500">Labour Attendance</span>
+                    <span className="text-slate-500">Site Visits Booked</span>
                     <span className="text-slate-700">91%</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -175,13 +175,13 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               {/* Team Overviews */}
               <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
                 <div className="flex -space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-violet-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-violet-700">RS</div>
+                  <div className="w-6 h-6 rounded-full bg-violet-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-violet-700">SM</div>
                   <div className="w-6 h-6 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-emerald-700">PP</div>
                   <div className="w-6 h-6 rounded-full bg-amber-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-amber-700">AK</div>
                 </div>
                 <div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Team Online</span>
-                  <span className="text-[10px] font-black text-slate-750 block mt-0.5">1,240 Members</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Sales Agents</span>
+                  <span className="text-[10px] font-black text-slate-750 block mt-0.5">1,240 Members Online</span>
                 </div>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             Backed by Government Initiatives
           </h2>
           <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
-            Apni Estate is officially registered and recognized for its commitment to digitizing Indian construction and driving technological advancement.
+            Apni Estate is officially registered and recognized for its commitment to digitizing Indian real estate CRM workflows and driving technological advancement.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             <div>
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup Tripura</h3>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Recognized by the Government of Tripura's Startup policy, reflecting our commitment to enterprise-grade innovation in the region.
+                Recognized by the Government of Tripura's Startup policy, reflecting our commitment to enterprise-grade sales cockpit innovation.
               </p>
             </div>
           </div>
@@ -233,7 +233,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             <div>
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Startup India</h3>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Officially recognized by the Government of India's Startup India initiative — validating our legitimate, high-growth trajectory.
+                Officially recognized by the Government of India's Startup India initiative — validating our legitimate, high-growth real estate SaaS trajectory.
               </p>
             </div>
           </div>
@@ -249,7 +249,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             <div>
               <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>DIT Tripura</h3>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium mt-2">
-                Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in construction.
+                Acknowledged by the Directorate of Information Technology (Govt. of Tripura) for technological advancement in builder CRM platforms.
               </p>
             </div>
           </div>
@@ -264,7 +264,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               Start Managing in <span className="text-amber-500">Minutes</span>
             </h2>
             <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
-              Our onboarding flow is designed for speed. Get your entire team set up and running in minutes, not days.
+              Our onboarding flow is designed for speed. Get your sales team set up and running in minutes, not days.
             </p>
           </div>
 
@@ -274,8 +274,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <div>
                 <span className="text-3xl font-black text-violet-100 block">01</span>
                 <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Create Account</h3>
-                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
-                  Sign up to get started in seconds. No credit card required.
+                <p className="text-xs text-slate-455 leading-relaxed font-medium mt-1">
+                  Sign up to activate your custom builder CRM workspace. No credit card required.
                 </p>
               </div>
               <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
@@ -288,8 +288,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <div>
                 <span className="text-3xl font-black text-violet-100 block">02</span>
                 <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Setup Workspace</h3>
-                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
-                  Configure your projects, teams and data to match your workflow.
+                <p className="text-xs text-slate-455 leading-relaxed font-medium mt-1">
+                  Import your leads via CSV/Excel, configure stages, and list properties.
                 </p>
               </div>
               <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
@@ -302,8 +302,8 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <div>
                 <span className="text-3xl font-black text-violet-100 block">03</span>
                 <h3 className="font-black text-slate-850 text-sm mt-2" style={{ fontFamily: "Plus Jakarta Sans" }}>Go Live</h3>
-                <p className="text-xs text-slate-450 leading-relaxed font-medium mt-1">
-                  Start managing everything in real time across every site and team.
+                <p className="text-xs text-slate-455 leading-relaxed font-medium mt-1">
+                  Track client site visits, log task updates, and log collections in real time.
                 </p>
               </div>
               <div className="flex items-center gap-1 text-[10px] font-bold text-violet-600 uppercase tracking-wider">
@@ -318,10 +318,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
       <section className="px-6 py-16 bg-white max-w-7xl w-full mx-auto text-center space-y-10">
         <div className="space-y-2">
           <h2 className="text-2xl md:text-3xl font-black text-[#0B1E43]" style={{ fontFamily: "Plus Jakarta Sans" }}>
-            A Dashboard for <span className="text-amber-500">Every Role</span>
+            A Dashboard for <span className="text-amber-500">Every Sales Role</span>
           </h2>
           <p className="text-slate-500 text-xs md:text-sm max-w-xl mx-auto font-medium">
-            Apni Estate gives each role purpose-built intelligence. No clutter – just what you need to make decisions faster.
+            Apni Estate CRM gives each department purpose-built intelligence. No clutter – just what you need to close bookings.
           </p>
         </div>
 
@@ -332,9 +332,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <Layers size={18} />
             </div>
             <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Executive Command Center</h3>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Sales & Relationship Cockpit</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
-                Full portfolio visibility – budgets, timelines, approvals, and cashflow in one dashboard.
+                Full client card tracking, pipeline stage transitions, callback follow-up logs, and automated WhatsApp broadcasts.
               </p>
             </div>
           </div>
@@ -345,9 +345,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <Briefcase size={18} />
             </div>
             <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Site Manager Console</h3>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Project Milestone Calendar</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
-                Real-time labour attendance, material issuance, daily logs, and task assignment.
+                Log task updates, schedule client site visits, record progress percentages, and attach updates to calendar dates.
               </p>
             </div>
           </div>
@@ -358,9 +358,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <IndianRupee size={18} />
             </div>
             <div>
-              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Finance & Accounts</h3>
+              <h3 className="font-black text-slate-850 text-sm" style={{ fontFamily: "Plus Jakarta Sans" }}>Financial Profit Ledger</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium mt-2">
-                Invoice tracking, vendor payments, cost analysis, and cashflow forecasting.
+                Record booking collection incomes, log vendor/broker expenses, and monitor net profit margins dynamically.
               </p>
             </div>
           </div>
@@ -376,10 +376,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               The Real Cost of Doing Nothing
             </span>
             <h2 className="text-3xl md:text-4xl font-black" style={{ fontFamily: "Plus Jakarta Sans" }}>
-              Construction Projects Lose <span className="text-amber-400">Money Every Day</span>
+              Builder Pipelines Lose <span className="text-amber-400">Deals Every Day</span>
             </h2>
-            <p className="text-slate-350 text-xs md:text-sm max-w-xl mx-auto font-semibold">
-              Every week without a proper system is revenue walking out the door. Here's what unmanaged construction looks like – and what Apni Estate does about it.
+            <p className="text-slate-355 text-xs md:text-sm max-w-xl mx-auto font-semibold">
+              Every week without a central CRM is client revenue walking out the door. Here is how unmanaged leads look – and what Apni Estate CRM does.
             </p>
           </div>
 
@@ -388,10 +388,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             {/* Row 1 */}
             <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
               <div className="md:col-span-5 space-y-2">
-                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Inventory Control</span>
-                <h3 className="text-sm font-black tracking-tight text-white">Material Wastage & Theft</h3>
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Leads Leaks</span>
+                <h3 className="text-sm font-black tracking-tight text-white">Lost Leads & No Followups</h3>
                 <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
-                  Legacy software and WhatsApp groups fail to monitor inventory, materials, and budget overruns. Theft goes undetected for weeks.
+                  Scattered WhatsApp lists and paper notes lead to forgotten client callbacks. Hot property leads go cold within 48 hours.
                 </p>
               </div>
               
@@ -402,9 +402,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               </div>
 
               <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
-                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate CRM Solution</span>
                 <p className="text-xs font-bold text-white leading-relaxed">
-                  Apni Estate centralizes your entire inventory in real time – every item issued, returned, or flagged is tracked automatically.
+                  Centralized interactive lead cards with automated callback reminders, templates, and seamless WhatsApp redirect messaging.
                 </p>
               </div>
             </div>
@@ -412,10 +412,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             {/* Row 2 */}
             <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
               <div className="md:col-span-5 space-y-2">
-                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Timeline Management</span>
-                <h3 className="text-sm font-black tracking-tight text-white">Project Delays</h3>
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Engagement Management</span>
+                <h3 className="text-sm font-black tracking-tight text-white">Disorganized Site Visits</h3>
                 <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
-                  Outdated timelines destroy client relationships. Poor coordination and approval bottlenecks bleed your margins on every project.
+                  Double-booked appointments and missed site visits destroy client trust. Difficult to track feedback on specific properties.
                 </p>
               </div>
               
@@ -426,9 +426,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               </div>
 
               <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
-                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate CRM Solution</span>
                 <p className="text-xs font-bold text-white leading-relaxed">
-                  Smart task sequencing, role-based notifications, and one-tap approvals keep every team on the same page and on schedule.
+                  Milestone calendar links site-visit schedules directly to property cards, logging progress updates and client requirements.
                 </p>
               </div>
             </div>
@@ -436,10 +436,10 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
             {/* Row 3 */}
             <div className="bg-[#0f2858] rounded-3xl p-6 border border-slate-700/60 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
               <div className="md:col-span-5 space-y-2">
-                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Financial Clarity</span>
+                <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Payment Collections</span>
                 <h3 className="text-sm font-black tracking-tight text-white">Blind Cashflow</h3>
                 <p className="text-[11px] text-slate-300 font-semibold leading-relaxed">
-                  Hidden costs eat into your profits. Scattered invoices, manual follow-ups, and delayed payments make cashflow unpredictable.
+                  Difficult to monitor builder payment plans, booking receipt collections, and broker commission expenses.
                 </p>
               </div>
               
@@ -450,9 +450,9 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               </div>
 
               <div className="md:col-span-5 space-y-2 bg-[#091a3c] rounded-2xl p-5 border border-slate-800">
-                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate Solution</span>
+                <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Apni Estate CRM Solution</span>
                 <p className="text-xs font-bold text-white leading-relaxed">
-                  Automated invoice tracking, vendor payment scheduling, and real-time cost dashboards give you full financial visibility.
+                  Integrated ledger tracks every client booking installment and project expense to output exact net profit margins.
                 </p>
               </div>
             </div>
@@ -466,43 +466,43 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           
           <div className="lg:col-span-5 space-y-4 text-left">
             <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Why Construction Enterprises Choose Us
+              Why Property Builders Choose Us
             </span>
             <h2 className="text-2xl md:text-3xl font-black text-white" style={{ fontFamily: "Plus Jakarta Sans" }}>
-              We didn't build yet another project management tool.
+              We didn't build yet another generic CRM.
             </h2>
             <p className="text-slate-350 text-xs font-semibold leading-relaxed">
-              We built the first purpose-built ERP for Indian construction — designed specifically for Indian builders and contractors, not adapted from Western enterprise tools.
+              We built the first property CRM designed specifically for Indian builders and real estate developers — fully equipped with bulk Excel lead imports and local WhatsApp messaging templates.
             </p>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
             <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
-              <span className="text-3xl font-black text-amber-400">3%</span>
-              <h4 className="text-xs font-black text-white">Savings on Every Site</h4>
+              <span className="text-3xl font-black text-amber-400">3x</span>
+              <h4 className="text-xs font-black text-white">Faster Lead Responses</h4>
               <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                Cut material and labour costs on every project through real-time tracking and alerts.
+                Send template WhatsApp broadcasts and initiate direct redirects to client chat lines instantly.
               </p>
             </div>
             <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
               <span className="text-3xl font-black text-amber-400">12%</span>
-              <h4 className="text-xs font-black text-white">Average Cost Reduction</h4>
+              <h4 className="text-xs font-black text-white font-sans">Deal Conversion Increase</h4>
               <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                Apni Estate customers report 12% lower overall project costs within the first quarter.
+                Visual status pipelines ensure no site-visit or follow-up callback opportunity is ever lost.
               </p>
             </div>
             <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
-              <span className="text-3xl font-black text-amber-400">3x</span>
-              <h4 className="text-xs font-black text-white">Faster Approval Cycles</h4>
+              <span className="text-3xl font-black text-amber-400">100%</span>
+              <h4 className="text-xs font-black text-white">Payment Transparency</h4>
               <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                Mobile-first approvals mean decisions in minutes, not days — keeping work moving.
+                Real-time tracking of booking cash receipts, broker payouts, and ledger updates.
               </p>
             </div>
             <div className="bg-[#0f2858] rounded-3xl p-5 border border-slate-700/50 space-y-2">
               <span className="text-3xl font-black text-amber-400">0</span>
-              <h4 className="text-xs font-black text-white">Data Loss Incidents</h4>
+              <h4 className="text-xs font-black text-white">Data Leak Incidents</h4>
               <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                Cloud-first architecture with automatic backups means your data is always safe.
+                Cloud-secure isolated tenant databases keep your agency client lists safe and isolated.
               </p>
             </div>
           </div>
@@ -520,11 +520,11 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           </div>
 
           <h2 className="text-3xl md:text-4xl font-black" style={{ fontFamily: "Plus Jakarta Sans" }}>
-            Ready to Build <span className="text-amber-400">Smarter?</span>
+            Ready to Sell <span className="text-amber-400">Smarter?</span>
           </h2>
           
-          <p className="text-slate-300 text-xs md:text-sm max-w-lg mx-auto font-semibold">
-            Join the leading construction companies that are using Apni Estate to deliver projects on time and on budget.
+          <p className="text-slate-350 text-xs md:text-sm max-w-lg mx-auto font-semibold">
+            Join the leading real estate builders using Apni Estate CRM to manage client pipelines, schedule site visits, and optimize sales.
           </p>
 
           <div className="pt-2 flex flex-wrap justify-center gap-3 relative z-10">
@@ -555,7 +555,7 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
               <span className="text-slate-900 font-black text-lg tracking-tight">Apni Estate</span>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-400 font-semibold max-w-sm">
-              The premium ERP built for Indian construction and real estate — eliminating wastage, tracking projects, and centralizing operations.
+              The premium CRM built for Indian builders and real estate developers — managing pipelines, tracking site visits, and centralizing collections.
             </p>
             <div className="flex gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               <a href="#" className="hover:text-slate-600">t</a>
@@ -568,11 +568,11 @@ export function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
           <div className="md:col-span-2 space-y-3 text-left">
             <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Product</h4>
             <ul className="space-y-2 text-[11px] font-semibold text-slate-450">
-              <li><a href="#" onClick={onStartDemo} className="hover:underline">Executive Dashboard</a></li>
-              <li><a href="#" onClick={onStartDemo} className="hover:underline">Site Manager Console</a></li>
-              <li><a href="#" onClick={onStartDemo} className="hover:underline">Finance & Accounts</a></li>
-              <li><a href="#" onClick={onStartDemo} className="hover:underline">Material Tracking</a></li>
-              <li><a href="#" onClick={onStartDemo} className="hover:underline">Labour Management</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Leads Management</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Site Visit Console</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Financial Ledger</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">WhatsApp Broadcaster</a></li>
+              <li><a href="#" onClick={onStartDemo} className="hover:underline">Milestone Calendars</a></li>
               <li><a href="#" onClick={onStartDemo} className="hover:underline">Reports & Analytics</a></li>
             </ul>
           </div>

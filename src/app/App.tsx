@@ -3571,13 +3571,13 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   };
 
   const handleDeleteMilestone = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this milestone?")) return;
+    if (!confirm("Are you sure you want to delete this task?")) return;
     try {
       await api.deleteMilestone(id);
       refreshData();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete milestone.");
+      alert("Failed to delete task.");
     }
   };
 
@@ -3632,7 +3632,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   const handleAddMilestone = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mName || !mTargetDate) {
-      alert("Please fill in Milestone Name and Target Date.");
+      alert("Please fill in Task Name and Due Date.");
       return;
     }
     setIsCreatingMilestone(true);
@@ -3650,7 +3650,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
       setMTargetDate("");
     } catch (err) {
       console.error(err);
-      alert("Failed to create milestone.");
+      alert("Failed to create task.");
     }
     setIsCreatingMilestone(false);
   };
@@ -3685,9 +3685,9 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
   return (
     <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden animate-in fade-in duration-300">
       <div className="bg-white border-b border-slate-100 px-4 pt-12 pb-0 shrink-0 sticky top-0 z-10">
-        <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Tasks & Milestones</h2>
+        <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Tasks</h2>
         <div className="flex gap-2">
-          {[{ id: "timeline", label: "Milestone Timeline" }, { id: "calendar", label: "Task Calendar" }].map(({ id, label }) => (
+          {[{ id: "timeline", label: "Task Timeline" }, { id: "calendar", label: "Task Calendar" }].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setView(id as any)}
@@ -3708,19 +3708,19 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
           ) : view === "timeline" ? (
             <>
               <div className="flex justify-between items-center mb-4">
-                <SectionLabel>Milestones</SectionLabel>
+                <SectionLabel>Tasks List</SectionLabel>
                 <button
                   onClick={() => { setMTargetDate(''); setShowAddMilestone(true); }}
                   className="text-xs font-bold bg-violet-50 text-violet-600 border border-violet-100 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-violet-100/50"
                 >
-                  <Plus size={14} /> Add Milestone
+                  <Plus size={14} /> Add Task
                 </button>
               </div>
 
               <div className="space-y-0">
                 {milestones.length === 0 ? (
                   <div className="text-center p-6 bg-white rounded-xl border border-slate-100 text-sm text-slate-400 italic">
-                    No milestones defined yet.
+                    No tasks defined yet.
                   </div>
                 ) : milestones.map((m, i) => (
                   <div key={m.id} className="flex gap-4">
@@ -3801,7 +3801,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                       <p className="text-xs font-bold text-slate-800 leading-relaxed">{d.summary}</p>
                       {d.milestone_id && (
                         <p className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
-                          <ArrowRight size={12} /> Contributed to milestone
+                          <ArrowRight size={12} /> Contributed to task progress
                         </p>
                       )}
                     </Card>
@@ -3869,8 +3869,8 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                   })}
                 </div>
                 <div className="flex items-center gap-5 mt-5 pt-4 border-t border-slate-100 justify-center">
-                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-indigo-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Task Logged</p></div>
-                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Milestone</p></div>
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-indigo-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Log Update</p></div>
+                  <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-amber-500" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Task Due</p></div>
                   <div className="flex items-center gap-2"><span className="size-2 rounded-full bg-violet-600" /><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Today</p></div>
                 </div>
               </Card>
@@ -3893,7 +3893,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                                 <p className="font-black text-sm text-slate-800">{m.name}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-bold tracking-wider uppercase text-slate-400 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-xs">Milestone</span>
+                                <span className="text-[9px] font-bold tracking-wider uppercase text-slate-400 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-xs">Task</span>
                                 <button onClick={() => handleDeleteMilestone(m.id)} className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
                                   <Trash2 size={14} />
                                 </button>
@@ -3921,7 +3921,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
                       <div className="bg-white p-2 rounded-full border border-slate-100 shadow-xs group-hover:scale-110 transition-transform">
                         <Plus size={16} className="text-violet-600" />
                       </div>
-                      <span className="text-xs font-bold uppercase tracking-wider">Add Milestone for this Date</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">Add Task for this Date</span>
                     </button>
 
                     {/* DPRs Section */}
@@ -3946,7 +3946,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
 
                             {dpr.milestone_id && (
                               <div className="bg-slate-50 p-2 rounded-xl mb-3 border border-slate-100">
-                                <p className="text-[11px] font-bold text-slate-600">Updated milestone by <span className="font-extrabold text-emerald-600">+{dpr.completion_percentage}%</span></p>
+                                <p className="text-[11px] font-bold text-slate-600">Updated task progress by <span className="font-extrabold text-emerald-600">+{dpr.completion_percentage}%</span></p>
                               </div>
                             )}
 
@@ -3967,26 +3967,26 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
         </div>
       </div>
 
-      {/* Add Milestone Modal */}
+      {/* Add Task Modal */}
       {showAddMilestone && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 shadow-xl border border-slate-100">
             <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Add Milestone</h3>
+              <h3 className="font-black text-sm text-slate-800 uppercase tracking-wider">Add Task</h3>
               <button onClick={() => setShowAddMilestone(false)} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
             </div>
             <form onSubmit={handleAddMilestone} className="p-4 space-y-4 text-left">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Milestone Name</label>
-                <input required value={mName} onChange={e => setMName(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="e.g. Ground Floor Slab" />
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Task Name</label>
+                <input required value={mName} onChange={e => setMName(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" placeholder="e.g. Schedule Client Site Visit" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target Date</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Due Date</label>
                 <input required type="date" value={mTargetDate} onChange={e => setMTargetDate(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-violet-500 focus:bg-white text-slate-800" />
               </div>
               <div className="pt-2 flex justify-end">
                 <button disabled={isCreatingMilestone} type="submit" className="bg-[#5B3FD9] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-violet-800 disabled:opacity-50 flex items-center gap-2">
-                  {isCreatingMilestone ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : "Create Milestone"}
+                  {isCreatingMilestone ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : "Create Task"}
                 </button>
               </div>
             </form>
@@ -4005,7 +4005,7 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
             <form onSubmit={handleSubmitDpr} className="p-4 space-y-4 overflow-y-auto flex-1 text-left" style={{ scrollbarWidth: "none" }}>
               {selectedMilestone && (
                 <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3.5 mb-4">
-                  <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider mb-1">Applying to Milestone</p>
+                  <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider mb-1">Applying to Task</p>
                   <p className="font-black text-xs text-indigo-900">{selectedMilestone.name}</p>
                 </div>
               )}
@@ -4025,11 +4025,11 @@ function CalendarTab({ go, onAddAppointment }: { go: (s: Screen) => void; onAddA
               {selectedMilestone && (
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between">
-                    <span>% Milestone Progress</span>
+                    <span>% Task Progress</span>
                     <span className="text-violet-600">{dprPercentage}%</span>
                   </label>
                   <input type="range" min="0" max="100" value={dprPercentage} onChange={e => setDprPercentage(Number(e.target.value))} className="w-full accent-violet-600 cursor-pointer" />
-                  <p className="text-[10px] text-slate-400 font-bold mt-1">How much of the milestone was accomplished?</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1">How much of the task was accomplished?</p>
                 </div>
               )}
 

@@ -12,8 +12,8 @@ export function LoginPage({
   onBack: () => void;
   onSignUpClick: () => void;
 }) {
-  const [email, setEmail] = useState("admin@apniestate.com");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

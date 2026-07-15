@@ -57,17 +57,22 @@ export function getDbForUser(userId) {
       newDb.run(`
         CREATE TABLE IF NOT EXISTS properties (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT,
+          name TEXT NOT NULL,
+          address TEXT,
+          price TEXT,
+          salePrice TEXT,
+          type TEXT,
           beds INTEGER,
           baths INTEGER,
-          sqft INTEGER,
-          price TEXT,
-          address TEXT,
+          sqft TEXT,
+          status TEXT,
+          statusColor TEXT,
           image TEXT,
-          type TEXT,
-          inquiries INTEGER,
-          siteVisits INTEGER,
-          favorite INTEGER
+          featured INTEGER DEFAULT 0,
+          inquiries INTEGER DEFAULT 0,
+          siteVisits INTEGER DEFAULT 0,
+          favorite INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
       newDb.run(`
